@@ -243,6 +243,11 @@
   .gradient-text {
     @apply bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent;
   }
+  
+  /* Brand gradient text */
+  .gradient-brand {
+    @apply bg-gradient-to-r from-[hsl(var(--brand))] to-[hsl(var(--brand-foreground))] bg-clip-text text-transparent;
+  }
 
   /* Elevated shadow utilities */
   .shadow-elevated {
@@ -251,6 +256,15 @@
 
   .shadow-elevated-lg {
     box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.15);
+  }
+  
+  /* Glow effects */
+  .glow-brand {
+    box-shadow: 0 0 20px hsla(var(--brand) / 0.3);
+  }
+  
+  .glow-brand-lg {
+    box-shadow: 0 0 40px hsla(var(--brand) / 0.4), 0 0 80px hsla(var(--brand-foreground) / 0.2);
   }
 
   /* Animation utilities */
@@ -268,6 +282,10 @@
 
   .animate-fade-in {
     animation: fadeIn 0.6s ease-out;
+  }
+  
+  .animate-slide-down {
+    animation: slideDown 0.5s ease-out;
   }
 }
 
@@ -302,6 +320,17 @@
   }
 }
 
+@keyframes slideDown {
+  0% {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 @keyframes fadeIn {
   0% {
     opacity: 0;
@@ -315,5 +344,80 @@
 @layer base {
   *:focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}
+
+/* Hero Section Animations */
+@layer utilities {
+  .delay-100 {
+    animation-delay: 100ms;
+  }
+  .delay-300 {
+    animation-delay: 300ms;
+  }
+  .delay-700 {
+    animation-delay: 700ms;
+  }
+  .delay-1000 {
+    animation-delay: 1000ms;
+  }
+}
+
+/* Brand Colors for Hero Section and Global Use */
+@layer base {
+  :root {
+    --brand: 27 96% 61%;
+    --brand-foreground: 31 97% 72%;
+    --glow-primary: 27 96% 61%;
+    --glow-secondary: 31 97% 72%;
+  }
+ 
+  .dark {
+    --brand: 31 97% 72%;
+    --brand-foreground: 27 96% 61%;
+    --glow-primary: 31 97% 72%;
+    --glow-secondary: 27 96% 61%;
+  }
+}
+
+/* Hero Section Keyframes and Animations */
+@layer utilities {
+  @keyframes appear {
+    0% {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes appear-zoom {
+    0% {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-appear {
+    animation: appear 0.5s ease-out forwards;
+  }
+
+  .animate-appear-zoom {
+    animation: appear-zoom 0.5s ease-out forwards;
+  }
+
+  .max-w-container {
+    max-width: 1280px;
+  }
+
+  .fade-bottom {
+    mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
   }
 }
