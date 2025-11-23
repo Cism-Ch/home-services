@@ -12,7 +12,7 @@ interface ProCardProps {
 
 export function ProCard({ pro }: ProCardProps) {
     return (
-        <Card className="group relative overflow-hidden transition-all duration-500 hover:shadow-elevated-lg hover:-translate-y-2 bg-card/80 backdrop-blur-sm border-border/50 hover:border-[hsl(var(--brand))]/40 animate-appear opacity-0">
+        <Card className="group relative overflow-hidden transition-all duration-300 shadow-md hover:shadow-2xl hover:-translate-y-2 bg-card/80 backdrop-blur-sm border-border/50 hover:border-[hsl(var(--brand))]/40 animate-appear opacity-0">
             {/* Gradient background effect */}
             <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--brand))]/5 via-transparent to-[hsl(var(--brand-foreground))]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             

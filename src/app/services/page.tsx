@@ -64,24 +64,35 @@ export default function ServicesPage() {
             </section>
 
             {/* Main Content Section */}
-            <section className="container mx-auto px-4 py-12">
+            <section className="container mx-auto px-4 py-16">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                     {/* Desktop Sidebar with enhanced styling */}
                     <aside className="hidden md:block col-span-1">
                         <div className="sticky top-24 animate-appear opacity-0 delay-300">
-                            <div className="bg-card/50 backdrop-blur-sm rounded-2xl border border-border/50 p-6 shadow-elevated">
-                                <div className="flex items-center gap-2 mb-6">
-                                    <Sparkles className="h-5 w-5 text-[hsl(var(--brand))]" />
-                                    <h2 className="text-lg font-semibold">Filtres</h2>
+                            <div className="relative bg-card/60 backdrop-blur-md rounded-2xl border border-border/50 p-6 shadow-elevated overflow-hidden group hover:shadow-elevated-lg transition-shadow duration-500">
+                                {/* Decorative gradient background */}
+                                <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--brand))]/5 via-transparent to-[hsl(var(--brand-foreground))]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                
+                                {/* Content */}
+                                <div className="relative z-10">
+                                    <div className="flex items-center gap-2 mb-6 pb-4 border-b border-border/50">
+                                        <div className="p-2 rounded-lg bg-gradient-to-br from-[hsl(var(--brand))]/10 to-[hsl(var(--brand-foreground))]/10">
+                                            <Sparkles className="h-5 w-5 text-[hsl(var(--brand))]" />
+                                        </div>
+                                        <h2 className="text-lg font-bold gradient-brand">Filtres</h2>
+                                    </div>
+                                    <ServiceFilter />
                                 </div>
-                                <ServiceFilter />
+                                
+                                {/* Decorative corner accent */}
+                                <div className="absolute top-0 right-0 w-20 h-20 bg-[hsl(var(--brand))]/10 rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                             </div>
                         </div>
                     </aside>
 
                     {/* Service Grid */}
                     <main className="col-span-1 md:col-span-3">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                             {services.map((service, index) => (
                                 <div
                                     key={service.id}

@@ -65,9 +65,9 @@ export function FeaturedServices() {
           {featuredServices.map((service, index) => {
             const Icon = service.icon
             return (
-              <Card 
+              <Card
                 key={service.title}
-                className="group relative overflow-hidden cursor-pointer transition-all duration-500 hover:shadow-elevated-lg hover:-translate-y-2 border-2 hover:border-[hsl(var(--brand))]/30 bg-card/80 backdrop-blur-sm animate-appear opacity-0"
+                className="group relative overflow-hidden cursor-pointer transition-all duration-300 shadow-md hover:shadow-2xl hover:-translate-y-2 border-2 hover:border-[hsl(var(--brand))]/30 bg-card/80 backdrop-blur-sm animate-appear opacity-0"
                 style={{
                   animationDelay: `${100 + index * 100}ms`
                 }}
