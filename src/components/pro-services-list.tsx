@@ -1,4 +1,4 @@
-import { Service } from "@/lib/mock-data"
+import { services as allServices } from "@/lib/mock-data"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -6,11 +6,20 @@ import { Clock, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
 
 interface ProServicesListProps {
-    services: Service[]
     proId: string
 }
 
-export function ProServicesList({ services, proId }: ProServicesListProps) {
+export function ProServicesList({ proId }: ProServicesListProps) {
+    const services = allServices.filter(s => s.providerId === proId)
+
+    if (!services || services.length === 0) {
+        return (
+            <div className="text-center py-12 border border-dashed rounded-lg">
+                <p className="text-muted-foreground">Aucun service disponible pour le moment.</p>
+            </div>
+        )
+    }
+
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {services.map((service) => (

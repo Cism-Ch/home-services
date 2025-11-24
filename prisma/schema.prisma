@@ -1,0 +1,80 @@
+// Configuration Prisma pour Better-auth avec Supabase PostgreSQL
+// Ce schéma définit les modèles requis pour l'authentification
+
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Modèle User - Utilisateurs de la plateforme
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  name          String
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations Better-auth
+  sessions      Session[]
+  accounts      Account[]
+  
+  // Champs métier spécifiques à la plateforme
+  userType      String    @default("client") // "client" | "pro"
+  phoneNumber   String?
+  
+  @@map("users")
+}
+
+// Modèle Session - Gestion des sessions utilisateurs
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// Modèle Account - Comptes de connexion (email/password et OAuth)
+model Account {
+  id                String   @id @default(uuid())
+  userId            String
+  accountId         String
+  providerId        String
+  accessToken       String?
+  refreshToken      String?
+  idToken           String?
+  expiresAt         DateTime?
+  password          String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@map("accounts")
+}
+
+// Modèle Verification - Tokens de vérification (reset password, email verification)
+model Verification {
+  id         String   @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([identifier, value])
+  @@map("verifications")
+}

@@ -15,7 +15,7 @@ export function ProCard({ pro }: ProCardProps) {
         <Card className="group relative overflow-hidden transition-all duration-300 shadow-md hover:shadow-2xl hover:-translate-y-2 bg-card/80 backdrop-blur-sm border-border/50 hover:border-[hsl(var(--brand))]/40 animate-appear opacity-0">
             {/* Gradient background effect */}
             <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--brand))]/5 via-transparent to-[hsl(var(--brand-foreground))]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            
+
             {/* Glow effect */}
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 glow-brand" />
 
@@ -55,14 +55,14 @@ export function ProCard({ pro }: ProCardProps) {
             </CardContent>
 
             <CardFooter className="relative">
-                <Link href={`/pros/${pro.id}`} className="w-full">
+                <Link href={`/professionals/pros/${pro.id}`} className="w-full">
                     <Button className="w-full group-hover:shadow-lg transition-all duration-300 font-semibold bg-gradient-to-r hover:from-[hsl(var(--brand))] hover:to-[hsl(var(--brand-foreground))] group-hover:scale-[1.02]">
                         Voir le profil
                         <span className="ml-2 inline-block transition-transform group-hover:translate-x-1">→</span>
                     </Button>
                 </Link>
             </CardFooter>
-            
+
             {/* Bottom accent line */}
             <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-[hsl(var(--brand))] to-[hsl(var(--brand-foreground))] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
         </Card>

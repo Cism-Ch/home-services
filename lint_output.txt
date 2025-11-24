@@ -1,0 +1,50 @@
+
+> home-services@0.1.0 lint
+> eslint
+
+
+C:\Users\hanok\.gemini\antigravity\scratch\home-services\prisma\prisma.config.ts
+  6:1  warning  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+C:\Users\hanok\.gemini\antigravity\scratch\home-services\src\app\book\[proId]\[serviceId]\page.tsx
+  193:55  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\Users\hanok\.gemini\antigravity\scratch\home-services\src\app\dashboard\layout.tsx
+  28:42  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\Users\hanok\.gemini\antigravity\scratch\home-services\src\app\login\page.tsx
+  68:22  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\Users\hanok\.gemini\antigravity\scratch\home-services\src\app\page.tsx
+  6:10  warning  'Input' is defined but never used     @typescript-eslint/no-unused-vars
+  7:10  warning  'Search' is defined but never used    @typescript-eslint/no-unused-vars
+  7:18  warning  'Sparkles' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hanok\.gemini\antigravity\scratch\home-services\src\app\register\page.tsx
+  60:45  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\Users\hanok\.gemini\antigravity\scratch\home-services\src\components\date-time-picker.tsx
+  3:10  warning  'useState' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hanok\.gemini\antigravity\scratch\home-services\src\components\pro-card.tsx
+  3:10  warning  'Badge' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hanok\.gemini\antigravity\scratch\home-services\src\components\pro-header.tsx
+   4:10  warning  'Card' is defined but never used                                 @typescript-eslint/no-unused-vars
+  49:60  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\Users\hanok\.gemini\antigravity\scratch\home-services\src\components\quick-search.tsx
+  6:18  warning  'Wrench' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hanok\.gemini\antigravity\scratch\home-services\src\components\ui\hero-section.tsx
+  49:5  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+
+C:\Users\hanok\.gemini\antigravity\scratch\home-services\src\lib\auth.ts
+  66:44  warning  'token' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hanok\.gemini\antigravity\scratch\home-services\src\middleware.ts
+  4:34  warning  'request' is defined but never used  @typescript-eslint/no-unused-vars
+
+Ô£û 16 problems (5 errors, 11 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+

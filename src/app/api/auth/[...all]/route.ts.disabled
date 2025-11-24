@@ -1,0 +1,18 @@
+/**
+ * API Routes Better-auth
+ * 
+ * Ce fichier expose toutes les routes d'authentification Better-auth:
+ * - POST /api/auth/sign-in/email
+ * - POST /api/auth/sign-up/email
+ * - POST /api/auth/sign-in/social
+ * - POST /api/auth/sign-out
+ * - POST /api/auth/forget-password
+ * - POST /api/auth/reset-password
+ * - GET /api/auth/session
+ * - etc.
+ */
+
+import { auth } from "@/lib/auth";
+
+export const GET = auth.handler;
+export const POST = auth.handler;

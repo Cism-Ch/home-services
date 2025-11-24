@@ -21,19 +21,13 @@ export function ServiceFilter() {
                 </h3>
                 <div className="space-y-3">
                     {categories.map((category) => (
-                        <div
-                            key={category.id}
-                            className="group flex items-center space-x-3 p-2 rounded-lg hover:bg-accent/5 transition-colors duration-200 cursor-pointer"
-                        >
-                            <Checkbox
-                                id={category.id}
-                                className="data-[state=checked]:bg-[hsl(var(--brand))] data-[state=checked]:border-[hsl(var(--brand))]"
-                            />
+                        <div key={category.id} className="flex items-center gap-2">
+                            <Checkbox id={category.id} />
                             <Label
                                 htmlFor={category.id}
-                                className="text-sm font-medium leading-none cursor-pointer group-hover:text-[hsl(var(--brand))] transition-colors duration-200"
+                                className="text-sm font-normal cursor-pointer hover:text-[hsl(var(--brand))] transition-colors duration-200"
                             >
-                                {category.label}
+                                {category.name}
                             </Label>
                         </div>
                     ))}

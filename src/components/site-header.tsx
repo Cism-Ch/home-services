@@ -2,6 +2,13 @@ import Link from "next/link"
 import { MainNav } from "@/components/main-nav"
 import { ModeToggle } from "@/components/mode-toggle"
 import { Button } from "@/components/ui/button"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { LayoutDashboard } from "lucide-react"
 
 export function SiteHeader() {
     return (
@@ -23,6 +30,23 @@ export function SiteHeader() {
                         {/* Search placeholder */}
                     </div>
                     <nav className="flex items-center gap-3">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm" className="hidden md:flex gap-2">
+                                    <LayoutDashboard className="h-4 w-4" />
+                                    Dashboards (Demo)
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem asChild>
+                                    <Link href="/dashboard/client">Espace Client</Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link href="/dashboard/pro">Espace Professionnel</Link>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+
                         <Button variant="ghost" asChild className="text-base font-medium hover:text-[hsl(var(--brand))] transition-colors duration-300 hover:bg-[hsl(var(--brand))]/10">
                             <Link href="/login">Se connecter</Link>
                         </Button>

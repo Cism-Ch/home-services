@@ -1,1 +1,39 @@
-{"mcpServers":{"filesystem":{"command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","Users/hanok/Documents/MCP"],"disabled":true,"alwaysAllow":[]},"sequentialthinking":{"command":"npx","args":["-y","@modelcontextprotocol/server-sequential-thinking"]},"puppeteer":{"command":"npx","args":["-y","@modelcontextprotocol/server-puppeteer"]},"memory":{"command":"npx","args":["-y","@modelcontextprotocol/server-memory"]}}}
+{
+    "mcpServers": {
+        "filesystem": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-filesystem",
+                "Users/hanok/Documents/MCP"
+            ],
+            "disabled": true,
+            "alwaysAllow": []
+        },
+        "sequentialthinking": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-sequential-thinking"
+            ]
+        },
+        "puppeteer": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-puppeteer"
+            ]
+        },
+        "memory": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-memory"
+            ]
+        },
+        "Better Auth": {
+            "type": "streamable-http",
+            "url": "https://mcp.chonkie.ai/better-auth/better-auth-builder/mcp"
+        }
+    }
+}

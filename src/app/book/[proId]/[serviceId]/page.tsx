@@ -190,7 +190,7 @@ export default function BookingPage({ params }: BookingPageProps) {
                                     </div>
                                     <div className="pt-4">
                                         <Button onClick={() => router.push("/")}>
-                                            Retour à l'accueil
+                                            Retour à l&apos;accueil
                                         </Button>
                                     </div>
                                 </CardContent>

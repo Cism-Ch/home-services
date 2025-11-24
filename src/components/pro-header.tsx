@@ -46,7 +46,7 @@ export function ProHeader({ professional }: ProHeaderProps) {
                             </div>
                             <div className="flex items-center gap-1">
                                 <Clock className="h-4 w-4" />
-                                {professional.experience} d'expérience
+                                {professional.experience} d&apos;expérience
                             </div>
                             <div className="flex items-center gap-1">
                                 <Globe className="h-4 w-4" />
