@@ -28,11 +28,12 @@ interface HeroProps {
   title: string;
   description: string;
   actions: HeroAction[];
-  image: {
+  image?: {
     light: string;
     dark: string;
     alt: string;
   };
+  children?: React.ReactNode;
 }
 
 export function HeroSection({
@@ -41,6 +42,7 @@ export function HeroSection({
   description,
   actions,
   image,
+  children,
 }: HeroProps) {
   const [mounted, setMounted] = useState(false);
   const { resolvedTheme } = useTheme();
@@ -50,9 +52,9 @@ export function HeroSection({
     setMounted(true);
   }, []);
 
-  const imageSrc = mounted
+  const imageSrc = mounted && image
     ? (resolvedTheme === "light" ? image.light : image.dark)
-    : image.light; // Image par défaut pendant le SSR
+    : image?.light || "";
 
   return (
     <section
@@ -99,22 +101,30 @@ export function HeroSection({
             </div>
           </div>
 
-          {/* Image with Glow */}
-          <div className="relative pt-12">
-            <MockupFrame
-              className="animate-appear opacity-0 delay-700"
-              size="small"
-            >
-              <Mockup type="responsive">
-                <Image
-                  src={imageSrc}
-                  alt={image.alt}
-                  width={1248}
-                  height={765}
-                  priority
-                />
-              </Mockup>
-            </MockupFrame>
+          {/* Image with Glow or Custom Content */}
+          <div className="relative pt-12 w-full">
+            {children ? (
+              <div className="animate-appear opacity-0 delay-700 w-full">
+                {children}
+              </div>
+            ) : (
+              image && (
+                <MockupFrame
+                  className="animate-appear opacity-0 delay-700"
+                  size="small"
+                >
+                  <Mockup type="responsive">
+                    <Image
+                      src={imageSrc}
+                      alt={image.alt}
+                      width={1248}
+                      height={765}
+                      priority
+                    />
+                  </Mockup>
+                </MockupFrame>
+              )
+            )}
             <Glow
               variant="top"
               className="animate-appear-zoom opacity-0 delay-1000"

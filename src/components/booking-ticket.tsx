@@ -171,7 +171,7 @@ export function BookingTicket({ booking, open, onOpenChange }: BookingTicketProp
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex gap-3 print:hidden">
+                    <div className="flex flex-col sm:flex-row gap-3 print:hidden">
                         <Button onClick={handlePrint} className="flex-1 gap-2">
                             <Printer className="h-4 w-4" />
                             Imprimer

@@ -11,6 +11,7 @@ import { HeroSection } from "@/components/ui/hero-section"
 import { Icons } from "@/components/ui/icons"
 import { QuickSearch } from "@/components/quick-search"
 import { FeaturedServices } from "@/components/featured-services"
+import { HowItWorks } from "@/components/how-it-works"
 
 export default function Home() {
   return (
@@ -40,11 +41,13 @@ export default function Home() {
           },
         ]}
         image={{
-          light: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&h=800&fit=crop",
-          dark: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=1200&h=800&fit=crop",
-          alt: "Services professionnels pour la maison",
+          light: "",
+          dark: "",
+          alt: "",
         }}
-      />
+      >
+        <HowItWorks />
+      </HeroSection>
 
       {/* Quick Search Section */}
       <QuickSearch />
@@ -53,17 +56,17 @@ export default function Home() {
       <FeaturedServices />
 
       {/* Categories Section */}
-      <section className="py-20 container mx-auto px-4 relative overflow-hidden">
+      <section className="py-12 md:py-20 container mx-auto px-4 relative overflow-hidden">
         {/* Decorative background */}
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[hsl(var(--brand))]/5 rounded-full blur-3xl -z-10" />
-        
+
         <div className="flex justify-between items-end mb-12 animate-appear opacity-0">
           <div>
             <div className="inline-flex items-center gap-2 text-sm font-medium text-[hsl(var(--brand))] mb-3 bg-[hsl(var(--brand))]/10 px-4 py-2 rounded-full">
               <div className="w-2 h-2 rounded-full bg-[hsl(var(--brand))] animate-pulse"></div>
               SERVICES POPULAIRES
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-2 gradient-brand">Nos Services</h2>
+            <h2 className="text-2xl md:text-4xl font-bold tracking-tight mb-2 gradient-brand">Nos Services</h2>
             <p className="text-muted-foreground text-lg">Tout ce dont votre maison a besoin</p>
           </div>
           <Button variant="link" className="text-lg gap-2 group hover:text-[hsl(var(--brand))] transition-all duration-300">
@@ -72,7 +75,7 @@ export default function Home() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
           <ServiceCard
             title="Électricité"
             icon={Zap}
@@ -107,7 +110,7 @@ export default function Home() {
       </section>
 
       {/* Featured Professionals Section */}
-      <section className="py-20 bg-gradient-to-b from-muted/20 to-background relative overflow-hidden">
+      <section className="py-12 md:py-20 bg-gradient-to-b from-muted/20 to-background relative overflow-hidden">
         {/* Subtle grid pattern */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
         {/* Decorative glow */}
@@ -120,7 +123,7 @@ export default function Home() {
                 <div className="w-2 h-2 rounded-full bg-[hsl(var(--brand))] animate-pulse"></div>
                 PROFESSIONNELS VÉRIFIÉS
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-2 gradient-brand">Professionnels à la une</h2>
+              <h2 className="text-2xl md:text-4xl font-bold tracking-tight mb-2 gradient-brand">Professionnels à la une</h2>
               <p className="text-muted-foreground text-lg">Les mieux notés par nos clients</p>
             </div>
             <Link href="/professionals">
@@ -140,8 +143,8 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 container mx-auto px-4">
-        <div className="relative bg-gradient-to-br from-[hsl(var(--brand))] via-[hsl(var(--brand))] to-[hsl(var(--brand-foreground))] text-white rounded-3xl p-12 md:p-20 flex flex-col md:flex-row items-center justify-between gap-12 shadow-elevated-lg overflow-hidden group glow-brand-lg">
+      <section className="py-12 md:py-20 container mx-auto px-4">
+        <div className="relative bg-gradient-to-br from-[hsl(var(--brand))] via-[hsl(var(--brand))] to-[hsl(var(--brand-foreground))] text-white rounded-3xl p-6 md:p-20 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12 shadow-elevated-lg overflow-hidden group glow-brand-lg">
           {/* Animated background pattern */}
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:32px_32px]" />
           <div className="absolute top-0 right-0 w-96 h-96 bg-[hsl(var(--brand-foreground))]/30 rounded-full blur-3xl -z-0 group-hover:scale-150 transition-transform duration-700" />
@@ -154,7 +157,7 @@ export default function Home() {
               </span>
               Offre limitée
             </div>
-            <h2 className="text-3xl md:text-5xl font-bold leading-tight">Vous êtes un professionnel ?</h2>
+            <h2 className="text-xl md:text-5xl font-bold leading-tight">Vous êtes un professionnel ?</h2>
             <p className="text-white/90 text-xl leading-relaxed">
               Rejoignez notre réseau et développez votre clientèle. Inscription gratuite et sans engagement.
             </p>

@@ -9,6 +9,7 @@ import {
     Sheet,
     SheetContent,
     SheetTrigger,
+    SheetTitle,
 } from "@/components/ui/sheet"
 
 export default function ServicesPage() {
@@ -36,7 +37,7 @@ export default function ServicesPage() {
 
                         {/* Description */}
                         <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
-                            Découvrez notre gamme complète de services professionnels pour votre maison. 
+                            Découvrez notre gamme complète de services professionnels pour votre maison.
                             <span className="text-foreground font-medium"> {services.length} services disponibles</span> près de chez vous.
                         </p>
 
@@ -44,8 +45,8 @@ export default function ServicesPage() {
                         <div className="md:hidden mt-8">
                             <Sheet>
                                 <SheetTrigger asChild>
-                                    <Button 
-                                        size="lg" 
+                                    <Button
+                                        size="lg"
                                         className="gap-2 bg-[hsl(var(--brand))] hover:bg-[hsl(var(--brand))]/90 text-white shadow-lg glow-brand"
                                     >
                                         <SlidersHorizontal className="h-5 w-5" />
@@ -53,6 +54,7 @@ export default function ServicesPage() {
                                     </Button>
                                 </SheetTrigger>
                                 <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+                                    <SheetTitle className="sr-only">Filtres de recherche</SheetTitle>
                                     <div className="py-6">
                                         <ServiceFilter />
                                     </div>
@@ -72,7 +74,7 @@ export default function ServicesPage() {
                             <div className="relative bg-card/60 backdrop-blur-md rounded-2xl border border-border/50 p-6 shadow-elevated overflow-hidden group hover:shadow-elevated-lg transition-shadow duration-500">
                                 {/* Decorative gradient background */}
                                 <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--brand))]/5 via-transparent to-[hsl(var(--brand-foreground))]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                
+
                                 {/* Content */}
                                 <div className="relative z-10">
                                     <div className="flex items-center gap-2 mb-6 pb-4 border-b border-border/50">
@@ -83,7 +85,7 @@ export default function ServicesPage() {
                                     </div>
                                     <ServiceFilter />
                                 </div>
-                                
+
                                 {/* Decorative corner accent */}
                                 <div className="absolute top-0 right-0 w-20 h-20 bg-[hsl(var(--brand))]/10 rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                             </div>
@@ -136,12 +138,12 @@ export default function ServicesPage() {
                             Proposez vos services sur notre plateforme
                         </h2>
                         <p className="text-white/90 text-lg mb-8 leading-relaxed">
-                            Rejoignez notre réseau de professionnels qualifiés et développez votre activité. 
+                            Rejoignez notre réseau de professionnels qualifiés et développez votre activité.
                             Inscription gratuite et commissions attractives.
                         </p>
-                        <Button 
-                            size="lg" 
-                            variant="secondary" 
+                        <Button
+                            size="lg"
+                            variant="secondary"
                             className="text-lg px-8 py-6 h-auto shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 font-bold bg-white text-[hsl(var(--brand))] hover:bg-white/90"
                         >
                             Devenir partenaire

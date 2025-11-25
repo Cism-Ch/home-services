@@ -48,25 +48,25 @@
   --background: #f0f0f0;
   --foreground: #1B2632;
 
-  --card: #dfdfdf;
-  --card-foreground: #414141;
+  --card: #ebebeb;
+  --card-foreground: #424242;
 
   --popover: #ffffff;
   --popover-foreground: #313131;
 
-  --primary: #18222D;
-  --primary-foreground: #F5F3F0;
+  --primary: #9c9c9c;
+  --primary-foreground: #222222;
 
   --secondary: #C9C1B1;
   --secondary-foreground: #1B2632;
 
   --muted: #F1F5F9;
-  --muted-foreground: #64748B;
+  --muted-foreground: #3f4144;
 
-  --accent: #F09235;
-  --accent-foreground: #524d4d;
+  --accent: #ee8822;
+  --accent-foreground: #353535;
 
-  --destructive: #EF4444;
+  --destructive: #ffae00;
   --destructive-foreground: #575757;
 
   --border: #D9DDE3;
@@ -418,5 +418,29 @@
   .fade-bottom {
     mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
     -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+  }
+}
+
+/* Aurora Effect */
+@layer utilities {
+  @keyframes aurora {
+    0% {
+      background-position: 50% 50%, 50% 50%;
+    }
+
+    100% {
+      background-position: 350% 50%, 350% 50%;
+    }
+  }
+
+  .animate-aurora {
+    animation: aurora 60s linear infinite;
+  }
+
+  .bg-aurora {
+    background-image:
+      radial-gradient(at 100% 0%, #F0923566 0px, transparent 50%),
+      radial-gradient(at 0% 0%, #F4A26166 0px, transparent 50%);
+    background-size: 100% 100%;
   }
 }

@@ -16,7 +16,7 @@ export function ServiceListingCard({ service }: ServiceListingCardProps) {
         <Card className="flex flex-col h-full overflow-hidden transition-all duration-300 group relative bg-card/50 backdrop-blur-sm border-border/50 shadow-md hover:shadow-2xl hover:border-[hsl(var(--brand))]/30 hover:-translate-y-2">
             {/* Gradient overlay on hover */}
             <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--brand))]/5 via-transparent to-[hsl(var(--brand-foreground))]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-10" />
-            
+
             {/* Glow effect */}
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 glow-brand pointer-events-none" />
 
@@ -30,7 +30,7 @@ export function ServiceListingCard({ service }: ServiceListingCardProps) {
                 />
                 {/* Gradient overlay on image */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
-                
+
                 <Badge className="absolute top-4 right-4 bg-white/95 text-gray-900 hover:bg-white backdrop-blur-md shadow-lg font-semibold px-3 py-1">
                     {service.category}
                 </Badge>
@@ -58,7 +58,7 @@ export function ServiceListingCard({ service }: ServiceListingCardProps) {
                 </p>
                 <div className="flex items-center gap-3 pt-4 border-t border-border/50 group-hover:border-[hsl(var(--brand))]/20 transition-colors duration-300">
                     <Avatar className="h-9 w-9 ring-2 ring-border/50 group-hover:ring-[hsl(var(--brand))]/30 transition-all duration-300">
-                        <AvatarImage src={service.providerAvatar} />
+                        <AvatarImage src={service.providerAvatar} className="object-cover" />
                         <AvatarFallback className="bg-[hsl(var(--brand))]/10 text-[hsl(var(--brand))] font-semibold">
                             {service.providerName.substring(0, 2)}
                         </AvatarFallback>

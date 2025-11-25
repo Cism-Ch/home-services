@@ -21,9 +21,9 @@ export function ProHeader({ professional }: ProHeaderProps) {
 
             <div className="container mx-auto px-4">
                 <div className="relative -top-12 md:-top-16 flex flex-col md:flex-row items-start md:items-end gap-6">
-                    <Avatar className="h-32 w-32 border-4 border-background shadow-lg">
-                        <AvatarImage src={professional.avatar} alt={professional.name} />
-                        <AvatarFallback className="text-2xl">{professional.name.substring(0, 2)}</AvatarFallback>
+                    <Avatar className="h-24 w-24 md:h-32 md:w-32 border-4 border-background shadow-lg">
+                        <AvatarImage src={professional.avatar} alt={professional.name} className="object-cover" />
+                        <AvatarFallback className="text-xl md:text-2xl">{professional.name.substring(0, 2)}</AvatarFallback>
                     </Avatar>
 
                     <div className="flex-1 pt-2 md:pt-0 md:pb-4 space-y-2">

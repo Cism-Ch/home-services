@@ -109,18 +109,30 @@ export default function ClientDashboardPage() {
             <div className="space-y-4">
                 <h2 className="text-xl font-semibold">Historique</h2>
                 <div className="rounded-md border">
-                    <div className="grid grid-cols-4 p-4 font-medium border-b bg-muted/50 text-sm">
+                    <div className="hidden md:grid grid-cols-4 p-4 font-medium border-b bg-muted/50 text-sm">
                         <div>Service</div>
                         <div>Professionnel</div>
                         <div>Date</div>
                         <div className="text-right">Prix</div>
                     </div>
                     {pastBookings.map((booking) => (
-                        <div key={booking.id} className="grid grid-cols-4 p-4 items-center text-sm border-b last:border-0 hover:bg-muted/5">
-                            <div className="font-medium">{booking.service?.title}</div>
-                            <div className="text-muted-foreground">{booking.professional?.name}</div>
-                            <div className="text-muted-foreground">{booking.date.toLocaleDateString('fr-FR')}</div>
-                            <div className="text-right font-medium">{booking.price}€</div>
+                        <div key={booking.id} className="grid grid-cols-1 md:grid-cols-4 p-4 items-start md:items-center text-sm border-b last:border-0 hover:bg-muted/5 gap-2 md:gap-0">
+                            <div className="font-medium flex justify-between md:block">
+                                <span className="md:hidden text-muted-foreground font-normal">Service:</span>
+                                {booking.service?.title}
+                            </div>
+                            <div className="text-muted-foreground flex justify-between md:block">
+                                <span className="md:hidden font-normal">Pro:</span>
+                                {booking.professional?.name}
+                            </div>
+                            <div className="text-muted-foreground flex justify-between md:block">
+                                <span className="md:hidden font-normal">Date:</span>
+                                {booking.date.toLocaleDateString('fr-FR')}
+                            </div>
+                            <div className="text-right font-medium flex justify-between md:block">
+                                <span className="md:hidden text-muted-foreground font-normal">Prix:</span>
+                                {booking.price}€
+                            </div>
                         </div>
                     ))}
                 </div>

@@ -22,7 +22,7 @@ export function ProCard({ pro }: ProCardProps) {
             <CardHeader className="relative flex flex-row items-center gap-4 pb-4">
                 <div className="relative">
                     <Avatar className="h-16 w-16 ring-2 ring-background group-hover:ring-[hsl(var(--brand))]/30 transition-all duration-500 shadow-md group-hover:scale-105">
-                        <AvatarImage src={pro.avatar} alt={pro.name} />
+                        <AvatarImage src={pro.avatar} alt={pro.name} className="object-cover" />
                         <AvatarFallback className="bg-[hsl(var(--brand))]/10 text-[hsl(var(--brand))] font-semibold text-lg">
                             {pro.name.substring(0, 2)}
                         </AvatarFallback>

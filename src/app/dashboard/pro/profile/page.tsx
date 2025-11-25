@@ -27,8 +27,8 @@ export default function ProProfilePage() {
                             <CardTitle>Photo de profil</CardTitle>
                         </CardHeader>
                         <CardContent className="flex flex-col items-center gap-4">
-                            <Avatar className="h-32 w-32">
-                                <AvatarImage src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80" />
+                            <Avatar className="h-24 w-24 md:h-32 md:w-32">
+                                <AvatarImage src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80" className="object-cover" />
                                 <AvatarFallback>JP</AvatarFallback>
                             </Avatar>
                             <Button variant="outline" className="w-full gap-2">
