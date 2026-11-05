@@ -25,19 +25,16 @@ interface ResetPasswordEmailData {
  * À implémenter avec un service email (Resend, SendGrid, etc.)
  */
 async function sendPasswordResetEmail(data: ResetPasswordEmailData): Promise<void> {
-  // TODO: Implémenter l'envoi d'email avec votre service
-  // Exemple avec console.log pour développement
-  console.log("📧 Email de réinitialisation:", {
-    to: data.to,
-    userName: data.userName,
-    resetUrl: data.resetUrl,
-  });
+  // En environnement de développement, journaliser sans exposer le token sensible en clair
+  if (process.env.NODE_ENV !== "production") {
+    console.log("Email de reinitialisation pret pour:", data.to);
+  }
   
-  // En production, remplacer par:
+  // En production, integrer avec le service d'emailing (Resend via QStash)
   // await resend.emails.send({
   //   from: process.env.EMAIL_FROM!,
   //   to: data.to,
-  //   subject: "Réinitialisation de votre mot de passe",
+  //   subject: "Reinitialisation de votre mot de passe",
   //   html: `<p>Bonjour ${data.userName},</p>...`
   // });
 }
@@ -46,6 +43,7 @@ async function sendPasswordResetEmail(data: ResetPasswordEmailData): Promise<voi
  * Configuration Better-auth
  */
 export const auth = betterAuth({
+  secret: process.env.BETTER_AUTH_SECRET,
   // Base de données: Supabase PostgreSQL via Prisma
   database: prismaAdapter(prisma, {
     provider: "postgresql",
@@ -72,18 +70,17 @@ export const auth = betterAuth({
     },
   },
 
-  // Providers OAuth
+  // Providers OAuth (actives dynamiquement selon les variables d'environnement)
   socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-      scope: ["email", "profile"],
-    },
-    // GitHub sera ajouté en Phase 2
-    // github: {
-    //   clientId: process.env.GITHUB_CLIENT_ID || "",
-    //   clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
-    // },
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? {
+          google: {
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            scope: ["email", "profile"],
+          },
+        }
+      : {}),
   },
 
   // Configuration sessions

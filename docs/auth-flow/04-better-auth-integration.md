@@ -650,7 +650,7 @@ export const auth = betterAuth({
 # .env.local
 
 # Database
-DATABASE_URL="postgresql://user:password@host:5432/dbname"
+DATABASE_URL="" # Supabase PostgreSQL connection string
 
 # Better Auth
 BETTER_AUTH_SECRET="your-secret-key-min-32-chars"
