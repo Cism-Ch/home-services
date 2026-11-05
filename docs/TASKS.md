@@ -12,7 +12,11 @@
 +-------------------------+  +-------------------------+  +-------------------------+
 | [>] IN PROGRESS (SP 01) |  |   [?] FUTURE BACKLOG    |  |       [X] ARCHIVES      |
 +-------------------------+  +-------------------------+  +-------------------------+
-|                         |  | [ ] Future task 1       |  | [x] TASK-GIT-01         |
+| (All tasks complete)    |  | [ ] Future task 1       |  | [x] TASK-SKILLS-PRUNE-01|
+|                         |  |                         |  | [x] TASK-SKILLS-01      |
+|                         |  |                         |  | [x] TASK-SEC-01         |
+|                         |  |                         |  | [x] TASK-ENV-01         |
+|                         |  |                         |  | [x] TASK-GIT-01         |
 |                         |  |                         |  | [x] TASK-I18N-01        |
 |                         |  |                         |  | [x] TASK-SCRIPTS-01     |
 |                         |  |                         |  | [x] TASK-RSI-RESET-01   |
@@ -34,6 +38,22 @@
 ---
 
 ## Active Sprint 01: Project Setup & Initialization
+
+- [x] **`TASK-SKILLS-PRUNE-01` - Prune Unused Skill Files, Create .bak Archive & Agent Restore Log**
+  - **Priority:** MEDIUM
+  - **Target files:** `.agents/skills/**/*`, `backups/skills/**/*`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-SKILLS-PRUNE-01.01`: Identify non-essential skills files across unused languages, marketing, and non-target stacks.
+    - [x] `TASK-SKILLS-PRUNE-01.02`: Archive pruned files into `.bak` archive and generate structured restoration log and helper script.
+    - [x] `TASK-SKILLS-PRUNE-01.03`: Verify tooling integrity with `python evals/stack_inspector.py` and test file restoration.
+
+- [x] **`TASK-SKILLS-01` - Ecosystem Skills Integration (UI, Tailwind, Prisma, Storage, Infrastructure)**
+  - **Priority:** MEDIUM
+  - **Target files:** `.agents/skills/**/*`, `skills-lock.json`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-SKILLS-01.01`: Install Tailwind CSS design system and Tailwind v4 + shadcn UI skills.
+    - [x] `TASK-SKILLS-01.02`: Install Prisma, Upstash, Resend, and Tigris storage skills.
+    - [x] `TASK-SKILLS-01.03`: Validate complete tooling coverage via `evals/stack_inspector.py`.
 
 - [x] **`TASK-SEC-01` - Vulnerability Audit & Codebase Security Hardening**
   - **Priority:** HIGH
@@ -190,3 +210,5 @@
 | 2026-11-05 | TASK-INIT-01 | Full Migration to pnpm & Build Pipeline Validation | `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `package-lock.json`, `README.md`, `docs/TASKS.md` |
 | 2026-11-05 | TASK-ENV-01 | Supabase Migration & Environment Variables Configuration | `.env.example`, `.env.local`, `docs/TASKS.md` |
 | 2026-11-05 | TASK-SEC-01 | Vulnerability Audit & Security Hardening | `src/middleware.ts`, `src/app/api/auth/[...all]/route.ts`, `next.config.ts`, `src/lib/auth.ts`, `src/lib/prisma.ts`, `docs/TASKS.md` |
+| 2026-11-05 | TASK-SKILLS-01 | Ecosystem Skills Integration (Tailwind, UI, Prisma, Storage, Upstash, Resend) | `.agents/skills/**/*`, `skills-lock.json`, `docs/TASKS.md` |
+| 2026-11-05 | TASK-SKILLS-PRUNE-01 | Prune Unused Skill Files, Create .bak Archive & Agent Restore Log | `.agents/skills/**/*`, `backups/skills/**/*`, `docs/TASKS.md` |

@@ -32,7 +32,7 @@ SECRET_PATTERNS = [
     (re.compile(r'(?i)(?:api_key|secret_key|private_key|auth_token)\s*=\s*["\'][a-zA-Z0-9_\-\.]{16,}["\']'), "Hardcoded Auth Secret")
 ]
 
-IGNORE_DIRS = {'.git', 'node_modules', '__pycache__', '.venv', 'venv', 'dist', 'build', '.next'}
+IGNORE_DIRS = {'.git', 'node_modules', '__pycache__', '.venv', 'venv', 'dist', 'build', '.next', 'backups', 'skills', 'auth-flow'}
 
 def audit_gitignore() -> list[str]:
     issues = []

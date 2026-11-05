@@ -1,0 +1,329 @@
+{
+  "metadata": {
+    "created_at": "2026-11-05 17:43:15Z",
+    "total_files": 53,
+    "archive_bak": "skills_pruned.bak",
+    "unpacked_dir": "backups/skills/unpacked",
+    "skills_root": ".agents/skills"
+  },
+  "files": {
+    "tigris-s3-migration/resources/sdk-go.md": {
+      "reason": "Irrelevant Go language SDK reference in TypeScript Next.js stack",
+      "size_bytes": 574,
+      "original_path": ".agents/skills/tigris-s3-migration/resources/sdk-go.md",
+      "unpacked_backup": "backups/skills/unpacked/tigris-s3-migration/resources/sdk-go.md"
+    },
+    "tigris-s3-migration/resources/sdk-php.md": {
+      "reason": "Irrelevant PHP language SDK reference in TypeScript Next.js stack",
+      "size_bytes": 572,
+      "original_path": ".agents/skills/tigris-s3-migration/resources/sdk-php.md",
+      "unpacked_backup": "backups/skills/unpacked/tigris-s3-migration/resources/sdk-php.md"
+    },
+    "tigris-s3-migration/resources/sdk-python.md": {
+      "reason": "Irrelevant Python language SDK reference in TypeScript Next.js stack",
+      "size_bytes": 483,
+      "original_path": ".agents/skills/tigris-s3-migration/resources/sdk-python.md",
+      "unpacked_backup": "backups/skills/unpacked/tigris-s3-migration/resources/sdk-python.md"
+    },
+    "tigris-s3-migration/resources/sdk-ruby.md": {
+      "reason": "Irrelevant Ruby language SDK reference in TypeScript Next.js stack",
+      "size_bytes": 439,
+      "original_path": ".agents/skills/tigris-s3-migration/resources/sdk-ruby.md",
+      "unpacked_backup": "backups/skills/unpacked/tigris-s3-migration/resources/sdk-ruby.md"
+    },
+    "resend/references/broadcasts.md": {
+      "reason": "Audience marketing broadcasts not used in transactional setup",
+      "size_bytes": 6705,
+      "original_path": ".agents/skills/resend/references/broadcasts.md",
+      "unpacked_backup": "backups/skills/unpacked/resend/references/broadcasts.md"
+    },
+    "resend/references/contact-properties.md": {
+      "reason": "Contact audience management properties not used",
+      "size_bytes": 3555,
+      "original_path": ".agents/skills/resend/references/contact-properties.md",
+      "unpacked_backup": "backups/skills/unpacked/resend/references/contact-properties.md"
+    },
+    "resend/references/contacts.md": {
+      "reason": "Marketing contacts management not used",
+      "size_bytes": 6794,
+      "original_path": ".agents/skills/resend/references/contacts.md",
+      "unpacked_backup": "backups/skills/unpacked/resend/references/contacts.md"
+    },
+    "resend/references/segments.md": {
+      "reason": "Audience segments not used in transactional emails",
+      "size_bytes": 2453,
+      "original_path": ".agents/skills/resend/references/segments.md",
+      "unpacked_backup": "backups/skills/unpacked/resend/references/segments.md"
+    },
+    "resend/references/topics.md": {
+      "reason": "Newsletter topic subscriptions not used",
+      "size_bytes": 2990,
+      "original_path": ".agents/skills/resend/references/topics.md",
+      "unpacked_backup": "backups/skills/unpacked/resend/references/topics.md"
+    },
+    "resend/references/inboxes.md": {
+      "reason": "Inbound email triage inboxes not used",
+      "size_bytes": 24826,
+      "original_path": ".agents/skills/resend/references/inboxes.md",
+      "unpacked_backup": "backups/skills/unpacked/resend/references/inboxes.md"
+    },
+    "supabase/assets/feedback-issue-template.md": {
+      "reason": "Upstream GitHub issue template for skills maintainers",
+      "size_bytes": 476,
+      "original_path": ".agents/skills/supabase/assets/feedback-issue-template.md",
+      "unpacked_backup": "backups/skills/unpacked/supabase/assets/feedback-issue-template.md"
+    },
+    "supabase/CHANGELOG.md": {
+      "reason": "Upstream release notes history",
+      "size_bytes": 8442,
+      "original_path": ".agents/skills/supabase/CHANGELOG.md",
+      "unpacked_backup": "backups/skills/unpacked/supabase/CHANGELOG.md"
+    },
+    "supabase/references/skill-feedback.md": {
+      "reason": "Upstream feedback reporting instructions",
+      "size_bytes": 1052,
+      "original_path": ".agents/skills/supabase/references/skill-feedback.md",
+      "unpacked_backup": "backups/skills/unpacked/supabase/references/skill-feedback.md"
+    },
+    "supabase-postgres-best-practices/CHANGELOG.md": {
+      "reason": "Upstream changelog",
+      "size_bytes": 5757,
+      "original_path": ".agents/skills/supabase-postgres-best-practices/CHANGELOG.md",
+      "unpacked_backup": "backups/skills/unpacked/supabase-postgres-best-practices/CHANGELOG.md"
+    },
+    "supabase-postgres-best-practices/references/_contributing.md": {
+      "reason": "Upstream contributor guide",
+      "size_bytes": 4283,
+      "original_path": ".agents/skills/supabase-postgres-best-practices/references/_contributing.md",
+      "unpacked_backup": "backups/skills/unpacked/supabase-postgres-best-practices/references/_contributing.md"
+    },
+    "supabase-postgres-best-practices/references/_sections.md": {
+      "reason": "Upstream editorial section template",
+      "size_bytes": 1721,
+      "original_path": ".agents/skills/supabase-postgres-best-practices/references/_sections.md",
+      "unpacked_backup": "backups/skills/unpacked/supabase-postgres-best-practices/references/_sections.md"
+    },
+    "supabase-postgres-best-practices/references/_template.md": {
+      "reason": "Upstream rule boilerplate template",
+      "size_bytes": 1074,
+      "original_path": ".agents/skills/supabase-postgres-best-practices/references/_template.md",
+      "unpacked_backup": "backups/skills/unpacked/supabase-postgres-best-practices/references/_template.md"
+    },
+    "tailwind-v4-shadcn/templates/vite.config.ts": {
+      "reason": "Vite build configuration not applicable to Next.js App Router",
+      "size_bytes": 354,
+      "original_path": ".agents/skills/tailwind-v4-shadcn/templates/vite.config.ts",
+      "unpacked_backup": "backups/skills/unpacked/tailwind-v4-shadcn/templates/vite.config.ts"
+    },
+    "tailwind-v4-shadcn/templates/tsconfig.app.json": {
+      "reason": "Vite tsconfig template",
+      "size_bytes": 750,
+      "original_path": ".agents/skills/tailwind-v4-shadcn/templates/tsconfig.app.json",
+      "unpacked_backup": "backups/skills/unpacked/tailwind-v4-shadcn/templates/tsconfig.app.json"
+    },
+    "tailwind-v4-shadcn/templates/index.css": {
+      "reason": "Vite raw entry stylesheet",
+      "size_bytes": 4787,
+      "original_path": ".agents/skills/tailwind-v4-shadcn/templates/index.css",
+      "unpacked_backup": "backups/skills/unpacked/tailwind-v4-shadcn/templates/index.css"
+    },
+    "tailwind-v4-shadcn/templates/components.json": {
+      "reason": "Vite-specific components.json scaffold",
+      "size_bytes": 416,
+      "original_path": ".agents/skills/tailwind-v4-shadcn/templates/components.json",
+      "unpacked_backup": "backups/skills/unpacked/tailwind-v4-shadcn/templates/components.json"
+    },
+    "tailwind-v4-shadcn/templates/utils.ts": {
+      "reason": "Redundant utils scaffold (already established in src/lib/utils.ts)",
+      "size_bytes": 172,
+      "original_path": ".agents/skills/tailwind-v4-shadcn/templates/utils.ts",
+      "unpacked_backup": "backups/skills/unpacked/tailwind-v4-shadcn/templates/utils.ts"
+    },
+    "tailwind-v4-shadcn/templates/theme-provider.tsx": {
+      "reason": "Vite ThemeProvider (Next.js uses next-themes)",
+      "size_bytes": 2393,
+      "original_path": ".agents/skills/tailwind-v4-shadcn/templates/theme-provider.tsx",
+      "unpacked_backup": "backups/skills/unpacked/tailwind-v4-shadcn/templates/theme-provider.tsx"
+    },
+    "upstash/upstash-blob-js/overview.md": {
+      "reason": "Upstash submodule 'upstash-blob-js': Project uses Tigris S3-compatible storage",
+      "size_bytes": 10489,
+      "original_path": ".agents/skills/upstash/upstash-blob-js/overview.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-blob-js/overview.md"
+    },
+    "upstash/upstash-box-cli/overview.md": {
+      "reason": "Upstash submodule 'upstash-box-cli': Cloud sandbox container CLI not used",
+      "size_bytes": 22149,
+      "original_path": ".agents/skills/upstash/upstash-box-cli/overview.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-box-cli/overview.md"
+    },
+    "upstash/upstash-box-js/overview.md": {
+      "reason": "Upstash submodule 'upstash-box-js': Cloud sandbox container JS SDK not used",
+      "size_bytes": 34224,
+      "original_path": ".agents/skills/upstash/upstash-box-js/overview.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-box-js/overview.md"
+    },
+    "upstash/upstash-box-py/overview.md": {
+      "reason": "Upstash submodule 'upstash-box-py': Cloud sandbox container Python SDK not used",
+      "size_bytes": 35601,
+      "original_path": ".agents/skills/upstash/upstash-box-py/overview.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-box-py/overview.md"
+    },
+    "upstash/upstash-box-remote-work/overview.md": {
+      "reason": "Upstash submodule 'upstash-box-remote-work': Cloud sandbox remote work SDK not used",
+      "size_bytes": 15231,
+      "original_path": ".agents/skills/upstash/upstash-box-remote-work/overview.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-box-remote-work/overview.md"
+    },
+    "upstash/upstash-cli/overview.md": {
+      "reason": "Upstash submodule 'upstash-cli': Upstash terminal CLI reference not used in app code",
+      "size_bytes": 9832,
+      "original_path": ".agents/skills/upstash/upstash-cli/overview.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-cli/overview.md"
+    },
+    "upstash/upstash-search-js/overview.md": {
+      "reason": "Upstash submodule 'upstash-search-js': Project uses Supabase PostgreSQL full-text search",
+      "size_bytes": 1742,
+      "original_path": ".agents/skills/upstash/upstash-search-js/overview.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-search-js/overview.md"
+    },
+    "upstash/upstash-search-js/quick-start.md": {
+      "reason": "Upstash submodule 'upstash-search-js': Project uses Supabase PostgreSQL full-text search",
+      "size_bytes": 4037,
+      "original_path": ".agents/skills/upstash/upstash-search-js/quick-start.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-search-js/quick-start.md"
+    },
+    "upstash/upstash-search-js/sdk-overview.md": {
+      "reason": "Upstash submodule 'upstash-search-js': Project uses Supabase PostgreSQL full-text search",
+      "size_bytes": 3817,
+      "original_path": ".agents/skills/upstash/upstash-search-js/sdk-overview.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-search-js/sdk-overview.md"
+    },
+    "upstash/upstash-vector-js/overview.md": {
+      "reason": "Upstash submodule 'upstash-vector-js': Project uses Supabase pgvector embeddings",
+      "size_bytes": 1540,
+      "original_path": ".agents/skills/upstash/upstash-vector-js/overview.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-vector-js/overview.md"
+    },
+    "upstash/upstash-vector-js/sdk-methods.md": {
+      "reason": "Upstash submodule 'upstash-vector-js': Project uses Supabase pgvector embeddings",
+      "size_bytes": 3819,
+      "original_path": ".agents/skills/upstash/upstash-vector-js/sdk-methods.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-vector-js/sdk-methods.md"
+    },
+    "upstash/upstash-vector-js/features/filtering-and-metadata.md": {
+      "reason": "Upstash submodule 'upstash-vector-js': Project uses Supabase pgvector embeddings",
+      "size_bytes": 2275,
+      "original_path": ".agents/skills/upstash/upstash-vector-js/features/filtering-and-metadata.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-vector-js/features/filtering-and-metadata.md"
+    },
+    "upstash/upstash-vector-js/features/index-structure.md": {
+      "reason": "Upstash submodule 'upstash-vector-js': Project uses Supabase pgvector embeddings",
+      "size_bytes": 4715,
+      "original_path": ".agents/skills/upstash/upstash-vector-js/features/index-structure.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-vector-js/features/index-structure.md"
+    },
+    "upstash/upstash-vector-js/features/namespaces.md": {
+      "reason": "Upstash submodule 'upstash-vector-js': Project uses Supabase pgvector embeddings",
+      "size_bytes": 961,
+      "original_path": ".agents/skills/upstash/upstash-vector-js/features/namespaces.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-vector-js/features/namespaces.md"
+    },
+    "upstash/upstash-workflow-js/agents.md": {
+      "reason": "Upstash submodule 'upstash-workflow-js': Project uses QStash webhook receiver pattern per Rule 5",
+      "size_bytes": 7089,
+      "original_path": ".agents/skills/upstash/upstash-workflow-js/agents.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-workflow-js/agents.md"
+    },
+    "upstash/upstash-workflow-js/overview.md": {
+      "reason": "Upstash submodule 'upstash-workflow-js': Project uses QStash webhook receiver pattern per Rule 5",
+      "size_bytes": 2363,
+      "original_path": ".agents/skills/upstash/upstash-workflow-js/overview.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-workflow-js/overview.md"
+    },
+    "upstash/upstash-workflow-js/rest-api.md": {
+      "reason": "Upstash submodule 'upstash-workflow-js': Project uses QStash webhook receiver pattern per Rule 5",
+      "size_bytes": 6895,
+      "original_path": ".agents/skills/upstash/upstash-workflow-js/rest-api.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-workflow-js/rest-api.md"
+    },
+    "upstash/upstash-workflow-js/troubleshooting.md": {
+      "reason": "Upstash submodule 'upstash-workflow-js': Project uses QStash webhook receiver pattern per Rule 5",
+      "size_bytes": 5120,
+      "original_path": ".agents/skills/upstash/upstash-workflow-js/troubleshooting.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-workflow-js/troubleshooting.md"
+    },
+    "upstash/upstash-workflow-js/basics/client.md": {
+      "reason": "Upstash submodule 'upstash-workflow-js': Project uses QStash webhook receiver pattern per Rule 5",
+      "size_bytes": 4412,
+      "original_path": ".agents/skills/upstash/upstash-workflow-js/basics/client.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-workflow-js/basics/client.md"
+    },
+    "upstash/upstash-workflow-js/basics/context.md": {
+      "reason": "Upstash submodule 'upstash-workflow-js': Project uses QStash webhook receiver pattern per Rule 5",
+      "size_bytes": 5417,
+      "original_path": ".agents/skills/upstash/upstash-workflow-js/basics/context.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-workflow-js/basics/context.md"
+    },
+    "upstash/upstash-workflow-js/basics/serve.md": {
+      "reason": "Upstash submodule 'upstash-workflow-js': Project uses QStash webhook receiver pattern per Rule 5",
+      "size_bytes": 2490,
+      "original_path": ".agents/skills/upstash/upstash-workflow-js/basics/serve.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-workflow-js/basics/serve.md"
+    },
+    "upstash/upstash-workflow-js/features/flow-control.md": {
+      "reason": "Upstash submodule 'upstash-workflow-js': Project uses QStash webhook receiver pattern per Rule 5",
+      "size_bytes": 4112,
+      "original_path": ".agents/skills/upstash/upstash-workflow-js/features/flow-control.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-workflow-js/features/flow-control.md"
+    },
+    "upstash/upstash-workflow-js/features/invoke.md": {
+      "reason": "Upstash submodule 'upstash-workflow-js': Project uses QStash webhook receiver pattern per Rule 5",
+      "size_bytes": 2808,
+      "original_path": ".agents/skills/upstash/upstash-workflow-js/features/invoke.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-workflow-js/features/invoke.md"
+    },
+    "upstash/upstash-workflow-js/features/retries-failures-reliability.md": {
+      "reason": "Upstash submodule 'upstash-workflow-js': Project uses QStash webhook receiver pattern per Rule 5",
+      "size_bytes": 6679,
+      "original_path": ".agents/skills/upstash/upstash-workflow-js/features/retries-failures-reliability.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-workflow-js/features/retries-failures-reliability.md"
+    },
+    "upstash/upstash-workflow-js/features/wait-for-event.md": {
+      "reason": "Upstash submodule 'upstash-workflow-js': Project uses QStash webhook receiver pattern per Rule 5",
+      "size_bytes": 2961,
+      "original_path": ".agents/skills/upstash/upstash-workflow-js/features/wait-for-event.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-workflow-js/features/wait-for-event.md"
+    },
+    "upstash/upstash-workflow-js/features/webhooks.md": {
+      "reason": "Upstash submodule 'upstash-workflow-js': Project uses QStash webhook receiver pattern per Rule 5",
+      "size_bytes": 2592,
+      "original_path": ".agents/skills/upstash/upstash-workflow-js/features/webhooks.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-workflow-js/features/webhooks.md"
+    },
+    "upstash/upstash-workflow-js/how-to/local-dev.md": {
+      "reason": "Upstash submodule 'upstash-workflow-js': Project uses QStash webhook receiver pattern per Rule 5",
+      "size_bytes": 5300,
+      "original_path": ".agents/skills/upstash/upstash-workflow-js/how-to/local-dev.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-workflow-js/how-to/local-dev.md"
+    },
+    "upstash/upstash-workflow-js/how-to/middleware.md": {
+      "reason": "Upstash submodule 'upstash-workflow-js': Project uses QStash webhook receiver pattern per Rule 5",
+      "size_bytes": 5010,
+      "original_path": ".agents/skills/upstash/upstash-workflow-js/how-to/middleware.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-workflow-js/how-to/middleware.md"
+    },
+    "upstash/upstash-workflow-js/how-to/migrations.md": {
+      "reason": "Upstash submodule 'upstash-workflow-js': Project uses QStash webhook receiver pattern per Rule 5",
+      "size_bytes": 5147,
+      "original_path": ".agents/skills/upstash/upstash-workflow-js/how-to/migrations.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-workflow-js/how-to/migrations.md"
+    },
+    "upstash/upstash-workflow-js/how-to/realtime.md": {
+      "reason": "Upstash submodule 'upstash-workflow-js': Project uses QStash webhook receiver pattern per Rule 5",
+      "size_bytes": 5150,
+      "original_path": ".agents/skills/upstash/upstash-workflow-js/how-to/realtime.md",
+      "unpacked_backup": "backups/skills/unpacked/upstash/upstash-workflow-js/how-to/realtime.md"
+    }
+  }
+}
