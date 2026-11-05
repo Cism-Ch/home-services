@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Service } from "@/lib/mock-data"
+import { Service, formatFCFA } from "@/lib/mock-data"
 import Image from "next/image"
 import Link from "next/link"
 
@@ -73,8 +73,8 @@ export function ServiceListingCard({ service }: ServiceListingCardProps) {
                 <div className="flex flex-col">
                     <span className="text-xs text-muted-foreground font-medium mb-0.5">À partir de</span>
                     <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-bold bg-gradient-to-r from-[hsl(var(--brand))] to-[hsl(var(--brand-foreground))] bg-clip-text text-transparent">
-                            {service.price}€
+                        <span className="text-xl font-bold bg-gradient-to-r from-[hsl(var(--brand))] to-[hsl(var(--brand-foreground))] bg-clip-text text-transparent">
+                            {formatFCFA(service.price)}
                         </span>
                     </div>
                 </div>

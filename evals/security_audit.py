@@ -77,8 +77,19 @@ def audit_secrets() -> list[dict]:
                 })
     return findings
 
+def is_emoji_character(ch: str) -> bool:
+    """Returns True if character is within standard Emoji and Pictograph ranges."""
+    cp = ord(ch)
+    return (
+        (0x1F300 <= cp <= 0x1FAFF) or  # Misc Symbols, Pictographs, Transport, Extended
+        (0x1F600 <= cp <= 0x1F64F) or  # Emoticons
+        (0x2600 <= cp <= 0x27BF) or    # Miscellaneous Symbols & Dingbats (e.g. stars, hands)
+        (0x2300 <= cp <= 0x23FF) or    # Miscellaneous Technical
+        (0xFE00 <= cp <= 0xFE0F)       # Variation Selectors
+    )
+
 def audit_ascii_hygiene() -> list[dict]:
-    """Ensures that scripts, rules, and core docs are 100% pure ASCII to prevent terminal/CI encoding crashes."""
+    """Ensures python scripts are pure ASCII and all docs strictly forbid emojis while allowing French accents in markdown."""
     violations = []
     check_patterns = ["evals/**/*.py", ".agents/**/*.md", "docs/**/*.md", "*.md"]
     scanned_files = set()
@@ -89,15 +100,22 @@ def audit_ascii_hygiene() -> list[dict]:
                 if any(part in IGNORE_DIRS for part in path.parts):
                     continue
                 scanned_files.add(path)
+                is_py = path.suffix == ".py"
                 try:
                     content = path.read_text(encoding="utf-8", errors="ignore")
                     for idx, line in enumerate(content.splitlines(), start=1):
-                        non_ascii_chars = [ch for ch in line if ord(ch) > 127]
-                        if non_ascii_chars:
+                        if is_py:
+                            forbidden = [ch for ch in line if ord(ch) > 127]
+                            label = "Non-ASCII Character"
+                        else:
+                            forbidden = [ch for ch in line if is_emoji_character(ch)]
+                            label = "Emoji Character"
+
+                        if forbidden:
                             violations.append({
                                 "file": str(path.relative_to(ROOT_DIR)),
                                 "line": idx,
-                                "type": "Non-ASCII / Emoji Character",
+                                "type": label,
                                 "sample": line.strip()[:60]
                             })
                 except Exception as e:

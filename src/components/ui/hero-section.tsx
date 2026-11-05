@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRightIcon } from "lucide-react";
@@ -25,7 +25,7 @@ interface HeroProps {
       href: string;
     };
   };
-  title: string;
+  title: React.ReactNode;
   description: string;
   actions: HeroAction[];
   image?: {
@@ -44,13 +44,12 @@ export function HeroSection({
   image,
   children,
 }: HeroProps) {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
   const { resolvedTheme } = useTheme();
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Pattern recommandé pour éviter les erreurs d'hydratation avec next-themes
-    setMounted(true);
-  }, []);
 
   const imageSrc = mounted && image
     ? (resolvedTheme === "light" ? image.light : image.dark)
@@ -78,9 +77,15 @@ export function HeroSection({
           )}
 
           {/* Title */}
-          <h1 className="relative z-10 inline-block animate-appear text-4xl font-semibold leading-tight text-foreground drop-shadow-2xl sm:text-6xl sm:leading-tight md:text-8xl md:leading-tight">
-            {title}
-          </h1>
+          {typeof title === "string" ? (
+            <h1 className="relative z-10 inline-block animate-appear text-4xl font-semibold leading-tight text-foreground drop-shadow-2xl sm:text-6xl sm:leading-tight md:text-8xl md:leading-tight">
+              {title}
+            </h1>
+          ) : (
+            <div className="relative z-10 w-full animate-appear">
+              {title}
+            </div>
+          )}
 
           {/* Description */}
           <p className="text-md relative z-10 max-w-[550px] animate-appear font-medium text-muted-foreground opacity-0 delay-100 sm:text-xl">

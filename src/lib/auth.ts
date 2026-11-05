@@ -61,7 +61,7 @@ export const auth = betterAuth({
     resetPasswordTokenExpiresIn: 900, // 15 minutes (en secondes)
     
     // Fonction d'envoi email pour reset password
-    sendResetPassword: async ({ user, url, token }) => {
+    sendResetPassword: async ({ user, url }) => {
       await sendPasswordResetEmail({
         to: user.email,
         resetUrl: url,

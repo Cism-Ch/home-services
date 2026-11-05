@@ -7,6 +7,8 @@ import { ProReviews } from "@/components/pro-reviews"
 import { AddReviewForm } from "@/components/add-review-form"
 import { professionals } from "@/lib/mock-data"
 import { notFound } from "next/navigation"
+import { Star, MessageCircle, ShieldCheck } from "lucide-react"
+import { ProContactActions } from "@/components/pro-contact-actions"
 
 interface PageProps {
     params: Promise<{ id: string }>
@@ -76,13 +78,37 @@ export default function ProfessionalProfilePage({ params }: PageProps) {
 
                     {/* Sidebar */}
                     <div className="space-y-6">
+                        {/* Direct Contact Card */}
+                        <div className="bg-card rounded-lg p-6 border shadow-sm space-y-4">
+                            <h3 className="font-semibold text-base flex items-center gap-2">
+                                <MessageCircle className="h-4 w-4 text-emerald-600" />
+                                Contact direct avec le pro
+                            </h3>
+                            <p className="text-xs text-muted-foreground">
+                                Échangez directement par appel ou message WhatsApp pour poser vos questions ou demander un avis.
+                            </p>
+                            <ProContactActions
+                                proName={professional.name}
+                                phoneNumber={professional.phoneNumber}
+                                whatsappNumber={professional.whatsappNumber}
+                                variant="vertical"
+                            />
+                            <div className="flex items-center gap-2 pt-2 border-t text-xs text-muted-foreground">
+                                <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
+                                <span>Paiement direct de la main à la main après service.</span>
+                            </div>
+                        </div>
+
                         {/* Stats Card */}
                         <div className="bg-card rounded-lg p-6 border sticky top-4">
                             <h3 className="font-semibold mb-4">Statistiques</h3>
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center">
                                     <span className="text-muted-foreground">Note moyenne</span>
-                                    <span className="font-bold text-lg">{professional.rating} ⭐</span>
+                                    <div className="flex items-center gap-1">
+                                        <span className="font-bold text-lg">{professional.rating}</span>
+                                        <Star className="h-4 w-4 fill-primary text-primary" />
+                                    </div>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-muted-foreground">Avis clients</span>

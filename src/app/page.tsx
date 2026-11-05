@@ -3,8 +3,7 @@
 import { ServiceCard } from "@/components/service-card"
 import { ProCard } from "@/components/pro-card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Search, Sparkles, Zap, Wrench, Droplets, Paintbrush, Shovel, Tv } from "lucide-react"
+import { Zap, Wrench, Droplets, Paintbrush, Shovel, Tv } from "lucide-react"
 import { professionals } from "@/lib/mock-data"
 import Link from "next/link"
 import { HeroSection } from "@/components/ui/hero-section"
@@ -12,6 +11,7 @@ import { Icons } from "@/components/ui/icons"
 import { QuickSearch } from "@/components/quick-search"
 import { FeaturedServices } from "@/components/featured-services"
 import { HowItWorks } from "@/components/how-it-works"
+import { HeroSloganRotator } from "@/components/hero-slogan-rotator"
 
 export default function Home() {
   return (
@@ -25,8 +25,8 @@ export default function Home() {
             href: "/services",
           },
         }}
-        title="Trouvez le professionnel qu'il vous faut"
-        description="Réservez en quelques clics les meilleurs professionnels pour tous vos projets de maison. Simple, rapide et fiable."
+        title={<HeroSloganRotator />}
+        description="Trouvez et réservez en quelques clics les meilleurs professionnels locaux pour tous vos besoins de maison. Simple, direct et sans intermédiaire financier."
         actions={[
           {
             text: "Explorer les services",

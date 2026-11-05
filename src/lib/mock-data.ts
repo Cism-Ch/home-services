@@ -1,11 +1,64 @@
-import { Wrench, Zap, Droplets, Paintbrush, Hammer, Truck } from "lucide-react"
+import { Wrench, Zap, Droplets, Paintbrush, Truck, Snowflake, ShieldCheck, type LucideIcon } from "lucide-react"
+
+export interface City {
+    id: string
+    name: string
+    country: string
+    currency: string
+    popularCommunes: string[]
+}
+
+export const cities: City[] = [
+    {
+        id: "abidjan",
+        name: "Abidjan",
+        country: "Côte d'Ivoire",
+        currency: "XOF",
+        popularCommunes: ["Cocody", "Yopougon", "Marcory", "Plateau", "Riviera", "Treichville"]
+    },
+    {
+        id: "dakar",
+        name: "Dakar",
+        country: "Sénégal",
+        currency: "XOF",
+        popularCommunes: ["Almadies", "Plateau", "Mermoz", "Ngor", "Yoff", "Parcelles Assainies"]
+    },
+    {
+        id: "douala",
+        name: "Douala",
+        country: "Cameroun",
+        currency: "XAF",
+        popularCommunes: ["Bonanjo", "Akwa", "Bonapriso", "Deido", "Makepe"]
+    },
+    {
+        id: "yaounde",
+        name: "Yaoundé",
+        country: "Cameroun",
+        currency: "XAF",
+        popularCommunes: ["Bastos", "Omnisports", "Mimboman", "Mvan"]
+    },
+    {
+        id: "cotonou",
+        name: "Cotonou",
+        country: "Bénin",
+        currency: "XOF",
+        popularCommunes: ["Haie Vive", "Cadjehoun", "Akpakpa", "Fidjrosse", "Ganhi"]
+    },
+    {
+        id: "lome",
+        name: "Lomé",
+        country: "Togo",
+        currency: "XOF",
+        popularCommunes: ["Tokoin", "Nyekonakpoe", "Bè", "Hedzranawoe", "Agoè"]
+    }
+]
 
 export interface Service {
     id: string
     title: string
     description: string
     category: string
-    price: number
+    price: number // En FCFA (XOF)
     duration: number
     rating: number
     reviews: number
@@ -19,104 +72,105 @@ export interface Service {
 export const services: Service[] = [
     {
         id: "service-plomberie-1",
-        title: "Réparation de fuite d'eau",
-        description: "Intervention rapide pour toute fuite d'eau, robinetterie ou tuyauterie.",
+        title: "Dépannage plomberie et fuite d'eau",
+        description: "Intervention rapide pour toute fuite d'eau, débouchage, robinetterie ou chauffe-eau sanitaire.",
         category: "plomberie",
-        price: 80,
+        price: 15000,
         duration: 60,
         rating: 4.8,
         reviews: 124,
-        providerName: "Jean Plombier",
+        providerName: "Kouassi Plomberie",
         providerId: "pro-1",
         image: "https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=800&q=80",
-        location: "Paris 15ème"
+        location: "Abidjan - Cocody"
     },
     {
         id: "service-electricite-1",
-        title: "Installation électrique complète",
-        description: "Mise aux normes et installation de tableaux électriques.",
+        title: "Installation et dépannage électrique",
+        description: "Mise aux normes du tableau électrique, installation disjoncteurs, dépannage court-circuit et prises.",
         category: "electricite",
-        price: 150,
+        price: 25000,
         duration: 120,
         rating: 4.9,
         reviews: 89,
-        providerName: "Elec Pro",
+        providerName: "Diop Électricité Générale",
         providerId: "pro-2",
         image: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800&q=80",
-        location: "Lyon"
+        location: "Dakar - Almadies"
+    },
+    {
+        id: "service-climatisation-1",
+        title: "Entretien et recharge gaz climatiseur",
+        description: "Nettoyage filtres, vérification étanchéité, traitement antibactérien et recharge gaz R22 / R410A.",
+        category: "climatisation",
+        price: 20000,
+        duration: 90,
+        rating: 4.9,
+        reviews: 110,
+        providerName: "Fofana Froid & Clim",
+        providerId: "pro-1",
+        image: "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=800&q=80",
+        location: "Abidjan - Marcory"
     },
     {
         id: "service-peinture-1",
-        title: "Peinture salon et cuisine",
-        description: "Peinture murs et plafonds, finitions soignées.",
+        title: "Peinture intérieure salon et chambres",
+        description: "Peinture acrylique et satinée haute résistance aux intempéries, finitions soignées sans coulures.",
         category: "peinture",
-        price: 200,
+        price: 45000,
         duration: 240,
         rating: 4.7,
         reviews: 56,
-        providerName: "Deco Peint",
+        providerName: "Kouassi Plomberie",
         providerId: "pro-1",
         image: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=800&q=80",
-        location: "Marseille"
+        location: "Abidjan - Riviera"
     },
     {
         id: "service-bricolage-1",
-        title: "Montage de meubles",
-        description: "Assemblage de tous types de meubles en kit.",
+        title: "Montage meubles et serrurerie",
+        description: "Assemblage rapide de placards, tringles à rideaux, changement de serrures et petits aménagements.",
         category: "bricolage",
-        price: 50,
+        price: 10000,
         duration: 45,
         rating: 4.5,
         reviews: 210,
-        providerName: "Brico Express",
+        providerName: "Diop Électricité Générale",
         providerId: "pro-2",
         image: "https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=800&q=80",
-        location: "Bordeaux"
+        location: "Dakar - Plateau"
     },
     {
         id: "service-demenagement-1",
-        title: "Déménagement petit volume",
-        description: "Transport de meubles et cartons pour petits déménagements.",
+        title: "Transport et déménagement sécurisé",
+        description: "Transport de cartons et mobilier avec équipe de manutention précautionneuse.",
         category: "demenagement",
-        price: 120,
+        price: 60000,
         duration: 180,
         rating: 4.6,
         reviews: 78,
-        providerName: "Move It",
+        providerName: "Kouassi Plomberie",
         providerId: "pro-1",
         image: "https://images.unsplash.com/photo-1600518464441-9154a4dea21b?w=800&q=80",
-        location: "Lille"
-    },
-    {
-        id: "service-jardinage-1",
-        title: "Jardinage et entretien",
-        description: "Tonte de pelouse, taille de haies et entretien général.",
-        category: "jardinage",
-        price: 60,
-        duration: 90,
-        rating: 4.9,
-        reviews: 145,
-        providerName: "Green Hands",
-        providerId: "pro-2",
-        image: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&q=80",
-        location: "Toulouse"
+        location: "Abidjan - Yopougon"
     }
 ]
 
 export interface Category {
     id: string
     name: string
-    icon: any
+    icon: LucideIcon
     count: number
 }
 
 export const categories: Category[] = [
     { id: "plomberie", name: "Plomberie", icon: Droplets, count: 45 },
     { id: "electricite", name: "Électricité", icon: Zap, count: 38 },
+    { id: "climatisation", name: "Climatisation", icon: Snowflake, count: 42 },
     { id: "peinture", name: "Peinture", icon: Paintbrush, count: 29 },
     { id: "bricolage", name: "Bricolage", icon: Wrench, count: 52 },
     { id: "demenagement", name: "Déménagement", icon: Truck, count: 18 },
-    { id: "jardinage", name: "Jardinage", icon: Hammer, count: 34 }
+    { id: "gardiennage", name: "Sécurité & Entretien", icon: ShieldCheck, count: 34 }
 ]
 
 export interface Review {
@@ -126,6 +180,8 @@ export interface Review {
     date: string
     comment: string
     professionalId: string
+    targetName?: string
+    authorType?: "CLIENT_TO_PRO" | "PRO_TO_CLIENT"
 }
 
 export interface Professional {
@@ -136,6 +192,12 @@ export interface Professional {
     rating: number
     reviewsCount: number
     location: string
+    commune: string
+    city: string
+    phoneNumber: string
+    whatsappNumber: string
+    availabilityStatus: "AVAILABLE" | "BUSY_TODAY" | "OFFLINE"
+    isVerified: boolean
     bio: string
     languages: string[]
     experience: string
@@ -147,32 +209,40 @@ export interface Professional {
 export const professionals: Professional[] = [
     {
         id: "pro-1",
-        name: "Jean Plombier",
-        title: "Plombier Expert",
+        name: "Amadou Kouassi",
+        title: "Artisan Plombier & Climatiseur Certifié",
         avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80",
         rating: 4.8,
         reviewsCount: 124,
-        location: "Paris 15ème",
-        bio: "Plombier qualifié avec plus de 15 ans d'expérience. Spécialisé dans les dépannages d'urgence et les rénovations de salle de bain. Travail soigné et garanti.",
-        languages: ["Français", "Anglais"],
-        experience: "15 ans",
-        services: [services[0]],
+        location: "Abidjan - Cocody",
+        commune: "Cocody",
+        city: "Abidjan",
+        phoneNumber: "+225 07 08 09 10 11",
+        whatsappNumber: "+2250708091011",
+        availabilityStatus: "AVAILABLE",
+        isVerified: true,
+        bio: "Plombier et frigoriste qualifié avec plus de 12 ans d'expérience sur le Grand Abidjan. Dépannage rapide, installation sanitaire et recharge clim. Travail soigné avec devis clair avant intervention.",
+        languages: ["Français", "Baoulé"],
+        experience: "12 ans",
+        services: [services[0], services[2]],
         reviews: [
             {
                 id: "review-1",
-                author: "Sophie M.",
+                author: "Mireille Koné",
                 rating: 5,
                 date: "Il y a 2 jours",
-                comment: "Intervention rapide et efficace. Jean est très professionnel et sympathique. Je recommande !",
-                professionalId: "pro-1"
+                comment: "Intervention très propre et ponctuelle à la Riviera 2. Diagnostic clair et problème réglé en moins d'une heure.",
+                professionalId: "pro-1",
+                authorType: "CLIENT_TO_PRO"
             },
             {
                 id: "review-2",
-                author: "Pierre D.",
-                rating: 4,
+                author: "Bakary Traoré",
+                rating: 5,
                 date: "Il y a 1 semaine",
-                comment: "Bon travail, prix correct. Un peu de retard mais prévenu à l'avance.",
-                professionalId: "pro-1"
+                comment: "Artisan disponible et réactif sur WhatsApp. Devis respecté et clim qui refroidit à merveille.",
+                professionalId: "pro-1",
+                authorType: "CLIENT_TO_PRO"
             }
         ],
         portfolio: [
@@ -183,18 +253,36 @@ export const professionals: Professional[] = [
     },
     {
         id: "pro-2",
-        name: "Elec Pro",
-        title: "Électricien Certifié",
+        name: "Moussa Diop",
+        title: "Électricien Bâtiment & Industriel",
         avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&q=80",
         rating: 4.9,
         reviewsCount: 89,
-        location: "Lyon",
-        bio: "Entreprise d'électricité générale. Mise aux normes, installation neuve et rénovation. Devis gratuit.",
-        languages: ["Français"],
+        location: "Dakar - Almadies",
+        commune: "Almadies",
+        city: "Dakar",
+        phoneNumber: "+221 77 123 45 67",
+        whatsappNumber: "+221771234567",
+        availabilityStatus: "AVAILABLE",
+        isVerified: true,
+        bio: "Électricien certifié opérant sur Dakar et sa banlieue. Rénovation de coffrets électriques, pose d'onduleurs solaires, dépannage court-circuit 24h/7j.",
+        languages: ["Français", "Wolof"],
         experience: "10 ans",
         services: [services[1]],
-        reviews: [],
-        portfolio: []
+        reviews: [
+            {
+                id: "review-3",
+                author: "Fatou Sow",
+                rating: 5,
+                date: "Il y a 3 jours",
+                comment: "Moussa a remis aux normes tout le tableau de mon appartement aux Almadies. Travail exemplaire.",
+                professionalId: "pro-2",
+                authorType: "CLIENT_TO_PRO"
+            }
+        ],
+        portfolio: [
+            "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800&q=80"
+        ]
     }
 ]
 
@@ -204,10 +292,12 @@ export interface Booking {
     professionalId: string
     userId: string
     date: Date
-    status: "upcoming" | "completed" | "cancelled"
-    price: number
+    status: "negotiating" | "in_progress" | "upcoming" | "completed" | "cancelled"
+    price: number // En FCFA (XOF)
     address: string
     time: string
+    clientName?: string
+    clientPhone?: string
 }
 
 export const bookings: Booking[] = [
@@ -216,35 +306,46 @@ export const bookings: Booking[] = [
         serviceId: "service-plomberie-1",
         professionalId: "pro-1",
         userId: "user-1",
-        date: new Date(Date.now() + 86400000 * 2), // In 2 days
-        status: "upcoming",
-        price: 80,
-        address: "12 Rue de la Paix, 75002 Paris",
-        time: "14:00"
+        date: new Date(Date.now() + 86400000 * 2),
+        status: "negotiating",
+        price: 15000,
+        address: "Cocody Riviera Bonoumin, Abidjan",
+        time: "10:00",
+        clientName: "Jean-Eudes Kouassi",
+        clientPhone: "+225 05 06 07 08 09"
     },
     {
         id: "booking-2",
-        serviceId: "service-peinture-1",
+        serviceId: "service-climatisation-1",
         professionalId: "pro-1",
         userId: "user-1",
-        date: new Date(Date.now() - 86400000 * 5), // 5 days ago
+        date: new Date(Date.now() - 86400000 * 3),
         status: "completed",
-        price: 200,
-        address: "12 Rue de la Paix, 75002 Paris",
-        time: "09:00"
+        price: 20000,
+        address: "Marcory Zone 4, Abidjan",
+        time: "14:30",
+        clientName: "Jean-Eudes Kouassi",
+        clientPhone: "+225 05 06 07 08 09"
     },
     {
         id: "booking-3",
         serviceId: "service-electricite-1",
         professionalId: "pro-2",
         userId: "user-1",
-        date: new Date(Date.now() + 86400000 * 10), // In 10 days
-        status: "upcoming",
-        price: 150,
-        address: "12 Rue de la Paix, 75002 Paris",
-        time: "10:30"
+        date: new Date(Date.now() + 86400000 * 4),
+        status: "in_progress",
+        price: 25000,
+        address: "Ngor Almadies, Dakar",
+        time: "09:00",
+        clientName: "Jean-Eudes Kouassi",
+        clientPhone: "+225 05 06 07 08 09"
     }
 ]
 
-// Global reviews export - must be after professionals array
+// Formatage FCFA standardisé
+export function formatFCFA(amount: number): string {
+    return new Intl.NumberFormat("fr-FR").format(amount) + " FCFA"
+}
+
+// Avis globaux
 export const reviews: Review[] = professionals.flatMap(pro => pro.reviews)

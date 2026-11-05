@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Calendar, Trash2, AlertCircle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { ProLiveStatusBanner } from "@/components/dashboard/pro-live-status-banner"
 
 const DAYS = [
     { id: "monday", label: "Lundi" },
@@ -63,7 +64,7 @@ export default function ProAvailabilityPage() {
         if (!startDate || !endDate) return
 
         const newPeriod: UnavailabilityPeriod = {
-            id: Date.now().toString(),
+            id: `period-${unavailabilityPeriods.length + 1}-${startDate}`,
             type: selectedType,
             startDate,
             endDate,
@@ -114,6 +115,9 @@ export default function ProAvailabilityPage() {
                     Définissez vos horaires d&apos;ouverture habituels et vos périodes d&apos;indisponibilité.
                 </p>
             </div>
+
+            {/* Commutateur de statut temps reel */}
+            <ProLiveStatusBanner proId="pro-1" />
 
             {/* Unavailability Periods Section */}
             <Card>

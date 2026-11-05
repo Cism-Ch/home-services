@@ -1,5 +1,5 @@
 // Configuration Prisma pour Better-auth avec Supabase PostgreSQL
-// Ce schéma définit les modèles requis pour l'authentification
+// Ce schéma définit les modèles requis pour l'authentification et les fonctionnalités SaaS
 
 datasource db {
   provider = "postgresql"
@@ -9,7 +9,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Modèle User - Utilisateurs de la plateforme
+// Modèle User - Utilisateurs de la plateforme (Clients, Prestataires, Admins)
 model User {
   id            String    @id @default(uuid())
   email         String    @unique
@@ -24,8 +24,16 @@ model User {
   accounts      Account[]
   
   // Champs métier spécifiques à la plateforme
-  userType      String    @default("client") // "client" | "pro"
+  userType      String    @default("client") // "client" | "pro" | "admin"
   phoneNumber   String?
+
+  // Relations métier
+  proProfile       ProProfile?
+  clientBookings   Booking[]      @relation("ClientBookings")
+  proBookings      Booking[]      @relation("ProBookings")
+  reviewsGiven     Review[]       @relation("ReviewsGiven")
+  reviewsReceived  Review[]       @relation("ReviewsReceived")
+  subscriptions    Subscription[]
   
   @@map("users")
 }
@@ -77,4 +85,159 @@ model Verification {
 
   @@unique([identifier, value])
   @@map("verifications")
+}
+
+// Modèle ProProfile - Profil professionnel d'un artisan / prestataire
+model ProProfile {
+  id                  String     @id @default(uuid())
+  userId              String     @unique
+  user                User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  headline            String
+  bio                 String     @db.Text
+  phoneNumber         String     // Contact direct appels (indicatif Afrique de l'Ouest/Centrale)
+  whatsappNumber      String     // Contact direct WhatsApp (discussion & notes vocales)
+  yearsOfExperience   Int        @default(1)
+  cityId              String?
+  city                City?      @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  commune             String?    // Ex: Cocody, Yopougon, Almadies, Akwa, etc.
+  address             String?
+  availabilityStatus  String     @default("AVAILABLE") // "AVAILABLE" | "BUSY_TODAY" | "OFFLINE"
+  isVerified          Boolean    @default(false)
+  kycStatus           String     @default("NOT_SUBMITTED") // "NOT_SUBMITTED" | "PENDING" | "APPROVED" | "REJECTED"
+  kycDocumentUrl      String?
+  rating              Float      @default(5.0)
+  reviewsCount        Int        @default(0)
+  completedTasks      Int        @default(0)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  services            Service[]
+  timeSlots           TimeSlot[]
+
+  @@map("pro_profiles")
+}
+
+// Modèle Category - Catégories de métiers
+model Category {
+  id          String    @id // Slug: "plomberie", "electricite", "climatisation", etc.
+  name        String
+  description String?
+  icon        String    // Identifiant icône Lucide
+  services    Service[]
+
+  @@map("categories")
+}
+
+// Modèle City - Villes africaines francophones desservies
+model City {
+  id          String       @id // Slug: "abidjan", "dakar", "douala", etc.
+  name        String
+  country     String
+  currency    String       @default("XOF") // XOF (FCFA)
+  proProfiles ProProfile[]
+
+  @@map("cities")
+}
+
+// Modèle Service - Prestations proposées en devises locales FCFA
+model Service {
+  id           String     @id @default(uuid())
+  proProfileId String
+  proProfile   ProProfile @relation(fields: [proProfileId], references: [id], onDelete: Cascade)
+  categoryId   String
+  category     Category   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  title        String
+  description  String     @db.Text
+  price        Int        // Tarif indicatif en FCFA (XOF)
+  duration     Int        // Durée estimée en minutes
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  bookings     Booking[]
+
+  @@map("services")
+}
+
+// Modèle TimeSlot - Créneaux horaires de disponibilité
+model TimeSlot {
+  id           String     @id @default(uuid())
+  proProfileId String
+  proProfile   ProProfile @relation(fields: [proProfileId], references: [id], onDelete: Cascade)
+  dayOfWeek    Int        // 0 = Dimanche, 1 = Lundi, ..., 6 = Samedi
+  startTime    String     // "08:00"
+  endTime      String     // "10:00"
+  isAvailable  Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@map("time_slots")
+}
+
+// Modèle Booking - Réservation de créneau horaire et suivi de mission
+model Booking {
+  id              String    @id @default(uuid())
+  serviceId       String
+  service         Service   @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  clientId        String
+  client          User      @relation("ClientBookings", fields: [clientId], references: [id], onDelete: Cascade)
+  proId           String
+  pro             User      @relation("ProBookings", fields: [proId], references: [id], onDelete: Cascade)
+  status          String    @default("NEGOTIATING") // "NEGOTIATING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED"
+  bookingDate     DateTime
+  timeSlot        String    // Ex: "09:00 - 11:00"
+  clientNotes     String?   @db.Text
+  indicativePrice Int       // En FCFA (XOF)
+  clientName      String
+  clientPhone     String
+  clientAddress   String
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  reviews         Review[]
+
+  @@map("bookings")
+}
+
+// Modèle Review - Système d'avis mutuel (Client -> Pro et Pro -> Client)
+model Review {
+  id          String   @id @default(uuid())
+  bookingId   String
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User     @relation("ReviewsGiven", fields: [authorId], references: [id], onDelete: Cascade)
+  targetId    String
+  target      User     @relation("ReviewsReceived", fields: [targetId], references: [id], onDelete: Cascade)
+  authorType  String   // "CLIENT_TO_PRO" | "PRO_TO_CLIENT"
+  rating      Int      // Note de 1 à 5
+  comment     String   @db.Text
+  isModerated Boolean  @default(false)
+  isReported  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("reviews")
+}
+
+// Modèle Subscription - Abonnements Paystack en FCFA
+model Subscription {
+  id                       String    @id @default(uuid())
+  userId                   String
+  user                     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                     String    // "PRO_STANDARD" | "PRO_PREMIUM" | "PRO_ENTERPRISE" | "CLIENT_GOLD"
+  amount                   Int       // 5000, 10000, 20000 ou 2000 FCFA
+  currency                 String    @default("XOF")
+  status                   String    @default("ACTIVE") // "ACTIVE" | "TRIALING" | "PAST_DUE" | "CANCELLED"
+  paystackCustomerCode     String?
+  paystackSubscriptionCode String?
+  paystackPlanCode         String?
+  trialStartDate           DateTime?
+  trialEndDate             DateTime?
+  currentPeriodStart       DateTime  @default(now())
+  currentPeriodEnd         DateTime
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+
+  @@map("subscriptions")
 }

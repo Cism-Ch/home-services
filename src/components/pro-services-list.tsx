@@ -1,4 +1,4 @@
-import { services as allServices } from "@/lib/mock-data"
+import { services as allServices, formatFCFA } from "@/lib/mock-data"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -44,7 +44,7 @@ export function ProServicesList({ proId }: ProServicesListProps) {
                     <CardFooter className="flex items-center justify-between border-t bg-muted/20 p-6">
                         <div className="flex flex-col">
                             <span className="text-xs text-muted-foreground">Tarif indicatif</span>
-                            <span className="text-xl font-bold text-primary">{service.price}€</span>
+                            <span className="text-xl font-bold text-primary">{formatFCFA(service.price)}</span>
                         </div>
                         <Link href={`/book/${proId}/${service.id}`}>
                             <Button size="sm">Choisir</Button>

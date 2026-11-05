@@ -98,7 +98,7 @@ def parse_active_tasks() -> list[dict]:
     if active_tasks:
         return active_tasks
     # During Phase 4 closure (right after marking [-] -> [x] and before git commit), use the latest closed task
-    return closed_sprint_tasks[:1]
+    return closed_sprint_tasks[-1:] if closed_sprint_tasks else []
 
 def get_modified_workspace_files() -> list[str]:
     """Returns git-modified and untracked files relative to ROOT_DIR."""

@@ -11,6 +11,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { useSession, signOut } from "@/lib/auth-client";
 
 /**
@@ -67,6 +68,7 @@ interface AuthProviderProps {
  * À placer au niveau racine de l'application
  */
 export function AuthProvider({ children }: AuthProviderProps) {
+  const router = useRouter();
   // Utilise le hook useSession de Better-auth
   const { data: sessionData, isPending, error } = useSession();
 
@@ -84,13 +86,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = React.useCallback(async () => {
     try {
       await signOut();
-      // Redirection gérée automatiquement par Better-auth
-      window.location.href = "/login";
+      router.push("/login");
     } catch (err) {
       console.error("Erreur lors de la déconnexion:", err);
       throw err;
     }
-  }, []);
+  }, [router]);
 
   /**
    * Fonction pour rafraîchir la session
