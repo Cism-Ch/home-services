@@ -31,6 +31,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { ProLiveStatusBanner } from "@/components/dashboard/pro-live-status-banner"
 import { AddReviewForm } from "@/components/add-review-form"
+import { useBookingStatusRealtime } from "@/hooks/use-realtime-status"
 import {
   validateOfferAction,
   answerTaskFollowUpAction,
@@ -44,34 +45,52 @@ import type {
 import { toast } from "sonner"
 
 interface ProScheduleViewProps {
+  userId: string
   proProfileId: string
   initialStatus: AvailabilityStatusType
   initialBookings: DashboardBookingItem[]
 }
 
 export function ProScheduleView({
+  userId,
   proProfileId,
   initialStatus,
   initialBookings,
 }: ProScheduleViewProps) {
   const router = useRouter()
   const [date, setDate] = useState<Date | undefined>(new Date())
-  const [proBookings, setProBookings] = useState<DashboardBookingItem[]>(initialBookings)
+  const [statusOverrides, setStatusOverrides] = useState<
+    Record<string, DashboardBookingItem["status"]>
+  >({})
+  const [reviewedIds, setReviewedIds] = useState<Record<string, boolean>>({})
   const [reviewClientBooking, setReviewClientBooking] =
     useState<DashboardBookingItem | null>(null)
 
+  useBookingStatusRealtime(userId, (evt) => {
+    toast.info(evt.message || "Agenda actualisé en direct.")
+    router.refresh()
+  })
+
+  const proBookings = initialBookings.map((b) => ({
+    ...b,
+    status: statusOverrides[`${b.id}:${b.status}`] ?? b.status,
+    hasProReviewed: b.hasProReviewed || Boolean(reviewedIds[b.id]),
+  }))
+
   const handleValidateOffer = async (bookingId: string) => {
+    const target = initialBookings.find((b) => b.id === bookingId)
     const res = await validateOfferAction(bookingId)
     if (res.error) {
       toast.error(res.error)
       return
     }
 
-    setProBookings((prev) =>
-      prev.map((b) =>
-        b.id === bookingId ? { ...b, status: "IN_PROGRESS" } : b
-      )
-    )
+    if (target) {
+      setStatusOverrides((prev) => ({
+        ...prev,
+        [`${bookingId}:${target.status}`]: "IN_PROGRESS",
+      }))
+    }
     toast.success(
       "Offre validée ! Vous êtes maintenant noté 'Occupé aujourd'hui' pour traiter cette tâche."
     )
@@ -79,32 +98,36 @@ export function ProScheduleView({
   }
 
   const handleCompleteTask = async (bookingId: string) => {
+    const target = initialBookings.find((b) => b.id === bookingId)
     const res = await answerTaskFollowUpAction(bookingId, "YES")
     if (res.error) {
       toast.error(res.error)
       return
     }
 
-    setProBookings((prev) =>
-      prev.map((b) =>
-        b.id === bookingId ? { ...b, status: "COMPLETED" } : b
-      )
-    )
+    if (target) {
+      setStatusOverrides((prev) => ({
+        ...prev,
+        [`${bookingId}:${target.status}`]: "COMPLETED",
+      }))
+    }
     toast.success("Mission clôturée ! Vos créneaux sont réouverts.")
     router.refresh()
   }
 
   const handleCancelBooking = async (bookingId: string) => {
+    const target = initialBookings.find((b) => b.id === bookingId)
     const res = await updateBookingStatusAction({ bookingId, status: "CANCELLED" })
     if (res.error) {
       toast.error(typeof res.error === "string" ? res.error : "Impossible d'annuler.")
       return
     }
-    setProBookings((prev) =>
-      prev.map((b) =>
-        b.id === bookingId ? { ...b, status: "CANCELLED" } : b
-      )
-    )
+    if (target) {
+      setStatusOverrides((prev) => ({
+        ...prev,
+        [`${bookingId}:${target.status}`]: "CANCELLED",
+      }))
+    }
     toast.info("Rendez-vous annulé.")
     router.refresh()
   }
@@ -376,13 +399,10 @@ export function ProScheduleView({
               bookingId={reviewClientBooking.id}
               authorType="PRO_TO_CLIENT"
               onReviewSubmitted={() => {
-                setProBookings((prev) =>
-                  prev.map((b) =>
-                    b.id === reviewClientBooking.id
-                      ? { ...b, hasProReviewed: true }
-                      : b
-                  )
-                )
+                setReviewedIds((prev) => ({
+                  ...prev,
+                  [reviewClientBooking.id]: true,
+                }))
                 setReviewClientBooking(null)
                 router.refresh()
               }}

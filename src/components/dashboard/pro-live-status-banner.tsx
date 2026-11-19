@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { CheckCircle2, AlertTriangle, Moon, RefreshCw } from "lucide-react"
+import { useProAvailabilityRealtime } from "@/hooks/use-realtime-status"
 import {
   setProAvailabilityAction,
   type ProAvailabilityType,
@@ -24,7 +25,8 @@ export function ProLiveStatusBanner({
   hasActiveMission = false,
   className = "",
 }: ProLiveStatusBannerProps) {
-  const [currentStatus, setCurrentStatus] = React.useState<ProAvailabilityType>(initialStatus)
+  const { status: currentStatus, setStatus: setCurrentStatus } =
+    useProAvailabilityRealtime(proId, initialStatus)
   const [isUpdating, setIsUpdating] = React.useState(false)
 
   const handleStatusChange = async (newStatus: ProAvailabilityType) => {

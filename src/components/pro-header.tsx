@@ -5,6 +5,7 @@ import { CatalogProfessional } from "@/lib/types/catalog"
 import { MapPin, Star, Globe, Clock, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
 import { ProContactActions } from "@/components/pro-contact-actions"
+import { ProLiveStatusBadge } from "@/components/pro-live-status-badge"
 
 interface ProHeaderProps {
   professional: CatalogProfessional
@@ -13,33 +14,6 @@ interface ProHeaderProps {
 export function ProHeader({ professional }: ProHeaderProps) {
   // Premier service pour le lien direct de reservation de creneau
   const firstServiceId = professional.services?.[0]?.id || ""
-
-  const getStatusBadge = () => {
-    switch (professional.availabilityStatus) {
-      case "AVAILABLE":
-        return (
-          <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-            Disponible aujourd&apos;hui
-          </Badge>
-        )
-      case "BUSY_TODAY":
-        return (
-          <Badge variant="secondary" className="bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 gap-1.5 border-amber-300">
-            <span className="w-2 h-2 rounded-full bg-amber-500" />
-            Occupé aujourd&apos;hui
-          </Badge>
-        )
-      case "OFFLINE":
-      default:
-        return (
-          <Badge variant="outline" className="text-muted-foreground gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-muted-foreground" />
-            Hors ligne
-          </Badge>
-        )
-    }
-  }
 
   return (
     <div className="relative mb-8">
@@ -67,7 +41,10 @@ export function ProHeader({ professional }: ProHeaderProps) {
                 <Badge variant="secondary" className="text-sm px-3 py-1 font-medium">
                   {professional.title}
                 </Badge>
-                {getStatusBadge()}
+                <ProLiveStatusBadge
+                  proProfileId={professional.id}
+                  initialStatus={professional.availabilityStatus}
+                />
               </div>
             </div>
 

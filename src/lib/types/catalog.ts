@@ -108,3 +108,17 @@ export interface DashboardBookingItem {
   hasClientReviewed?: boolean
   hasProReviewed?: boolean
 }
+
+export interface DashboardSubscriptionItem {
+  id: string
+  plan: string
+  planLabel: string
+  amount: number
+  currency: string
+  status: "ACTIVE" | "TRIALING" | "PAST_DUE" | "CANCELLED"
+  referenceCode: string
+  currentPeriodStart: string
+  currentPeriodEnd: string
+  trialEndDate: string | null
+  createdAt: string
+}

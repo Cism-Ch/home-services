@@ -253,3 +253,24 @@
   - **Acceptance criteria:**
     - [x] `TASK-RBAC-GUARD-01.01`: Implement `src/server/auth-guard.ts` and protect `/dashboard`, `/dashboard/client`, `/dashboard/pro`, and `/dashboard/admin` layouts by session & role.
     - [x] `TASK-RBAC-GUARD-01.02`: Update `DashboardSidebar` and `SiteHeader` with real authenticated user session + logout, and enforce `requireActionSession` / ownership checks across all Server Actions.
+
+- [x] **`TASK-CATALOG-DB-01` - [Scope: L] Shared Formatters/Types, Prisma Public Catalog Queries & Public Pages Migration**
+  - **Priority:** CRITICAL
+  - **Target files:** `src/lib/formatters.ts`, `src/lib/types/catalog.ts`, `src/server/queries/catalog.ts`, `src/components/**/*`, `src/app/page.tsx`, `src/app/services/**/*`, `src/app/professionals/**/*`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-CATALOG-DB-01.01`: Extract `formatFCFA` into `src/lib/formatters.ts`, create `src/lib/types/catalog.ts`, and implement `src/server/queries/catalog.ts` backed by Prisma with subscriber priority sorting.
+    - [x] `TASK-CATALOG-DB-01.02`: Refactor UI components (`ProCard`, `ProHeader`, `ProServicesList`, `ProReviews`, `ServiceListingCard`, `ServiceFilter`, `BookingSummary`, `BookingTicket`, `CreateServiceDialog`, `BillingInvoices`) off `mock-data.ts` and migrate `/`, `/services`, `/professionals`, `/professionals/pros/[id]` to RSC + Prisma with Skeletons and zero emojis.
+
+- [x] **`TASK-SLOTS-DB-01` - [Scope: L] Real TimeSlot & Unavailability Persistence, Dynamic DateTimePicker & Anti-Double-Booking**
+  - **Priority:** CRITICAL
+  - **Target files:** `src/server/actions/availability.ts`, `src/server/actions/booking.ts`, `src/components/date-time-picker.tsx`, `src/app/dashboard/pro/availability/**/*`, `src/app/book/**/*`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-SLOTS-DB-01.01`: Implement `src/server/actions/availability.ts` and persist Pro weekly `TimeSlot` + `UnavailabilityPeriod` entries in `/dashboard/pro/availability`.
+    - [x] `TASK-SLOTS-DB-01.02`: Upgrade `DateTimePicker`, migrate `/book/[proId]/[serviceId]` to RSC + Prisma, and enforce transactional anti-double-booking with canonical `User.id` FK in `src/server/actions/booking.ts`.
+
+- [x] **`TASK-DASHBOARDS-DB-01` - [Scope: L] Client & Pro Dashboards 100% Prisma, Atomic Rating/Task Counters & Real Error Handling**
+  - **Priority:** CRITICAL
+  - **Target files:** `src/server/queries/dashboard.ts`, `src/server/actions/booking-status.ts`, `src/server/actions/reviews.ts`, `src/server/actions/pro-catalog.ts`, `src/app/dashboard/client/**/*`, `src/app/dashboard/pro/**/*`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-DASHBOARDS-DB-01.01`: Implement `src/server/queries/dashboard.ts` and migrate Client and Pro dashboard pages to real Prisma data.
+    - [x] `TASK-DASHBOARDS-DB-01.02`: Remove silent `catch {}` fallbacks, send real booking metadata to QStash, atomically recalculate `rating` / `reviewsCount` / `completedTasks` on `ProProfile`, and verify zero `mock-data` imports outside Admin.

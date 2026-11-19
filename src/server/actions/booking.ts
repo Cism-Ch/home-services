@@ -8,6 +8,8 @@ import {
   type UpdateBookingStatusInput,
 } from "@/lib/validations/booking"
 import { prisma } from "@/lib/prisma"
+import { enforceRateLimit } from "@/lib/redis"
+import { broadcastBookingStatusEvent } from "@/lib/supabase-server"
 import { requireActionSession } from "@/server/auth-guard"
 
 export interface ServerActionResponse<T> {
@@ -41,6 +43,11 @@ export async function createSlotBooking(
     const authRes = await requireActionSession()
     if (authRes.error !== null) {
       return { data: null, error: authRes.error }
+    }
+
+    const rateLimit = await enforceRateLimit("booking", authRes.user.id)
+    if (!rateLimit.allowed) {
+      return { data: null, error: rateLimit.error }
     }
 
     const validated = createBookingSchema.safeParse(input)
@@ -144,6 +151,12 @@ export async function createSlotBooking(
 
     const dbBooking = txResult.record
 
+    await broadcastBookingStatusEvent([dbBooking.proId], {
+      bookingId: dbBooking.id,
+      status: dbBooking.status,
+      message: "Nouvelle demande de créneau reçue.",
+    })
+
     revalidatePath("/dashboard/client")
     revalidatePath("/dashboard/client/bookings")
     revalidatePath("/dashboard/pro")
@@ -186,6 +199,11 @@ export async function updateBookingStatusAction(
       return { data: null, error: authRes.error }
     }
 
+    const rateLimit = await enforceRateLimit("booking", authRes.user.id)
+    if (!rateLimit.allowed) {
+      return { data: null, error: rateLimit.error }
+    }
+
     const validated = updateBookingStatusSchema.safeParse(input)
     if (!validated.success) {
       return {
@@ -219,6 +237,12 @@ export async function updateBookingStatusAction(
         status,
         completedAt: status === "COMPLETED" ? new Date() : undefined,
       },
+    })
+
+    await broadcastBookingStatusEvent([existing.clientId, existing.proId], {
+      bookingId,
+      status,
+      message: "Statut de réservation mis à jour.",
     })
 
     revalidatePath("/dashboard/client")

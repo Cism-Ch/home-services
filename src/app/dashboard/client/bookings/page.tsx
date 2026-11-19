@@ -8,5 +8,5 @@ export default async function ClientBookingsPage() {
   const { user } = await requireSession()
   const { bookings } = await getClientDashboardData(user.id)
 
-  return <ClientBookingsView initialBookings={bookings} />
+  return <ClientBookingsView userId={user.id} initialBookings={bookings} />
 }

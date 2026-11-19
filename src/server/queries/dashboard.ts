@@ -3,12 +3,14 @@
  */
 
 import { prisma } from "@/lib/prisma"
+import { PAYSTACK_PLANS, type SubscriptionPlanCode } from "@/lib/paystack"
 import { getServiceFallbackImage } from "@/server/queries/catalog"
 import type {
   AvailabilityStatusType,
   CatalogCategory,
   CatalogService,
   DashboardBookingItem,
+  DashboardSubscriptionItem,
 } from "@/lib/types/catalog"
 
 function normalizeBookingStatus(
@@ -229,5 +231,114 @@ export async function getProDashboardData(userId: string) {
       averageRating: proProfile.rating.toFixed(1),
       completedTasks: proProfile.completedTasks,
     },
+  }
+}
+
+function normalizeSubscriptionStatus(
+  raw: string
+): DashboardSubscriptionItem["status"] {
+  if (raw === "TRIALING") return "TRIALING"
+  if (raw === "PAST_DUE") return "PAST_DUE"
+  if (raw === "CANCELLED") return "CANCELLED"
+  return "ACTIVE"
+}
+
+function resolvePlanLabel(planCode: string): string {
+  if (planCode in PAYSTACK_PLANS) {
+    return PAYSTACK_PLANS[planCode as SubscriptionPlanCode].name
+  }
+  return planCode
+}
+
+export async function getUserSubscriptions(
+  userId: string
+): Promise<DashboardSubscriptionItem[]> {
+  const subs = await prisma.subscription.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+  })
+
+  return subs.map((s) => ({
+    id: s.id,
+    plan: s.plan,
+    planLabel: resolvePlanLabel(s.plan),
+    amount: s.amount,
+    currency: s.currency,
+    status: normalizeSubscriptionStatus(s.status),
+    referenceCode:
+      s.paystackSubscriptionCode || `PSK-${s.id.slice(0, 8).toUpperCase()}`,
+    currentPeriodStart: s.currentPeriodStart.toISOString(),
+    currentPeriodEnd: s.currentPeriodEnd.toISOString(),
+    trialEndDate: s.trialEndDate ? s.trialEndDate.toISOString() : null,
+    createdAt: s.createdAt.toISOString(),
+  }))
+}
+
+export async function getClientSettingsData(userId: string) {
+  const [user, subscriptions] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phoneNumber: true,
+      },
+    }),
+    getUserSubscriptions(userId),
+  ])
+
+  const isGoldMember = subscriptions.some(
+    (s) =>
+      s.plan === "CLIENT_GOLD" &&
+      (s.status === "ACTIVE" || s.status === "TRIALING")
+  )
+
+  return {
+    user,
+    subscriptions,
+    isGoldMember,
+  }
+}
+
+export async function getProSettingsData(userId: string) {
+  const [user, proProfile, subscriptions] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phoneNumber: true,
+      },
+    }),
+    prisma.proProfile.findUnique({
+      where: { userId },
+      select: {
+        id: true,
+        cityId: true,
+        commune: true,
+        address: true,
+        phoneNumber: true,
+        whatsappNumber: true,
+        kycStatus: true,
+        isVerified: true,
+      },
+    }),
+    getUserSubscriptions(userId),
+  ])
+
+  const activeProSubscription =
+    subscriptions.find(
+      (s) =>
+        s.plan.startsWith("PRO_") &&
+        (s.status === "ACTIVE" || s.status === "TRIALING" || s.status === "PAST_DUE")
+    ) || null
+
+  return {
+    user,
+    proProfile,
+    subscriptions,
+    activeProSubscription,
   }
 }

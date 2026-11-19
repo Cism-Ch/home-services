@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { enqueueFollowUpNotification } from "@/lib/qstash"
+import { invalidateCatalogCache } from "@/lib/redis"
+import { broadcastBookingStatusEvent } from "@/lib/supabase-server"
 import { requireActionSession } from "@/server/auth-guard"
 
 export interface ServerActionResponse<T> {
@@ -51,6 +53,7 @@ export async function setProAvailabilityAction(
       data: { availabilityStatus: status },
     })
 
+    await invalidateCatalogCache()
     revalidatePath("/dashboard/pro")
     revalidatePath("/dashboard/pro/availability")
     revalidatePath("/dashboard/pro/schedule")
@@ -133,6 +136,12 @@ export async function validateOfferAction(
       indicativePriceFCFA: booking.indicativePrice,
     })
 
+    await invalidateCatalogCache()
+    await broadcastBookingStatusEvent([booking.clientId, booking.proId], {
+      bookingId,
+      status: "IN_PROGRESS",
+      message: "Offre validée : intervention en cours de traitement.",
+    })
     revalidatePath("/dashboard/client")
     revalidatePath("/dashboard/client/bookings")
     revalidatePath("/dashboard/pro")
@@ -256,6 +265,15 @@ export async function answerTaskFollowUpAction(
       })
     }
 
+    if (answer === "YES") {
+      await broadcastBookingStatusEvent([booking.clientId, booking.proId], {
+        bookingId,
+        status: "COMPLETED",
+        message: "Mission clôturée avec succès.",
+      })
+    }
+
+    await invalidateCatalogCache()
     revalidatePath("/dashboard/client")
     revalidatePath("/dashboard/client/bookings")
     revalidatePath("/dashboard/pro")

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
+import { invalidateCatalogCache } from "@/lib/redis"
 import { requireActionSession } from "@/server/auth-guard"
 
 export interface ServerActionResponse<T> {
@@ -36,6 +37,7 @@ export async function verifyProKycAction(
       // Fallback hors-ligne
     }
 
+    await invalidateCatalogCache()
     revalidatePath("/dashboard/admin")
     revalidatePath("/professionals")
     return {
@@ -78,6 +80,7 @@ export async function moderateReviewAction(
       // Fallback
     }
 
+    await invalidateCatalogCache()
     revalidatePath("/dashboard/admin")
     return {
       data: {

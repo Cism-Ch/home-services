@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -17,16 +17,41 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Upload, X, Plus, ShieldCheck, Phone, MessageSquare, FileCheck } from "lucide-react"
+import {
+  Upload,
+  X,
+  Plus,
+  ShieldCheck,
+  Phone,
+  MessageSquare,
+  FileCheck,
+  Loader2,
+} from "lucide-react"
 import { CityCombobox } from "@/components/city-combobox"
 import { ProLiveStatusBanner } from "@/components/dashboard/pro-live-status-banner"
 import {
   updateProProfileAction,
   requestPresignedUploadAction,
+  confirmPortfolioUploadAction,
+  confirmAvatarUploadAction,
+  confirmKycUploadAction,
   removeStoredAssetAction,
 } from "@/server/actions/pro-catalog"
 import type { AvailabilityStatusType } from "@/lib/types/catalog"
 import { toast } from "sonner"
+
+const MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024
+const IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"]
+const KYC_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"]
+
+function inferPortfolioKey(url: string, proId: string, idx: number): string {
+  const marker = `portfolio/${proId}/`
+  const markerIndex = url.indexOf(marker)
+  if (markerIndex !== -1) {
+    return decodeURIComponent(url.slice(markerIndex))
+  }
+  return `legacy:${idx}`
+}
 
 interface ProProfileViewProps {
   profile: {
@@ -49,7 +74,12 @@ interface ProProfileViewProps {
 
 export function ProProfileView({ profile }: ProProfileViewProps) {
   const router = useRouter()
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const kycInputRef = useRef<HTMLInputElement>(null)
+  const portfolioInputRef = useRef<HTMLInputElement>(null)
+
   const [name, setName] = useState(profile.userName)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(profile.userImage)
   const [headline, setHeadline] = useState(profile.headline)
   const [bio, setBio] = useState(profile.bio)
   const [phoneNumber, setPhoneNumber] = useState(profile.phoneNumber)
@@ -61,12 +91,15 @@ export function ProProfileView({ profile }: ProProfileViewProps) {
   const [newLanguage, setNewLanguage] = useState("")
   const [portfolio, setPortfolio] = useState(
     profile.portfolioImages.map((url, idx) => ({
-      key: `portfolio/${profile.id}/${idx}`,
+      key: inferPortfolioKey(url, profile.id, idx),
       url,
     }))
   )
   const [kycStatus, setKycStatus] = useState<string>(profile.kycStatus)
   const [isSaving, setIsSaving] = useState(false)
+  const [uploadingFolder, setUploadingFolder] = useState<
+    "portfolio" | "avatars" | "kyc" | null
+  >(null)
 
   const handleAddLanguage = () => {
     const trimmed = newLanguage.trim()
@@ -80,43 +113,126 @@ export function ProProfileView({ profile }: ProProfileViewProps) {
     setLanguages(languages.filter((l) => l !== lang))
   }
 
-  const handleRequestTigrisPresigned = async (folder: "portfolio" | "kyc") => {
-    const fileName =
-      folder === "portfolio" ? `chantier-${Date.now()}.jpg` : `cni-rccm-${Date.now()}.pdf`
-    const contentType = folder === "portfolio" ? "image/jpeg" : "application/pdf"
+  const handleFileUpload = async (
+    file: File | undefined,
+    folder: "portfolio" | "avatars" | "kyc"
+  ) => {
+    if (!file) return
 
-    const res = await requestPresignedUploadAction(
-      profile.id,
-      fileName,
-      contentType,
-      folder
-    )
-    if (res.error || !res.data) {
-      toast.error(res.error || "Erreur lors de la génération de l'URL signée Tigris.")
+    const allowedMimes = folder === "kyc" ? KYC_MIME_TYPES : IMAGE_MIME_TYPES
+    if (!allowedMimes.includes(file.type)) {
+      toast.error(
+        folder === "kyc"
+          ? "Format invalide. Utilisez JPG, PNG, WebP ou PDF."
+          : "Format invalide. Utilisez une image JPG, PNG ou WebP."
+      )
       return
     }
 
-    if (folder === "portfolio") {
-      setPortfolio([
-        ...portfolio,
-        {
-          key: res.data.objectKey,
-          url: "https://images.unsplash.com/photo-1600566752355-35792bedcfe1?w=800&q=80",
-        },
-      ])
-      toast.success("URL signée Tigris générée pour le portfolio.")
-    } else {
-      setKycStatus("PENDING")
-      toast.info(
-        "Dossier KYC soumis pour vérification par l'administrateur."
+    if (file.size <= 0 || file.size > MAX_UPLOAD_SIZE_BYTES) {
+      toast.error("Le fichier dépasse la limite maximale de 5 Mo.")
+      return
+    }
+
+    setUploadingFolder(folder)
+    try {
+      const presigned = await requestPresignedUploadAction(
+        profile.id,
+        file.name,
+        file.type,
+        folder,
+        file.size
       )
+
+      if (presigned.error || !presigned.data) {
+        toast.error(
+          presigned.error || "Erreur lors de la génération de l'URL signée Tigris."
+        )
+        return
+      }
+
+      if (!presigned.data.isConfigured || !presigned.data.uploadUrl) {
+        toast.error("Stockage Tigris S3 non configuré sur cet environnement.")
+        return
+      }
+
+      const uploadResponse = await fetch(presigned.data.uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type,
+        },
+        body: file,
+      })
+
+      if (!uploadResponse.ok) {
+        toast.error(
+          `Échec de l'envoi vers Tigris S3 (HTTP ${uploadResponse.status}).`
+        )
+        return
+      }
+
+      if (folder === "portfolio") {
+        const confirmRes = await confirmPortfolioUploadAction(
+          presigned.data.publicUrl,
+          presigned.data.objectKey
+        )
+        if (confirmRes.error) {
+          toast.error(confirmRes.error)
+          return
+        }
+        setPortfolio((prev) => [
+          ...prev,
+          { key: presigned.data!.objectKey, url: presigned.data!.publicUrl },
+        ])
+        toast.success("Photo ajoutée au portfolio et enregistrée sur Tigris S3.")
+      } else if (folder === "avatars") {
+        const confirmRes = await confirmAvatarUploadAction(
+          presigned.data.publicUrl,
+          presigned.data.objectKey
+        )
+        if (confirmRes.error) {
+          toast.error(confirmRes.error)
+          return
+        }
+        setAvatarUrl(presigned.data.publicUrl)
+        toast.success("Photo de profil mise à jour avec succès.")
+      } else {
+        const confirmRes = await confirmKycUploadAction(presigned.data.objectKey)
+        if (confirmRes.error) {
+          toast.error(confirmRes.error)
+          return
+        }
+        setKycStatus("PENDING")
+        toast.info(
+          "Justificatif KYC envoyé sur Tigris S3. Dossier en attente de validation administrateur."
+        )
+      }
+
+      router.refresh()
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Erreur réseau lors du transfert vers Tigris S3."
+      )
+    } finally {
+      setUploadingFolder(null)
     }
   }
 
-  const handleRemovePortfolioItem = async (objectKey: string) => {
-    setPortfolio(portfolio.filter((item) => item.key !== objectKey))
-    await removeStoredAssetAction(profile.id, objectKey)
-    toast.info("Photo retirée. Nettoyage S3 programmé en tâche de fond.")
+  const handleRemovePortfolioItem = async (item: { key: string; url: string }) => {
+    const previous = portfolio
+    setPortfolio((prev) => prev.filter((p) => p.url !== item.url))
+
+    const res = await removeStoredAssetAction(profile.id, item.key, item.url)
+    if (res.error) {
+      setPortfolio(previous)
+      toast.error(res.error)
+      return
+    }
+
+    toast.info("Photo retirée du portfolio. Nettoyage S3 planifié en arrière-plan.")
+    router.refresh()
   }
 
   const handleSaveProfile = async () => {
@@ -178,17 +294,35 @@ export function ProProfileView({ profile }: ProProfileViewProps) {
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4">
               <Avatar className="h-24 w-24 md:h-32 md:w-32">
-                <AvatarImage src={profile.userImage || undefined} className="object-cover" />
+                <AvatarImage src={avatarUrl || undefined} className="object-cover" />
                 <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const selected = e.target.files?.[0]
+                  e.target.value = ""
+                  void handleFileUpload(selected, "avatars")
+                }}
+              />
               <Button
                 type="button"
                 variant="outline"
                 className="w-full gap-2"
-                onClick={() => handleRequestTigrisPresigned("portfolio")}
+                disabled={uploadingFolder !== null}
+                onClick={() => avatarInputRef.current?.click()}
               >
-                <Upload className="h-4 w-4" />
-                Préparer une photo (S3)
+                {uploadingFolder === "avatars" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4" />
+                )}
+                {uploadingFolder === "avatars"
+                  ? "Envoi vers S3..."
+                  : "Changer ma photo (max 5 Mo)"}
               </Button>
             </CardContent>
           </Card>
@@ -221,15 +355,33 @@ export function ProProfileView({ profile }: ProProfileViewProps) {
                   {kycStatus}
                 </Badge>
               </div>
+              <input
+                ref={kycInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                className="hidden"
+                onChange={(e) => {
+                  const selected = e.target.files?.[0]
+                  e.target.value = ""
+                  void handleFileUpload(selected, "kyc")
+                }}
+              />
               <Button
                 type="button"
                 variant="secondary"
                 size="sm"
                 className="w-full gap-2"
-                onClick={() => handleRequestTigrisPresigned("kyc")}
+                disabled={uploadingFolder !== null}
+                onClick={() => kycInputRef.current?.click()}
               >
-                <Upload className="h-4 w-4" />
-                Soumettre mon justificatif
+                {uploadingFolder === "kyc" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4" />
+                )}
+                {uploadingFolder === "kyc"
+                  ? "Envoi du justificatif..."
+                  : "Téléverser CNI / RCCM (max 5 Mo)"}
               </Button>
             </CardContent>
           </Card>
@@ -380,7 +532,7 @@ export function ProProfileView({ profile }: ProProfileViewProps) {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {portfolio.map((item, idx) => (
                   <div
-                    key={item.key}
+                    key={`${item.key}-${idx}`}
                     className="aspect-square rounded-lg overflow-hidden relative group border"
                   >
                     <Image
@@ -392,20 +544,41 @@ export function ProProfileView({ profile }: ProProfileViewProps) {
                     />
                     <button
                       type="button"
-                      onClick={() => handleRemovePortfolioItem(item.key)}
+                      onClick={() => handleRemovePortfolioItem(item)}
                       className="absolute top-1.5 right-1.5 bg-black/65 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      aria-label="Supprimer cette photo"
                     >
                       <X className="h-4 w-4" />
                     </button>
                   </div>
                 ))}
+                <input
+                  ref={portfolioInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    const selected = e.target.files?.[0]
+                    e.target.value = ""
+                    void handleFileUpload(selected, "portfolio")
+                  }}
+                />
                 <button
                   type="button"
-                  onClick={() => handleRequestTigrisPresigned("portfolio")}
-                  className="aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground hover:bg-accent/50 cursor-pointer transition-colors"
+                  disabled={uploadingFolder !== null}
+                  onClick={() => portfolioInputRef.current?.click()}
+                  className="aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground hover:bg-accent/50 cursor-pointer transition-colors disabled:opacity-50"
                 >
-                  <Upload className="h-6 w-6 mb-2" />
-                  <span className="text-xs font-medium">Ajouter photo</span>
+                  {uploadingFolder === "portfolio" ? (
+                    <Loader2 className="h-6 w-6 mb-2 animate-spin" />
+                  ) : (
+                    <Upload className="h-6 w-6 mb-2" />
+                  )}
+                  <span className="text-xs font-medium text-center px-2">
+                    {uploadingFolder === "portfolio"
+                      ? "Transfert S3..."
+                      : "Ajouter photo (max 5 Mo)"}
+                  </span>
                 </button>
               </div>
             </CardContent>

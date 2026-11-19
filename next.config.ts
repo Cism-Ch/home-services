@@ -34,6 +34,22 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "images.unsplash.com",
       },
+      {
+        protocol: "https",
+        hostname: "fly.storage.tigris.dev",
+      },
+      {
+        protocol: "https",
+        hostname: "*.fly.storage.tigris.dev",
+      },
+      {
+        protocol: "https",
+        hostname: "t3.storage.dev",
+      },
+      {
+        protocol: "https",
+        hostname: "*.t3.storage.dev",
+      },
     ],
   },
   async headers() {

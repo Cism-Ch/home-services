@@ -3,6 +3,7 @@
  */
 
 import { prisma } from "@/lib/prisma"
+import { CATALOG_CACHE_KEYS, getCachedOrFetch } from "@/lib/redis"
 import type {
   AvailabilityStatusType,
   CatalogCategory,
@@ -76,144 +77,150 @@ function formatRelativeDate(date: Date): string {
 }
 
 export async function getPublicCategories(): Promise<CatalogCategory[]> {
-  return prisma.category.findMany({
-    orderBy: { name: "asc" },
-  })
+  return getCachedOrFetch(CATALOG_CACHE_KEYS.CATEGORIES, 300, async () =>
+    prisma.category.findMany({
+      orderBy: { name: "asc" },
+    })
+  )
 }
 
 export async function getPublicServices(): Promise<CatalogService[]> {
-  const rows = await prisma.service.findMany({
-    where: { isActive: true },
-    include: {
-      category: true,
-      proProfile: {
-        include: {
-          city: true,
-          user: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
-              subscriptions: {
-                where: { status: { in: ["ACTIVE", "TRIALING"] } },
-                select: { plan: true, status: true },
+  return getCachedOrFetch(CATALOG_CACHE_KEYS.SERVICES, 60, async () => {
+    const rows = await prisma.service.findMany({
+      where: { isActive: true },
+      include: {
+        category: true,
+        proProfile: {
+          include: {
+            city: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+                subscriptions: {
+                  where: { status: { in: ["ACTIVE", "TRIALING"] } },
+                  select: { plan: true, status: true },
+                },
               },
             },
           },
         },
       },
-    },
-  })
+    })
 
-  const sorted = [...rows].sort((a, b) => {
-    const rankA = getSubscriptionPriorityRank(a.proProfile.user.subscriptions)
-    const rankB = getSubscriptionPriorityRank(b.proProfile.user.subscriptions)
-    if (rankA !== rankB) return rankB - rankA
-    if (a.proProfile.isVerified !== b.proProfile.isVerified) {
-      return a.proProfile.isVerified ? -1 : 1
-    }
-    return b.proProfile.rating - a.proProfile.rating
-  })
+    const sorted = [...rows].sort((a, b) => {
+      const rankA = getSubscriptionPriorityRank(a.proProfile.user.subscriptions)
+      const rankB = getSubscriptionPriorityRank(b.proProfile.user.subscriptions)
+      if (rankA !== rankB) return rankB - rankA
+      if (a.proProfile.isVerified !== b.proProfile.isVerified) {
+        return a.proProfile.isVerified ? -1 : 1
+      }
+      return b.proProfile.rating - a.proProfile.rating
+    })
 
-  return sorted.map((row) => ({
-    id: row.id,
-    proProfileId: row.proProfile.id,
-    proUserId: row.proProfile.userId,
-    title: row.title,
-    description: row.description,
-    categoryId: row.categoryId,
-    categoryName: row.category.name,
-    price: row.price,
-    duration: row.duration,
-    rating: row.proProfile.rating,
-    reviewsCount: row.proProfile.reviewsCount,
-    providerName: row.proProfile.user.name,
-    providerAvatar: row.proProfile.user.image,
-    location: formatLocationLabel(row.proProfile.city?.name, row.proProfile.commune),
-    cityId: row.proProfile.cityId,
-    image: getServiceFallbackImage(row.categoryId, row.proProfile.portfolioImages),
-    isActive: row.isActive,
-    availabilityStatus: normalizeAvailability(row.proProfile.availabilityStatus),
-  }))
+    return sorted.map((row) => ({
+      id: row.id,
+      proProfileId: row.proProfile.id,
+      proUserId: row.proProfile.userId,
+      title: row.title,
+      description: row.description,
+      categoryId: row.categoryId,
+      categoryName: row.category.name,
+      price: row.price,
+      duration: row.duration,
+      rating: row.proProfile.rating,
+      reviewsCount: row.proProfile.reviewsCount,
+      providerName: row.proProfile.user.name,
+      providerAvatar: row.proProfile.user.image,
+      location: formatLocationLabel(row.proProfile.city?.name, row.proProfile.commune),
+      cityId: row.proProfile.cityId,
+      image: getServiceFallbackImage(row.categoryId, row.proProfile.portfolioImages),
+      isActive: row.isActive,
+      availabilityStatus: normalizeAvailability(row.proProfile.availabilityStatus),
+    }))
+  })
 }
 
 export async function getPublicProfessionals(): Promise<CatalogProfessional[]> {
-  const profiles = await prisma.proProfile.findMany({
-    include: {
-      city: true,
-      user: {
-        select: {
-          id: true,
-          name: true,
-          image: true,
-          subscriptions: {
-            where: { status: { in: ["ACTIVE", "TRIALING"] } },
-            select: { plan: true, status: true },
+  return getCachedOrFetch(CATALOG_CACHE_KEYS.PROFESSIONALS, 60, async () => {
+    const profiles = await prisma.proProfile.findMany({
+      include: {
+        city: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            subscriptions: {
+              where: { status: { in: ["ACTIVE", "TRIALING"] } },
+              select: { plan: true, status: true },
+            },
           },
         },
+        services: {
+          where: { isActive: true },
+          include: { category: true },
+        },
       },
-      services: {
-        where: { isActive: true },
-        include: { category: true },
-      },
-    },
-  })
+    })
 
-  const sorted = [...profiles].sort((a, b) => {
-    const rankA = getSubscriptionPriorityRank(a.user.subscriptions)
-    const rankB = getSubscriptionPriorityRank(b.user.subscriptions)
-    if (rankA !== rankB) return rankB - rankA
-    if (a.isVerified !== b.isVerified) return a.isVerified ? -1 : 1
-    return b.rating - a.rating
-  })
+    const sorted = [...profiles].sort((a, b) => {
+      const rankA = getSubscriptionPriorityRank(a.user.subscriptions)
+      const rankB = getSubscriptionPriorityRank(b.user.subscriptions)
+      if (rankA !== rankB) return rankB - rankA
+      if (a.isVerified !== b.isVerified) return a.isVerified ? -1 : 1
+      return b.rating - a.rating
+    })
 
-  return sorted.map((p) => {
-    const rank = getSubscriptionPriorityRank(p.user.subscriptions)
-    const location = formatLocationLabel(p.city?.name, p.commune)
+    return sorted.map((p) => {
+      const rank = getSubscriptionPriorityRank(p.user.subscriptions)
+      const location = formatLocationLabel(p.city?.name, p.commune)
 
-    return {
-      id: p.id,
-      userId: p.userId,
-      name: p.user.name,
-      title: p.headline,
-      avatar: p.user.image,
-      rating: p.rating,
-      reviewsCount: p.reviewsCount,
-      completedTasks: p.completedTasks,
-      location,
-      cityId: p.cityId,
-      commune: p.commune,
-      phoneNumber: p.phoneNumber,
-      whatsappNumber: p.whatsappNumber,
-      availabilityStatus: normalizeAvailability(p.availabilityStatus),
-      isVerified: p.isVerified,
-      bio: p.bio,
-      languages: p.languages.length > 0 ? p.languages : ["Français"],
-      yearsOfExperience: p.yearsOfExperience,
-      experienceLabel: `${p.yearsOfExperience} ans`,
-      portfolioImages: p.portfolioImages,
-      isPremiumBoosted: rank >= 2,
-      services: p.services.map((s) => ({
-        id: s.id,
-        proProfileId: p.id,
-        proUserId: p.userId,
-        title: s.title,
-        description: s.description,
-        categoryId: s.categoryId,
-        categoryName: s.category.name,
-        price: s.price,
-        duration: s.duration,
+      return {
+        id: p.id,
+        userId: p.userId,
+        name: p.user.name,
+        title: p.headline,
+        avatar: p.user.image,
         rating: p.rating,
         reviewsCount: p.reviewsCount,
-        providerName: p.user.name,
-        providerAvatar: p.user.image,
+        completedTasks: p.completedTasks,
         location,
         cityId: p.cityId,
-        image: getServiceFallbackImage(s.categoryId, p.portfolioImages),
-        isActive: s.isActive,
+        commune: p.commune,
+        phoneNumber: p.phoneNumber,
+        whatsappNumber: p.whatsappNumber,
         availabilityStatus: normalizeAvailability(p.availabilityStatus),
-      })),
-    }
+        isVerified: p.isVerified,
+        bio: p.bio,
+        languages: p.languages.length > 0 ? p.languages : ["Français"],
+        yearsOfExperience: p.yearsOfExperience,
+        experienceLabel: `${p.yearsOfExperience} ans`,
+        portfolioImages: p.portfolioImages,
+        isPremiumBoosted: rank >= 2,
+        services: p.services.map((s) => ({
+          id: s.id,
+          proProfileId: p.id,
+          proUserId: p.userId,
+          title: s.title,
+          description: s.description,
+          categoryId: s.categoryId,
+          categoryName: s.category.name,
+          price: s.price,
+          duration: s.duration,
+          rating: p.rating,
+          reviewsCount: p.reviewsCount,
+          providerName: p.user.name,
+          providerAvatar: p.user.image,
+          location,
+          cityId: p.cityId,
+          image: getServiceFallbackImage(s.categoryId, p.portfolioImages),
+          isActive: s.isActive,
+          availabilityStatus: normalizeAvailability(p.availabilityStatus),
+        })),
+      }
+    })
   })
 }
 

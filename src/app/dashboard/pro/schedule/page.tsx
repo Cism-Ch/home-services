@@ -15,6 +15,7 @@ export default async function ProSchedulePage() {
 
   return (
     <ProScheduleView
+      userId={user.id}
       proProfileId={data.proProfile.id}
       initialStatus={data.proProfile.availabilityStatus}
       initialBookings={data.bookings}

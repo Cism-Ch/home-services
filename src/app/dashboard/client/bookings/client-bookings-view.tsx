@@ -25,6 +25,7 @@ import {
   type ActiveTaskItem,
 } from "@/components/dashboard/client-follow-up-card"
 import { AddReviewForm } from "@/components/add-review-form"
+import { useBookingStatusRealtime } from "@/hooks/use-realtime-status"
 import { updateBookingStatusAction } from "@/server/actions/booking"
 import { formatFCFA } from "@/lib/formatters"
 import type { DashboardBookingItem } from "@/lib/types/catalog"
@@ -198,15 +199,31 @@ function BookingList({
 }
 
 export function ClientBookingsView({
+  userId,
   initialBookings,
 }: {
+  userId: string
   initialBookings: DashboardBookingItem[]
 }) {
   const router = useRouter()
-  const [bookingsList, setBookingsList] = useState<DashboardBookingItem[]>(initialBookings)
+  const [statusOverrides, setStatusOverrides] = useState<
+    Record<string, DashboardBookingItem["status"]>
+  >({})
+  const [reviewedIds, setReviewedIds] = useState<Record<string, boolean>>({})
   const [selectedBooking, setSelectedBooking] = useState<BookingTicketData | null>(null)
   const [ticketOpen, setTicketOpen] = useState(false)
   const [reviewBooking, setReviewBooking] = useState<DashboardBookingItem | null>(null)
+
+  useBookingStatusRealtime(userId, (evt) => {
+    toast.info(evt.message || "Statut de réservation actualisé en direct.")
+    router.refresh()
+  })
+
+  const bookingsList = initialBookings.map((b) => ({
+    ...b,
+    status: statusOverrides[`${b.id}:${b.status}`] ?? b.status,
+    hasClientReviewed: b.hasClientReviewed || Boolean(reviewedIds[b.id]),
+  }))
 
   const inProgressTasks: ActiveTaskItem[] = bookingsList
     .filter((b) => b.status === "IN_PROGRESS")
@@ -227,21 +244,29 @@ export function ClientBookingsView({
   const cancelledBookings = bookingsList.filter((b) => b.status === "CANCELLED")
 
   const handleTaskCompleted = (taskId: string) => {
-    setBookingsList((prev) =>
-      prev.map((b) => (b.id === taskId ? { ...b, status: "COMPLETED" } : b))
-    )
+    const target = initialBookings.find((b) => b.id === taskId)
+    if (target) {
+      setStatusOverrides((prev) => ({
+        ...prev,
+        [`${taskId}:${target.status}`]: "COMPLETED",
+      }))
+    }
     router.refresh()
   }
 
   const handleCancelBooking = async (bookingId: string) => {
+    const target = initialBookings.find((b) => b.id === bookingId)
     const res = await updateBookingStatusAction({ bookingId, status: "CANCELLED" })
     if (res.error) {
       toast.error(typeof res.error === "string" ? res.error : "Impossible d'annuler.")
       return
     }
-    setBookingsList((prev) =>
-      prev.map((b) => (b.id === bookingId ? { ...b, status: "CANCELLED" } : b))
-    )
+    if (target) {
+      setStatusOverrides((prev) => ({
+        ...prev,
+        [`${bookingId}:${target.status}`]: "CANCELLED",
+      }))
+    }
     toast.success("Demande annulée.")
     router.refresh()
   }
@@ -350,11 +375,10 @@ export function ClientBookingsView({
               bookingId={reviewBooking.id}
               authorType="CLIENT_TO_PRO"
               onReviewSubmitted={() => {
-                setBookingsList((prev) =>
-                  prev.map((b) =>
-                    b.id === reviewBooking.id ? { ...b, hasClientReviewed: true } : b
-                  )
-                )
+                setReviewedIds((prev) => ({
+                  ...prev,
+                  [reviewBooking.id]: true,
+                }))
                 setReviewBooking(null)
                 router.refresh()
               }}

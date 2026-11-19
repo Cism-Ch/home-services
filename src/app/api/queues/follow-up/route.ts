@@ -11,6 +11,7 @@ import {
   sendFollowUpEmailViaResend,
   sendPasswordResetEmailViaResend,
 } from "@/lib/resend"
+import { deleteTigrisObject } from "@/lib/storage"
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,10 +57,13 @@ export async function POST(request: NextRequest) {
     }
 
     if (payload.type === "STORAGE_CLEANUP") {
+      const cleanupResult = await deleteTigrisObject(payload.objectKey)
       return NextResponse.json({
         processed: true,
         type: payload.type,
         cleanedKey: payload.objectKey,
+        deleted: cleanupResult.deleted,
+        skipped: cleanupResult.skipped ?? false,
       })
     }
 

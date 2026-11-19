@@ -1,17 +1,33 @@
 /**
- * Service de Stockage d'Objets S3-Compatible (Tigris Data)
- * Centralise la generation d'URLs presignees AWS Signature V4 et le nettoyage asynchrone.
+ * Service de Stockage d'Objets S3-Compatible (Tigris Data - Regle 4)
+ * Centralise le client S3, les URLs presignees PutObject/GetObject et le nettoyage asynchrone DeleteObject.
  */
 
-import crypto from "crypto"
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3"
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
+import { enqueueFollowUpNotification } from "@/lib/qstash"
 
 export type StorageFolder = "portfolio" | "kyc" | "avatars"
+
+export const MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024 // 5 Mo max
+
+export const ALLOWED_MIME_BY_FOLDER: Record<StorageFolder, readonly string[]> = {
+  portfolio: ["image/jpeg", "image/png", "image/webp"],
+  avatars: ["image/jpeg", "image/png", "image/webp"],
+  kyc: ["image/jpeg", "image/png", "image/webp", "application/pdf"],
+}
 
 export interface PresignedUrlOptions {
   fileName: string
   contentType: string
   folder: StorageFolder
   proId: string
+  fileSizeBytes?: number
   expiresInSeconds?: number
 }
 
@@ -20,136 +36,233 @@ export interface PresignedUrlResult {
   publicUrl: string
   objectKey: string
   expiresAt: string
+  isConfigured: boolean
 }
 
-const TIGRIS_CONFIG = {
-  bucket: process.env.TIGRIS_BUCKET_NAME || "home-services-assets",
-  endpoint: process.env.AWS_ENDPOINT_URL_S3 || "https://fly.storage.tigris.dev",
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
-  region: process.env.AWS_REGION || "auto",
-}
+let cachedS3Client: S3Client | null | undefined
 
-function hmacSha256(key: Buffer | string, data: string): Buffer {
-  return crypto.createHmac("sha256", key).update(data, "utf8").digest()
-}
-
-function sha256Hex(data: string): string {
-  return crypto.createHash("sha256").update(data, "utf8").digest("hex")
+function getStorageConfig() {
+  return {
+    bucket: process.env.TIGRIS_BUCKET_NAME?.trim() || "home-services-assets",
+    endpoint: (
+      process.env.AWS_ENDPOINT_URL_S3?.trim() || "https://fly.storage.tigris.dev"
+    ).replace(/\/$/, ""),
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID?.trim() || "",
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY?.trim() || "",
+    region: process.env.AWS_REGION?.trim() || "auto",
+  }
 }
 
 /**
- * Genere une URL presignee S3-compatible (Signature V4) pour l'upload direct vers Tigris
+ * Retourne l'instance singleton S3Client configuree pour Tigris Data ou null si absente.
+ */
+export function getS3Client(): S3Client | null {
+  if (cachedS3Client !== undefined) {
+    return cachedS3Client
+  }
+
+  const cfg = getStorageConfig()
+  if (!cfg.accessKeyId || !cfg.secretAccessKey) {
+    cachedS3Client = null
+    return null
+  }
+
+  // WHEN_REQUIRED evite l'injection de parametres CRC32 incompatibles avec l'upload direct navigateur PUT
+  cachedS3Client = new S3Client({
+    region: cfg.region,
+    endpoint: cfg.endpoint,
+    credentials: {
+      accessKeyId: cfg.accessKeyId,
+      secretAccessKey: cfg.secretAccessKey,
+    },
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    responseChecksumValidation: "WHEN_REQUIRED",
+  })
+
+  return cachedS3Client
+}
+
+/**
+ * Verifie le type MIME autorise et la taille maximale (5 Mo) avant toute signature S3.
+ */
+export function validateUploadConstraints(
+  folder: StorageFolder,
+  contentType: string,
+  fileSizeBytes?: number
+): { valid: true } | { valid: false; error: string } {
+  const allowedMimes = ALLOWED_MIME_BY_FOLDER[folder]
+  if (!allowedMimes || !allowedMimes.includes(contentType)) {
+    const label =
+      folder === "kyc"
+        ? "JPEG, PNG, WebP ou PDF"
+        : "JPEG, PNG ou WebP"
+    return {
+      valid: false,
+      error: `Format de fichier non autorisé. Formats acceptés : ${label}.`,
+    }
+  }
+
+  if (typeof fileSizeBytes === "number") {
+    if (fileSizeBytes <= 0) {
+      return { valid: false, error: "Le fichier sélectionné est vide." }
+    }
+    if (fileSizeBytes > MAX_UPLOAD_SIZE_BYTES) {
+      return {
+        valid: false,
+        error: "Le fichier dépasse la taille maximale autorisée (5 Mo).",
+      }
+    }
+  }
+
+  return { valid: true }
+}
+
+/**
+ * Extrait la cle S3 d'une URL Tigris publique ou valide une objectKey directe.
+ */
+export function extractTigrisObjectKey(urlOrKey: string): string | null {
+  const trimmed = urlOrKey.trim()
+  if (!trimmed) return null
+
+  if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
+    return trimmed
+  }
+
+  try {
+    const cfg = getStorageConfig()
+    const prefix = `${cfg.endpoint}/${cfg.bucket}/`
+    if (trimmed.startsWith(prefix)) {
+      return decodeURIComponent(trimmed.slice(prefix.length))
+    }
+
+    const parsed = new URL(trimmed)
+    const bucketMarker = `/${cfg.bucket}/`
+    if (parsed.pathname.startsWith(bucketMarker)) {
+      return decodeURIComponent(parsed.pathname.slice(bucketMarker.length))
+    }
+  } catch {
+    return null
+  }
+
+  return null
+}
+
+/**
+ * Genere une URL presignee S3 PutObject via @aws-sdk/s3-request-presigner pour l'upload navigateur direct.
  */
 export async function generateTigrisPresignedUrl(
   options: PresignedUrlOptions
 ): Promise<PresignedUrlResult> {
-  const sanitizedName = options.fileName.replace(/[^a-zA-Z0-9._-]/g, "_")
+  const validation = validateUploadConstraints(
+    options.folder,
+    options.contentType,
+    options.fileSizeBytes
+  )
+  if (!validation.valid) {
+    throw new Error(validation.error)
+  }
+
+  const sanitizedName = options.fileName
+    .replace(/[^a-zA-Z0-9._-]/g, "_")
+    .slice(0, 80)
   const timestamp = Date.now()
   const objectKey = `${options.folder}/${options.proId}/${timestamp}-${sanitizedName}`
-  const expires = options.expiresInSeconds ?? 900 // 15 minutes par defaut
+  const expires = options.expiresInSeconds ?? 900
   const expiresAt = new Date(timestamp + expires * 1000).toISOString()
 
-  const baseUrl = `${TIGRIS_CONFIG.endpoint.replace(/\/$/, "")}/${TIGRIS_CONFIG.bucket}/${objectKey}`
+  const cfg = getStorageConfig()
+  const publicUrl = `${cfg.endpoint}/${cfg.bucket}/${objectKey}`
 
-  // Si les cles S3 Tigris ne sont pas encore renseignees en dev local, fournit une URL signee de simulation
-  if (!TIGRIS_CONFIG.accessKeyId || !TIGRIS_CONFIG.secretAccessKey) {
-    const devToken = crypto
-      .createHash("sha256")
-      .update(`${objectKey}:${timestamp}`)
-      .digest("hex")
-      .slice(0, 24)
-
+  const s3 = getS3Client()
+  if (!s3) {
     return {
-      uploadUrl: `${baseUrl}?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Expires=${expires}&X-Amz-Signature=${devToken}`,
-      publicUrl: baseUrl,
+      uploadUrl: "",
+      publicUrl,
       objectKey,
       expiresAt,
+      isConfigured: false,
     }
   }
 
-  // Calcul AWS Signature V4 standard pour S3 / Tigris
-  const now = new Date()
-  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "")
-  const dateStamp = amzDate.slice(0, 8)
-  const urlObj = new URL(baseUrl)
-  const host = urlObj.host
-
-  const credentialScope = `${dateStamp}/${TIGRIS_CONFIG.region}/s3/aws4_request`
-  const credential = `${TIGRIS_CONFIG.accessKeyId}/${credentialScope}`
-
-  const queryParams = new URLSearchParams({
-    "X-Amz-Algorithm": "AWS4-HMAC-SHA256",
-    "X-Amz-Credential": credential,
-    "X-Amz-Date": amzDate,
-    "X-Amz-Expires": expires.toString(),
-    "X-Amz-SignedHeaders": "host",
+  const command = new PutObjectCommand({
+    Bucket: cfg.bucket,
+    Key: objectKey,
+    ContentType: options.contentType,
   })
 
-  const canonicalRequest = [
-    "PUT",
-    urlObj.pathname,
-    queryParams.toString(),
-    `host:${host}\n`,
-    "host",
-    "UNSIGNED-PAYLOAD",
-  ].join("\n")
-
-  const stringToSign = [
-    "AWS4-HMAC-SHA256",
-    amzDate,
-    credentialScope,
-    sha256Hex(canonicalRequest),
-  ].join("\n")
-
-  const kDate = hmacSha256(`AWS4${TIGRIS_CONFIG.secretAccessKey}`, dateStamp)
-  const kRegion = hmacSha256(kDate, TIGRIS_CONFIG.region)
-  const kService = hmacSha256(kRegion, "s3")
-  const kSigning = hmacSha256(kService, "aws4_request")
-  const signature = hmacSha256(kSigning, stringToSign).toString("hex")
-
-  queryParams.set("X-Amz-Signature", signature)
+  const uploadUrl = await getSignedUrl(s3, command, { expiresIn: expires })
 
   return {
-    uploadUrl: `${baseUrl}?${queryParams.toString()}`,
-    publicUrl: baseUrl,
+    uploadUrl,
+    publicUrl,
     objectKey,
     expiresAt,
+    isConfigured: true,
   }
 }
 
 /**
- * Planifie la suppression asynchrone d'un objet Tigris via un job de fond (QStash)
- * Conforme a la Regle 4 : Gerez le nettoyage des fichiers supprimes via des jobs de fond.
+ * Genere une URL signee GetObject temporaire pour consulter un justificatif KYC prive.
  */
-export async function scheduleTigrisFileCleanup(objectKey: string, proId: string): Promise<{ scheduled: boolean; jobId: string }> {
-  const jobId = `cleanup-${Date.now().toString(36)}-${objectKey.slice(-8)}`
-  const qstashToken = process.env.QSTASH_TOKEN
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-
-  if (qstashToken) {
-    try {
-      const qstashUrl = process.env.QSTASH_URL || "https://qstash.upstash.io"
-      await fetch(`${qstashUrl}/v2/publish/${appUrl}/api/queues/follow-up`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${qstashToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          type: "STORAGE_CLEANUP",
-          objectKey,
-          proId,
-          requestedAt: new Date().toISOString(),
-        }),
-      })
-    } catch {
-      // Fallback silencieux en environnement hors-ligne
-    }
+export async function generateTigrisReadUrl(
+  objectKey: string,
+  expiresInSeconds = 900
+): Promise<string | null> {
+  const s3 = getS3Client()
+  if (!s3 || !objectKey) {
+    return null
   }
 
+  const cfg = getStorageConfig()
+  const command = new GetObjectCommand({
+    Bucket: cfg.bucket,
+    Key: objectKey,
+  })
+
+  return getSignedUrl(s3, command, { expiresIn: expiresInSeconds })
+}
+
+/**
+ * Supprime physiquement un objet dans le bucket Tigris S3 (execute depuis le worker QStash).
+ */
+export async function deleteTigrisObject(
+  objectKey: string
+): Promise<{ deleted: boolean; skipped?: boolean }> {
+  const s3 = getS3Client()
+  if (!s3 || !objectKey) {
+    return { deleted: false, skipped: true }
+  }
+
+  const cfg = getStorageConfig()
+  await s3.send(
+    new DeleteObjectCommand({
+      Bucket: cfg.bucket,
+      Key: objectKey,
+    })
+  )
+
+  return { deleted: true }
+}
+
+/**
+ * Planifie la suppression asynchrone d'un objet Tigris via Upstash QStash (Regle 4).
+ */
+export async function scheduleTigrisFileCleanup(
+  objectKey: string,
+  proId: string
+): Promise<{ scheduled: boolean; jobId: string }> {
+  const res = await enqueueFollowUpNotification(
+    {
+      type: "STORAGE_CLEANUP",
+      objectKey,
+      proId,
+      requestedAt: new Date().toISOString(),
+    },
+    0
+  )
+
   return {
-    scheduled: true,
-    jobId,
+    scheduled: res.queued,
+    jobId: res.messageId,
   }
 }

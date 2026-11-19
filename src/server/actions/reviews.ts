@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
+import { enforceRateLimit, invalidateCatalogCache } from "@/lib/redis"
 import { createReviewSchema, type CreateReviewInput } from "@/lib/validations/review"
 import { requireActionSession } from "@/server/auth-guard"
 
@@ -32,6 +33,11 @@ export async function submitMutualReviewAction(
   const authRes = await requireActionSession()
   if (authRes.error !== null) {
     return { data: null, error: authRes.error }
+  }
+
+  const rateLimit = await enforceRateLimit("review", authRes.user.id)
+  if (!rateLimit.allowed) {
+    return { data: null, error: rateLimit.error }
   }
 
   const parsed = createReviewSchema.safeParse(input)
@@ -134,6 +140,7 @@ export async function submitMutualReviewAction(
     if (booking.pro.proProfile) {
       revalidatePath(`/professionals/pros/${booking.pro.proProfile.id}`)
     }
+    await invalidateCatalogCache()
     revalidatePath("/professionals")
     revalidatePath("/dashboard/client")
     revalidatePath("/dashboard/client/bookings")

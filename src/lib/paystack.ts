@@ -60,6 +60,42 @@ export const PAYSTACK_PLANS: Record<SubscriptionPlanCode, PaystackPlanDefinition
   },
 }
 
+/**
+ * Associe un code de formule interne au plan_code Paystack recurrent configure dans l'environnement.
+ */
+export function getPaystackPlanCodeFromEnv(
+  plan: SubscriptionPlanCode
+): string | undefined {
+  const map: Record<SubscriptionPlanCode, string | undefined> = {
+    PRO_STANDARD: process.env.PAYSTACK_PLAN_PRO_STANDARD?.trim() || undefined,
+    PRO_PREMIUM: process.env.PAYSTACK_PLAN_PRO_PREMIUM?.trim() || undefined,
+    PRO_ENTERPRISE: process.env.PAYSTACK_PLAN_PRO_ENTERPRISE?.trim() || undefined,
+    CLIENT_GOLD: process.env.PAYSTACK_PLAN_CLIENT_GOLD?.trim() || undefined,
+  }
+  return map[plan]
+}
+
+/**
+ * Resout un plan_code Paystack vers notre formule interne (fallback webhook si metadata absent).
+ */
+export function resolvePlanFromPaystackCode(
+  paystackPlanCode?: string | null
+): SubscriptionPlanCode | undefined {
+  if (!paystackPlanCode) return undefined
+  const plans: SubscriptionPlanCode[] = [
+    "PRO_STANDARD",
+    "PRO_PREMIUM",
+    "PRO_ENTERPRISE",
+    "CLIENT_GOLD",
+  ]
+  for (const plan of plans) {
+    if (getPaystackPlanCodeFromEnv(plan) === paystackPlanCode) {
+      return plan
+    }
+  }
+  return undefined
+}
+
 export interface InitializeCheckoutParams {
   email: string
   userId: string
@@ -73,6 +109,22 @@ export interface InitializeCheckoutResult {
   reference: string
   plan: PaystackPlanDefinition
   trialEndsAt: string | null
+  isSimulated: boolean
+}
+
+export interface VerifyPaystackResult {
+  verified: boolean
+  simulated: boolean
+  reference: string
+  amountFCFA?: number
+  customerCode?: string
+  customerEmail?: string
+  paystackPlanCode?: string
+  metadata?: {
+    userId?: string
+    plan?: SubscriptionPlanCode
+  }
+  error?: string
 }
 
 /**
@@ -89,51 +141,58 @@ export async function initializePaystackSubscription(
       ? new Date(now + planDef.trialDays * 24 * 60 * 60 * 1000).toISOString()
       : null
 
-  const secretKey = process.env.PAYSTACK_SECRET_KEY
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-  const callback = params.callbackUrl || `${appUrl}/dashboard`
+  const secretKey = process.env.PAYSTACK_SECRET_KEY?.trim()
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "")
+  const defaultPath =
+    params.plan === "CLIENT_GOLD"
+      ? "/dashboard/client/settings"
+      : "/dashboard/pro/settings"
+  const callback = params.callbackUrl || `${appUrl}${defaultPath}`
 
   if (secretKey) {
-    try {
-      const response = await fetch("https://api.paystack.co/transaction/initialize", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${secretKey}`,
-          "Content-Type": "application/json",
+    const envPlanCode = getPaystackPlanCodeFromEnv(params.plan)
+    const response = await fetch("https://api.paystack.co/transaction/initialize", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: params.email,
+        // Paystack attend le montant dans la sous-unite (multiplie par 100)
+        amount: planDef.amountFCFA * 100,
+        currency: "XOF",
+        reference,
+        callback_url: callback,
+        ...(envPlanCode ? { plan: envPlanCode } : {}),
+        metadata: {
+          userId: params.userId,
+          plan: params.plan,
+          trialDays: planDef.trialDays,
+          trialEndsAt,
         },
-        body: JSON.stringify({
-          email: params.email,
-          // Paystack attend le montant dans la sous-unite (multiplie par 100)
-          amount: planDef.amountFCFA * 100,
-          currency: "XOF",
-          reference,
-          callback_url: callback,
-          metadata: {
-            userId: params.userId,
-            plan: params.plan,
-            trialDays: planDef.trialDays,
-            trialEndsAt,
-          },
-        }),
-      })
+      }),
+    })
 
-      if (response.ok) {
-        const json = (await response.json()) as {
-          status: boolean
-          data?: { authorization_url: string; access_code: string; reference: string }
-        }
-        if (json.status && json.data) {
-          return {
-            authorizationUrl: json.data.authorization_url,
-            accessCode: json.data.access_code,
-            reference: json.data.reference,
-            plan: planDef,
-            trialEndsAt,
-          }
-        }
-      }
-    } catch {
-      // Fallback dev local
+    const json = (await response.json()) as {
+      status: boolean
+      message?: string
+      data?: { authorization_url: string; access_code: string; reference: string }
+    }
+
+    if (!response.ok || !json.status || !json.data) {
+      throw new Error(
+        json.message || `Échec d'initialisation Paystack (HTTP ${response.status})`
+      )
+    }
+
+    return {
+      authorizationUrl: json.data.authorization_url,
+      accessCode: json.data.access_code,
+      reference: json.data.reference,
+      plan: planDef,
+      trialEndsAt,
+      isSimulated: false,
     }
   }
 
@@ -143,6 +202,130 @@ export async function initializePaystackSubscription(
     reference,
     plan: planDef,
     trialEndsAt,
+    isSimulated: true,
+  }
+}
+
+function inferPlanFromReference(reference: string): SubscriptionPlanCode | undefined {
+  const lower = reference.toLowerCase()
+  if (lower.includes("pro_standard")) return "PRO_STANDARD"
+  if (lower.includes("pro_premium")) return "PRO_PREMIUM"
+  if (lower.includes("pro_enterprise")) return "PRO_ENTERPRISE"
+  if (lower.includes("client_gold")) return "CLIENT_GOLD"
+  return undefined
+}
+
+/**
+ * Verifie aupres de l'API Paystack qu'une transaction est reellement reglee avant activation en DB.
+ */
+export async function verifyPaystackTransaction(
+  reference: string
+): Promise<VerifyPaystackResult> {
+  const trimmedRef = reference.trim()
+  if (!trimmedRef) {
+    return {
+      verified: false,
+      simulated: false,
+      reference: trimmedRef,
+      error: "Référence de transaction Paystack manquante.",
+    }
+  }
+
+  const secretKey = process.env.PAYSTACK_SECRET_KEY?.trim()
+  if (!secretKey) {
+    if (process.env.NODE_ENV === "production") {
+      return {
+        verified: false,
+        simulated: false,
+        reference: trimmedRef,
+        error: "PAYSTACK_SECRET_KEY manquante en production.",
+      }
+    }
+
+    if (!trimmedRef.startsWith("psk_")) {
+      return {
+        verified: false,
+        simulated: true,
+        reference: trimmedRef,
+        error: "Référence Paystack locale invalide.",
+      }
+    }
+
+    const inferredPlan = inferPlanFromReference(trimmedRef)
+    return {
+      verified: true,
+      simulated: true,
+      reference: trimmedRef,
+      amountFCFA: inferredPlan ? PAYSTACK_PLANS[inferredPlan].amountFCFA : undefined,
+      paystackPlanCode: inferredPlan ? getPaystackPlanCodeFromEnv(inferredPlan) : undefined,
+      metadata: inferredPlan ? { plan: inferredPlan } : undefined,
+    }
+  }
+
+  const response = await fetch(
+    `https://api.paystack.co/transaction/verify/${encodeURIComponent(trimmedRef)}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+      },
+      cache: "no-store",
+    }
+  )
+
+  const json = (await response.json()) as {
+    status?: boolean
+    message?: string
+    data?: {
+      status?: string
+      amount?: number
+      reference?: string
+      plan?: string | null
+      plan_object?: { plan_code?: string } | null
+      customer?: { customer_code?: string; email?: string } | null
+      metadata?: { userId?: string; plan?: SubscriptionPlanCode } | null
+    }
+  }
+
+  if (!response.ok || !json.status || !json.data) {
+    return {
+      verified: false,
+      simulated: false,
+      reference: trimmedRef,
+      error: json.message || "Impossible de vérifier la transaction Paystack.",
+    }
+  }
+
+  if (json.data.status !== "success") {
+    return {
+      verified: false,
+      simulated: false,
+      reference: trimmedRef,
+      error: `Paiement non finalisé (statut : ${json.data.status || "inconnu"}).`,
+    }
+  }
+
+  const paystackPlanCode =
+    json.data.plan_object?.plan_code ||
+    (typeof json.data.plan === "string" ? json.data.plan : undefined)
+
+  return {
+    verified: true,
+    simulated: false,
+    reference: json.data.reference || trimmedRef,
+    amountFCFA:
+      typeof json.data.amount === "number"
+        ? Math.round(json.data.amount / 100)
+        : undefined,
+    customerCode: json.data.customer?.customer_code,
+    customerEmail: json.data.customer?.email,
+    paystackPlanCode,
+    metadata: {
+      userId: json.data.metadata?.userId,
+      plan:
+        json.data.metadata?.plan ||
+        resolvePlanFromPaystackCode(paystackPlanCode),
+    },
   }
 }
 
@@ -153,7 +336,7 @@ export function verifyPaystackWebhookSignature(
   rawBody: string,
   signatureHeader: string | null
 ): boolean {
-  const secret = process.env.PAYSTACK_SECRET_KEY || ""
+  const secret = process.env.PAYSTACK_SECRET_KEY?.trim() || ""
   if (!secret || !signatureHeader) {
     return false
   }
