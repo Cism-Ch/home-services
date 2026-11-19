@@ -10,6 +10,7 @@ import {
   type StorageFolder,
   type PresignedUrlResult,
 } from "@/lib/storage"
+import { requireProProfile } from "@/server/auth-guard"
 
 export interface ServerActionResponse<T> {
   data: T | null
@@ -20,9 +21,15 @@ export interface ServerActionResponse<T> {
  * Cree une prestation en FCFA pour le professionnel
  */
 export async function createProServiceAction(
-  proProfileId: string,
+  clientProProfileId: string,
   input: CreateServiceInput
 ): Promise<ServerActionResponse<{ id: string; title: string; price: number }>> {
+  void clientProProfileId
+  const authRes = await requireProProfile()
+  if (authRes.error !== null) {
+    return { data: null, error: authRes.error }
+  }
+
   const parsed = createServiceSchema.safeParse(input)
   if (!parsed.success) {
     const firstIssue = parsed.error.issues[0]?.message || "Donnees de service invalides"
@@ -34,7 +41,7 @@ export async function createProServiceAction(
     try {
       const created = await prisma.service.create({
         data: {
-          proProfileId,
+          proProfileId: authRes.proProfile.id,
           categoryId: parsed.data.categoryId,
           title: parsed.data.title,
           description: parsed.data.description,
@@ -72,11 +79,31 @@ export async function createProServiceAction(
 export async function deleteProServiceAction(
   serviceId: string
 ): Promise<ServerActionResponse<{ deletedId: string }>> {
+  const authRes = await requireProProfile()
+  if (authRes.error !== null) {
+    return { data: null, error: authRes.error }
+  }
+
   try {
     try {
-      await prisma.service.delete({
+      const existing = await prisma.service.findUnique({
         where: { id: serviceId },
+        select: { proProfileId: true },
       })
+
+      if (
+        existing &&
+        existing.proProfileId !== authRes.proProfile.id &&
+        authRes.user.userType !== "admin"
+      ) {
+        return { data: null, error: "Vous ne pouvez pas supprimer ce service." }
+      }
+
+      if (existing) {
+        await prisma.service.delete({
+          where: { id: serviceId },
+        })
+      }
     } catch {
       // Fallback
     }
@@ -96,9 +123,15 @@ export async function deleteProServiceAction(
  * Met a jour le profil public et les coordonnees WhatsApp / Telephone / Ville du professionnel
  */
 export async function updateProProfileAction(
-  proProfileId: string,
+  clientProProfileId: string,
   input: ProProfileInput
 ): Promise<ServerActionResponse<{ id: string; updatedAt: string }>> {
+  void clientProProfileId
+  const authRes = await requireProProfile()
+  if (authRes.error !== null) {
+    return { data: null, error: authRes.error }
+  }
+
   const parsed = proProfileSchema.safeParse(input)
   if (!parsed.success) {
     const firstIssue = parsed.error.issues[0]?.message || "Informations de profil invalides"
@@ -108,7 +141,7 @@ export async function updateProProfileAction(
   try {
     try {
       await prisma.proProfile.update({
-        where: { id: proProfileId },
+        where: { id: authRes.proProfile.id },
         data: {
           headline: parsed.data.headline,
           bio: parsed.data.bio,
@@ -129,7 +162,7 @@ export async function updateProProfileAction(
     revalidatePath("/dashboard/pro/settings")
     revalidatePath("/professionals")
     return {
-      data: { id: proProfileId, updatedAt: new Date().toISOString() },
+      data: { id: authRes.proProfile.id, updatedAt: new Date().toISOString() },
       error: null,
     }
   } catch (err) {
@@ -144,18 +177,24 @@ export async function updateProProfileAction(
  * Genere une URL presignee Tigris S3 pour uploader une image de portfolio ou un document KYC (CNI / RCCM)
  */
 export async function requestPresignedUploadAction(
-  proId: string,
+  clientProId: string,
   fileName: string,
   contentType: string,
   folder: StorageFolder
 ): Promise<ServerActionResponse<PresignedUrlResult>> {
+  void clientProId
+  const authRes = await requireProProfile()
+  if (authRes.error !== null) {
+    return { data: null, error: authRes.error }
+  }
+
   if (!fileName || !contentType) {
     return { data: null, error: "Nom de fichier et type MIME requis" }
   }
 
   try {
     const presigned = await generateTigrisPresignedUrl({
-      proId,
+      proId: authRes.proProfile.id,
       fileName,
       contentType,
       folder,
@@ -174,11 +213,17 @@ export async function requestPresignedUploadAction(
  * Supprime un fichier du portfolio ou KYC et planifie son nettoyage en tache de fond via QStash
  */
 export async function removeStoredAssetAction(
-  proId: string,
+  clientProId: string,
   objectKey: string
 ): Promise<ServerActionResponse<{ jobId: string }>> {
+  void clientProId
+  const authRes = await requireProProfile()
+  if (authRes.error !== null) {
+    return { data: null, error: authRes.error }
+  }
+
   try {
-    const res = await scheduleTigrisFileCleanup(objectKey, proId)
+    const res = await scheduleTigrisFileCleanup(objectKey, authRes.proProfile.id)
     revalidatePath("/dashboard/pro/profile")
     return { data: { jobId: res.jobId }, error: null }
   } catch (err) {

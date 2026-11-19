@@ -12,8 +12,12 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient() {
+  const connectionString =
+    process.env.DATABASE_URL || "postgresql://localhost:5432/postgres";
+  const isSupabase = connectionString.includes("supabase.com");
   const adapter = new PrismaPg({
-    connectionString: process.env.DATABASE_URL || "postgresql://localhost:5432/postgres",
+    connectionString,
+    ...(isSupabase ? { ssl: { rejectUnauthorized: false } } : {}),
   });
   return new PrismaClient({ adapter });
 }

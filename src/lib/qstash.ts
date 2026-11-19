@@ -23,6 +23,12 @@ export type QStashJobPayload =
       proId: string
       requestedAt: string
     }
+  | {
+      type: "PASSWORD_RESET_EMAIL"
+      toEmail: string
+      userName: string
+      resetUrl: string
+    }
 
 function base64UrlDecode(input: string): Buffer {
   const padded = input.replace(/-/g, "+").replace(/_/g, "/")

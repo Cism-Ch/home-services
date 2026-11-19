@@ -62,6 +62,9 @@ export type LoginFormData = z.infer<typeof loginSchema>;
  */
 export const registerSchema = z
   .object({
+    userType: z.enum(["client", "pro"], {
+      message: "Veuillez sélectionner votre type de compte",
+    }),
     name: z
       .string({ message: errorMessages.name.required })
       .min(2, { message: errorMessages.name.minLength })
@@ -72,6 +75,12 @@ export const registerSchema = z
       .min(1, { message: errorMessages.email.required })
       .email({ message: errorMessages.email.invalid })
       .toLowerCase(),
+    phoneNumber: z
+      .string()
+      .trim()
+      .max(30, { message: "Le numéro de téléphone ne peut pas dépasser 30 caractères" })
+      .optional()
+      .or(z.literal("")),
     password: z
       .string({ message: errorMessages.password.required })
       .min(8, { message: errorMessages.password.minLength })

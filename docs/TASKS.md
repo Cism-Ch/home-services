@@ -10,103 +10,48 @@
 
 ```
 +-------------------------+  +-------------------------+  +-------------------------+
-| [>] IN PROGRESS (SP 02) |  |   [?] SPRINT 02 QUEUE   |  |       [X] ARCHIVES      |
+| [>] IN PROGRESS (SP 03) |  |   [?] SPRINT 03 QUEUE   |  |       [X] ARCHIVES      |
 +-------------------------+  +-------------------------+  +-------------------------+
-| (All Sprint 02 Done!)   |  | (Queue Empty)           |  | [x] TASK-HYGIENE-01 [XS]|
-|                         |  |                         |  | [x] TASK-UI-INDEX-01 [M]|
-|                         |  |                         |  | [x] TASK-PRISMA-01  [L] |
-|                         |  |                         |  | [x] TASK-HERO-GEO-01 [S] |
-|                         |  |                         |  | [x] TASK-BOOK-SLOTS [L] |
-|                         |  |                         |  | [x] TASK-PRO-STATUS [L] |
-|                         |  |                         |  | [x] TASK-PRO-CATALOG[M] |
-|                         |  |                         |  | [x] TASK-REVIEWS-01 [M] |
-|                         |  |                         |  | [x] TASK-PAYSTACK-01[L] |
-|                         |  |                         |  | [x] TASK-ASYNC-NOTIF[M] |
-|                         |  |                         |  | [x] TASK-ADMIN-FLOW [L] |
+| (All Sprint 03 Done!)   |  | (Queue Empty)           |  | Sprint 02 (11 tasks)    |
+|                         |  |                         |  | [x] TASK-PROD-ENV-01 [S]|
+|                         |  |                         |  | [x] TASK-DB-MIGRATE [L] |
+|                         |  |                         |  | [x] TASK-AUTH-REAL  [L] |
+|                         |  |                         |  | [x] TASK-RBAC-GUARD [M] |
 +-------------------------+  +-------------------------+  +-------------------------+
 ```
 
 ---
 
-## Active Sprint 02: SaaS Core Flows, Slot Booking & Paystack Monetization
+## Active Sprint 03: Production Foundations (Env, Supabase DB + RLS & Real Auth/RBAC)
 
-- [x] **`TASK-HYGIENE-01` - [Scope: XS] Lint Fixes, Zero Emoji Enforcement & Judge 100/100**
+- [x] **`TASK-PROD-ENV-01` - [Scope: S] Environment Validation (`src/env.ts`), `.env.local` Shadowing Fix & Paystack Secret Hardening**
   - **Priority:** CRITICAL
-  - **Target files:** `AGENTS.md`, `evals/security_audit.py`, `src/app/dashboard/client/page.tsx`, `src/app/professionals/pros/[id]/page.tsx`, `src/**/*`, `docs/archive/tasks/**/*`, `docs/TASKS.md`
+  - **Target files:** `src/env.ts`, `.env.example`, `.env.local`, `.env`, `src/lib/paystack.ts`, `docs/TASKS.md`
   - **Acceptance criteria:**
-    - [x] `TASK-HYGIENE-01.01`: Remove residual emojis from `src/app/dashboard/client/page.tsx` and `src/app/professionals/pros/[id]/page.tsx`.
-    - [x] `TASK-HYGIENE-01.02`: Fix ESLint errors across `src/` and refine `evals/security_audit.py` so French accents in `AGENTS.md` are permitted while strictly blocking emojis.
-    - [x] `TASK-HYGIENE-01.03`: Validate `100/100 PASS` on `python evals/run_fullstack_eval.py`.
+    - [x] `TASK-PROD-ENV-01.01`: Comment out empty assignments in `.env.local` so `.env` keys are not shadowed, ensure `BETTER_AUTH_SECRET` is configured in `.env`, and document Paystack env keys in `.env.example`.
+    - [x] `TASK-PROD-ENV-01.02`: Implement Zod runtime env validation in `src/env.ts` and remove the `BETTER_AUTH_SECRET` fallback from `verifyPaystackWebhookSignature` in `src/lib/paystack.ts`.
 
-- [x] **`TASK-UI-INDEX-01` - [Scope: M] Missing Shadcn Primitives, Skeletons & Component Index**
+- [x] **`TASK-DB-MIGRATE-01` - [Scope: L] Prisma 7 Config, Schema Indexes, Supabase Migration, Seed & RLS Policies**
   - **Priority:** CRITICAL
-  - **Target files:** `src/components/ui/**/*`, `src/app/layout.tsx`, `package.json`, `pnpm-lock.yaml`, `docs/COMPONENT_INDEX.md`, `docs/TASKS.md`
+  - **Target files:** `prisma.config.ts`, `prisma/prisma.config.ts`, `prisma/schema.prisma`, `prisma/migrations/**/*`, `prisma/seed.ts`, `package.json`, `docs/TASKS.md`
   - **Acceptance criteria:**
-    - [x] `TASK-UI-INDEX-01.01`: Install missing shadcn primitives (`skeleton`, `drawer`, `sonner`, `tooltip`, `popover`, `separator`, `scroll-area`, `breadcrumb`, `pagination`, `radio-group`, `command`, `progress`).
-    - [x] `TASK-UI-INDEX-01.02`: Create `SkeletonPremium` and `ResponsiveTable` components for consistent loading states and mobile-first tables.
-    - [x] `TASK-UI-INDEX-01.03`: Generate `docs/COMPONENT_INDEX.md` documenting all UI, Auth, Dashboard, and Business components.
+    - [x] `TASK-DB-MIGRATE-01.01`: Migrate to root `prisma.config.ts` (Prisma 7 `defineConfig` format) and install `dotenv` + `tsx`.
+    - [x] `TASK-DB-MIGRATE-01.02`: Extend `prisma/schema.prisma` with `UnavailabilityPeriod`, `portfolioImages`, `languages`, uniqueness/FK indexes, and apply migration + `prisma generate`.
+    - [x] `TASK-DB-MIGRATE-01.03`: Enable Supabase Row Level Security (`ENABLE ROW LEVEL SECURITY`) across all 13 tables with explicit public catalog policies and create idempotent `prisma/seed.ts`.
 
-- [x] **`TASK-PRISMA-01` - [Scope: L] Complete SaaS Prisma Schema (XOF, Time Slots, Offer Status, Mutual Reviews, Paystack)**
+- [x] **`TASK-AUTH-REAL-01` - [Scope: L] Real Better-Auth Wiring (Login, Role-Based Register, ProProfile Provisioning, Forgot/Reset Password)**
   - **Priority:** CRITICAL
-  - **Target files:** `prisma/schema.prisma`, `src/lib/mock-data.ts`, `src/lib/validations/**/*`, `src/components/booking-ticket.tsx`, `docs/TASKS.md`
+  - **Target files:** `src/lib/auth.ts`, `src/lib/auth-client.ts`, `src/lib/validations/auth.ts`, `src/contexts/auth-context.tsx`, `src/emails/reset-password-email.tsx`, `src/lib/qstash.ts`, `src/lib/resend.ts`, `src/app/api/queues/follow-up/route.ts`, `src/app/api/auth/[...all]/route.ts.disabled`, `src/app/login/page.tsx`, `src/app/register/page.tsx`, `src/app/forgot-password/page.tsx`, `src/app/reset-password/page.tsx`, `docs/TASKS.md`
   - **Acceptance criteria:**
-    - [x] `TASK-PRISMA-01.01`: Extend `prisma/schema.prisma` with `ProProfile` (`availabilityStatus`, WhatsApp, city, KYC), `Category`, `City`, `Service` (XOF/FCFA), `TimeSlot`, `Booking` (`NEGOTIATING`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`), `Review` (mutual), and `Subscription` (Paystack).
-    - [x] `TASK-PRISMA-01.02`: Replace EUR/French mock data with Francophone Africa cities (Abidjan, Dakar, Douala, Cotonou, Lome) and FCFA pricing.
-    - [x] `TASK-PRISMA-01.03`: Create Zod validation schemas for all domain inputs and validate Prisma schema integrity.
+    - [x] `TASK-AUTH-REAL-01.01`: Configure `user.additionalFields` (`userType`, `phoneNumber`), role sanitization + auto `ProProfile` creation hooks in `src/lib/auth.ts`, `inferAdditionalFields` + zero emojis in `src/lib/auth-client.ts`, and remove legacy `route.ts.disabled`.
+    - [x] `TASK-AUTH-REAL-01.02`: Wire QStash + Resend password reset emails and connect `/login`, `/register`, `/forgot-password`, and `/reset-password` to real Better-Auth flows.
 
-- [x] **`TASK-HERO-GEO-01` - [Scope: S] Animated 4-Slogan Hero (Framer Motion) & Searchable/Sortable Geo City Selector**
+- [x] **`TASK-RBAC-GUARD-01` - [Scope: M] Server-Side RBAC Guards, Dynamic Session Sidebar/Header & Server Action Auth Hardening**
   - **Priority:** HIGH
-  - **Target files:** `src/app/page.tsx`, `src/components/ui/hero-section.tsx`, `src/components/city-combobox.tsx`, `src/components/quick-search.tsx`, `src/components/service-filter.tsx`, `src/lib/cities-data.ts`, `docs/TASKS.md`
+  - **Target files:** `src/server/auth-guard.ts`, `src/middleware.ts`, `src/app/dashboard/**/*`, `src/components/dashboard/dashboard-sidebar.tsx`, `src/components/site-header.tsx`, `src/server/actions/*.ts`, `src/app/**/*`, `src/components/**/*`, `docs/TASKS.md`
   - **Acceptance criteria:**
-    - [x] `TASK-HERO-GEO-01.01`: Implement Framer Motion text rotator for the 4 official project slogans with elegant transitions.
-    - [x] `TASK-HERO-GEO-01.02`: Build comprehensive searchable and sortable `CityCombobox` component covering Côte d'Ivoire cities, towns, and main communes + regional hubs.
-    - [x] `TASK-HERO-GEO-01.03`: Integrate `CityCombobox` into `QuickSearch` and `ServiceFilter` with live filtering and "Available today" toggle.
-
-- [x] **`TASK-BOOKING-SLOTS-01` - [Scope: L] Time-Slot Appointment Booking, Negotiation State & Direct WhatsApp/Phone Contact**
-  - **Priority:** HIGH
-  - **Target files:** `src/app/book/[proId]/[serviceId]/page.tsx`, `src/app/professionals/pros/[id]/page.tsx`, `src/components/booking-*.tsx`, `src/components/pro-header.tsx`, `src/server/actions/booking.ts`, `docs/TASKS.md`
-  - **Acceptance criteria:**
-    - [x] `TASK-BOOKING-SLOTS-01.01`: Refactor `/book/[proId]/[serviceId]` for pure time-slot reservation (no online service payment) creating an offer in `NEGOTIATING` status.
-    - [x] `TASK-BOOKING-SLOTS-01.02`: Add direct WhatsApp (`wa.me` with pre-filled context & voice note prompt) and Phone (`tel:`) buttons on Pro profiles and booking tickets.
-
-- [x] **`TASK-PRO-STATUS-01` - [Scope: L] Automatic Pro Availability Lock on Validated Offer & Interactive Client Follow-Up**
-  - **Priority:** HIGH
-  - **Target files:** `src/app/dashboard/pro/page.tsx`, `src/app/dashboard/pro/availability/page.tsx`, `src/app/dashboard/pro/schedule/page.tsx`, `src/app/dashboard/client/page.tsx`, `src/app/dashboard/client/bookings/page.tsx`, `src/components/dashboard/**/*`, `src/server/actions/booking-status.ts`, `docs/TASKS.md`
-  - **Acceptance criteria:**
-    - [x] `TASK-PRO-STATUS-01.01`: Automatically switch Pro availability to `BUSY_TODAY` and lock overlapping time slots when a negotiated offer is validated by the client (`IN_PROGRESS`), with manual override toggle.
-    - [x] `TASK-PRO-STATUS-01.02`: Implement interactive follow-up notification prompt for clients ("Has your task been finalized? [Yes / In Progress / No]") to synchronize task completion (`COMPLETED`), unlock Pro availability, and trigger rating.
-
-- [x] **`TASK-PRO-CATALOG-01` - [Scope: M] Pro Services CRUD in FCFA, African Business Profile & Tigris S3 KYC Upload**
-  - **Priority:** HIGH
-  - **Target files:** `src/app/dashboard/pro/services/page.tsx`, `src/app/dashboard/pro/profile/page.tsx`, `src/app/dashboard/pro/settings/page.tsx`, `src/lib/storage.ts`, `docs/TASKS.md`
-  - **Acceptance criteria:**
-    - [x] `TASK-PRO-CATALOG-01.01`: Update Pro settings and profile forms with African phone country codes, WhatsApp number, local registration (RCCM/IFU/CNI), and FCFA service pricing.
-    - [x] `TASK-PRO-CATALOG-01.02`: Configure Tigris S3 presigned URLs for portfolio images and KYC document uploads.
-
-- [x] **`TASK-MUTUAL-REVIEWS-01` - [Scope: M] Bidirectional Mutual Review System (Client <-> Pro)**
-  - **Priority:** MEDIUM
-  - **Target files:** `src/components/add-review-form.tsx`, `src/components/pro-reviews.tsx`, `src/app/dashboard/client/bookings/page.tsx`, `src/app/dashboard/pro/schedule/page.tsx`, `src/server/actions/reviews.ts`, `docs/TASKS.md`
-  - **Acceptance criteria:**
-    - [x] `TASK-MUTUAL-REVIEWS-01.01`: Enable Client -> Pro and Pro -> Client star ratings and written reviews strictly after a booking reaches `COMPLETED` status.
-
-- [x] **`TASK-PAYSTACK-01` - [Scope: L] Paystack Subscriptions (Pro 5k/10k/20k FCFA + 1 Month Free & Client Gold 2k FCFA)**
-  - **Priority:** HIGH
-  - **Target files:** `src/lib/paystack.ts`, `src/app/api/webhooks/paystack/route.ts`, `src/components/dashboard/billing-invoices.tsx`, `src/app/dashboard/client/settings/page.tsx`, `src/app/dashboard/pro/settings/page.tsx`, `docs/TASKS.md`
-  - **Acceptance criteria:**
-    - [x] `TASK-PAYSTACK-01.01`: Implement Paystack checkout and subscription plans for Pros (5 000, 10 000, 20 000 FCFA/month with 1 month free trial) and Clients (2 000 FCFA/month Gold badge & search boost).
-    - [x] `TASK-PAYSTACK-01.02`: Implement verified Paystack webhook handler and FCFA billing invoice history.
-
-- [x] **`TASK-ASYNC-NOTIFY-01` - [Scope: M] Upstash QStash & Resend Follow-Up Notifications**
-  - **Priority:** MEDIUM
-  - **Target files:** `src/lib/qstash.ts`, `src/lib/resend.ts`, `src/app/api/queues/**/*`, `src/emails/**/*`, `docs/TASKS.md`
-  - **Acceptance criteria:**
-    - [x] `TASK-ASYNC-NOTIFY-01.01`: Dispatch asynchronous follow-up emails ("Has your task been finalized? [Yes / In Progress / No]") and status alerts via Upstash QStash (`receiver.verify`) and Resend React Email templates.
-
-- [x] **`TASK-ADMIN-FLOW-01` - [Scope: L] Admin Governance Portal (`/dashboard/admin`)**
-  - **Priority:** MEDIUM
-  - **Target files:** `src/app/dashboard/admin/**/*`, `src/components/dashboard/dashboard-sidebar.tsx`, `src/middleware.ts`, `docs/TASKS.md`
-  - **Acceptance criteria:**
-    - [x] `TASK-ADMIN-FLOW-01.01`: Build `/dashboard/admin` with Pro KYC verification queue, mutual review moderation, city/category management, and Paystack subscription KPIs.
+    - [x] `TASK-RBAC-GUARD-01.01`: Implement `src/server/auth-guard.ts` and protect `/dashboard`, `/dashboard/client`, `/dashboard/pro`, and `/dashboard/admin` layouts by session & role.
+    - [x] `TASK-RBAC-GUARD-01.02`: Update `DashboardSidebar` and `SiteHeader` with real authenticated user session + logout, and enforce `requireActionSession` / ownership checks across all Server Actions.
 
 ---
 

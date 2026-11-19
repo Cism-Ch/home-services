@@ -4,9 +4,13 @@
  * l'envoi des emails de suivi ("Vos taches ont-elles ete finalisees ?") via Resend.
  */
 
+import crypto from "crypto"
 import { NextRequest, NextResponse } from "next/server"
 import { receiver, type QStashJobPayload } from "@/lib/qstash"
-import { sendFollowUpEmailViaResend } from "@/lib/resend"
+import {
+  sendFollowUpEmailViaResend,
+  sendPasswordResetEmailViaResend,
+} from "@/lib/resend"
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,6 +60,29 @@ export async function POST(request: NextRequest) {
         processed: true,
         type: payload.type,
         cleanedKey: payload.objectKey,
+      })
+    }
+
+    if (payload.type === "PASSWORD_RESET_EMAIL") {
+      const tokenDigest = crypto
+        .createHash("sha256")
+        .update(payload.resetUrl, "utf8")
+        .digest("hex")
+        .slice(0, 16)
+      const idempotencyKey = `password-reset-${tokenDigest}`
+      const emailResult = await sendPasswordResetEmailViaResend(
+        payload.toEmail,
+        {
+          userName: payload.userName,
+          resetUrl: payload.resetUrl,
+        },
+        idempotencyKey
+      )
+
+      return NextResponse.json({
+        processed: true,
+        type: payload.type,
+        emailId: emailResult.id,
       })
     }
 

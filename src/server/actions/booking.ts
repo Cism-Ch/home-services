@@ -8,6 +8,7 @@ import {
   type UpdateBookingStatusInput,
 } from "@/lib/validations/booking"
 import { prisma } from "@/lib/prisma"
+import { requireActionSession } from "@/server/auth-guard"
 
 export interface ServerActionResponse<T> {
   data: T | null
@@ -37,6 +38,11 @@ export async function createSlotBooking(
   input: CreateBookingInput
 ): Promise<ServerActionResponse<BookingResult>> {
   try {
+    const authRes = await requireActionSession()
+    if (authRes.error !== null) {
+      return { data: null, error: authRes.error }
+    }
+
     const validated = createBookingSchema.safeParse(input)
 
     if (!validated.success) {
@@ -58,7 +64,7 @@ export async function createSlotBooking(
           id: generatedId,
           proId: data.proId,
           serviceId: data.serviceId,
-          clientId: "guest-client-session", // Par defaut pour la reservation d'entree de tunnel
+          clientId: authRes.user.id,
           clientName: data.clientName,
           clientPhone: data.clientPhone,
           clientAddress: data.clientAddress,
@@ -128,6 +134,11 @@ export async function updateBookingStatusAction(
   input: UpdateBookingStatusInput
 ): Promise<ServerActionResponse<{ id: string; status: string }>> {
   try {
+    const authRes = await requireActionSession()
+    if (authRes.error !== null) {
+      return { data: null, error: authRes.error }
+    }
+
     const validated = updateBookingStatusSchema.safeParse(input)
 
     if (!validated.success) {
@@ -140,10 +151,26 @@ export async function updateBookingStatusAction(
     const { bookingId, status } = validated.data
 
     try {
-      await prisma.booking.update({
+      const existing = await prisma.booking.findUnique({
         where: { id: bookingId },
-        data: { status },
+        select: { clientId: true, proId: true },
       })
+
+      if (
+        existing &&
+        existing.clientId !== authRes.user.id &&
+        existing.proId !== authRes.user.id &&
+        authRes.user.userType !== "admin"
+      ) {
+        return { data: null, error: "Accès refusé pour cette réservation." }
+      }
+
+      if (existing) {
+        await prisma.booking.update({
+          where: { id: bookingId },
+          data: { status },
+        })
+      }
     } catch {
       // Fallback developpement si l'id n'est pas encore synchronise
     }

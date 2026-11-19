@@ -9,6 +9,7 @@ import {
   initializePaystackSubscription,
   type InitializeCheckoutResult,
 } from "@/lib/paystack"
+import { requireActionSession } from "@/server/auth-guard"
 
 export interface ServerActionResponse<T> {
   data: T | null
@@ -19,10 +20,17 @@ export interface ServerActionResponse<T> {
  * Initialise une souscription Paystack (Pro 5k/10k/20k FCFA + 1 mois offert ou Client Or 2k FCFA)
  */
 export async function startSubscriptionCheckoutAction(
-  userId: string,
-  email: string,
+  clientUserId: string,
+  clientEmail: string,
   input: SubscriptionCheckoutInput
 ): Promise<ServerActionResponse<InitializeCheckoutResult>> {
+  void clientUserId
+  void clientEmail
+  const authRes = await requireActionSession()
+  if (authRes.error !== null) {
+    return { data: null, error: authRes.error }
+  }
+
   const parsed = subscriptionCheckoutSchema.safeParse(input)
   if (!parsed.success) {
     const firstIssue = parsed.error.issues[0]?.message || "Formule d'abonnement invalide"
@@ -31,8 +39,8 @@ export async function startSubscriptionCheckoutAction(
 
   try {
     const result = await initializePaystackSubscription({
-      userId,
-      email,
+      userId: authRes.user.id,
+      email: authRes.user.email,
       plan: parsed.data.plan,
       callbackUrl: parsed.data.callbackUrl,
     })

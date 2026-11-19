@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   LayoutDashboard,
@@ -16,7 +17,8 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
-import { useState } from "react"
+import { useAuth } from "@/contexts/auth-context"
+import { toast } from "sonner"
 
 interface NavLinkItem {
   href: string
@@ -25,25 +27,48 @@ interface NavLinkItem {
   exact: boolean
 }
 
+export interface SidebarUserProps {
+  id: string
+  name: string
+  email: string
+  image?: string | null
+  userType: "client" | "pro" | "admin"
+}
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return "HS"
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
+}
+
 interface NavContentProps {
   roleMode: "client" | "pro" | "admin"
+  actualRole: "client" | "pro" | "admin"
   userName: string
-  userType: string
+  userTypeLabel: string
+  initials: string
   links: NavLinkItem[]
   pathname: string
+  isLoggingOut: boolean
+  onLogout: () => void
   onItemClick: () => void
 }
 
 function NavContent({
   roleMode,
+  actualRole,
   userName,
-  userType,
+  userTypeLabel,
+  initials,
   links,
   pathname,
+  isLoggingOut,
+  onLogout,
   onItemClick,
 }: NavContentProps) {
-  const initials =
-    roleMode === "admin" ? "AD" : roleMode === "pro" ? "AK" : "JK"
+  const canAccessPro = actualRole === "pro" || actualRole === "admin"
+  const canAccessAdmin = actualRole === "admin"
 
   return (
     <div className="space-y-4">
@@ -51,7 +76,7 @@ function NavContent({
         <div className="flex items-center gap-3 mb-6">
           <div
             className={cn(
-              "w-10 h-10 rounded-full flex items-center justify-center font-bold",
+              "w-10 h-10 rounded-full flex items-center justify-center font-bold shrink-0",
               roleMode === "admin"
                 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
                 : roleMode === "pro"
@@ -61,9 +86,9 @@ function NavContent({
           >
             {initials}
           </div>
-          <div>
-            <p className="font-medium text-sm">{userName}</p>
-            <p className="text-xs text-muted-foreground">{userType}</p>
+          <div className="min-w-0">
+            <p className="font-medium text-sm truncate">{userName}</p>
+            <p className="text-xs text-muted-foreground">{userTypeLabel}</p>
           </div>
         </div>
 
@@ -91,47 +116,54 @@ function NavContent({
           })}
         </nav>
 
-        {/* Bascule rapide d'espaces pour navigation fluide */}
-        <div className="pt-4 mt-4 border-t space-y-1">
-          <p className="px-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-            Espaces de gestion
-          </p>
-          <Link href="/dashboard/client" onClick={onItemClick}>
-            <Button
-              variant={roleMode === "client" ? "secondary" : "ghost"}
-              size="sm"
-              className="w-full justify-start text-xs h-8"
-            >
-              Espace Client
-            </Button>
-          </Link>
-          <Link href="/dashboard/pro" onClick={onItemClick}>
-            <Button
-              variant={roleMode === "pro" ? "secondary" : "ghost"}
-              size="sm"
-              className="w-full justify-start text-xs h-8"
-            >
-              Espace Prestataire
-            </Button>
-          </Link>
-          <Link href="/dashboard/admin" onClick={onItemClick}>
-            <Button
-              variant={roleMode === "admin" ? "secondary" : "ghost"}
-              size="sm"
-              className="w-full justify-start text-xs h-8"
-            >
-              Portail Admin
-            </Button>
-          </Link>
-        </div>
+        {(canAccessPro || canAccessAdmin) && (
+          <div className="pt-4 mt-4 border-t space-y-1">
+            <p className="px-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+              Espaces autorisés
+            </p>
+            <Link href="/dashboard/client" onClick={onItemClick}>
+              <Button
+                variant={roleMode === "client" ? "secondary" : "ghost"}
+                size="sm"
+                className="w-full justify-start text-xs h-8"
+              >
+                Espace Client
+              </Button>
+            </Link>
+            {canAccessPro && (
+              <Link href="/dashboard/pro" onClick={onItemClick}>
+                <Button
+                  variant={roleMode === "pro" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="w-full justify-start text-xs h-8"
+                >
+                  Espace Prestataire
+                </Button>
+              </Link>
+            )}
+            {canAccessAdmin && (
+              <Link href="/dashboard/admin" onClick={onItemClick}>
+                <Button
+                  variant={roleMode === "admin" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="w-full justify-start text-xs h-8"
+                >
+                  Portail Admin
+                </Button>
+              </Link>
+            )}
+          </div>
+        )}
 
         <div className="pt-3 mt-3 border-t">
           <Button
             variant="ghost"
+            onClick={onLogout}
+            disabled={isLoggingOut}
             className="w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
           >
             <LogOut className="h-4 w-4" />
-            Se déconnecter
+            {isLoggingOut ? "Déconnexion..." : "Se déconnecter"}
           </Button>
         </div>
       </div>
@@ -139,16 +171,19 @@ function NavContent({
   )
 }
 
-export function DashboardSidebar() {
+export function DashboardSidebar({ user }: { user: SidebarUserProps }) {
   const pathname = usePathname()
-  const isAdmin = pathname.startsWith("/dashboard/admin")
-  const isPro = pathname.startsWith("/dashboard/pro")
-  const roleMode: "client" | "pro" | "admin" = isAdmin
+  const { logout } = useAuth()
+  const [open, setOpen] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+
+  const isAdminRoute = pathname.startsWith("/dashboard/admin")
+  const isProRoute = pathname.startsWith("/dashboard/pro")
+  const roleMode: "client" | "pro" | "admin" = isAdminRoute
     ? "admin"
-    : isPro
+    : isProRoute
     ? "pro"
     : "client"
-  const [open, setOpen] = useState(false)
 
   const clientLinks: NavLinkItem[] = [
     {
@@ -225,22 +260,29 @@ export function DashboardSidebar() {
       : roleMode === "pro"
       ? proLinks
       : clientLinks
-  const userType =
-    roleMode === "admin"
+
+  const userTypeLabel =
+    user.userType === "admin"
       ? "Administrateur"
-      : roleMode === "pro"
+      : user.userType === "pro"
       ? "Artisan Prestataire"
       : "Compte Client"
-  const userName =
-    roleMode === "admin"
-      ? "Direction HomeServices"
-      : roleMode === "pro"
-      ? "Amadou Kouassi"
-      : "Jean-Marc Kouadio"
+
+  const initials = getInitials(user.name)
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true)
+    try {
+      await logout()
+      toast.success("Vous êtes déconnecté.")
+    } catch {
+      toast.error("Erreur lors de la déconnexion.")
+      setIsLoggingOut(false)
+    }
+  }
 
   return (
     <>
-      {/* Mobile Sidebar Trigger */}
       <div className="md:hidden w-full mb-4">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
@@ -254,10 +296,14 @@ export function DashboardSidebar() {
             <div className="px-4">
               <NavContent
                 roleMode={roleMode}
-                userName={userName}
-                userType={userType}
+                actualRole={user.userType}
+                userName={user.name}
+                userTypeLabel={userTypeLabel}
+                initials={initials}
                 links={links}
                 pathname={pathname}
+                isLoggingOut={isLoggingOut}
+                onLogout={handleLogout}
                 onItemClick={() => setOpen(false)}
               />
             </div>
@@ -265,15 +311,18 @@ export function DashboardSidebar() {
         </Sheet>
       </div>
 
-      {/* Desktop Sidebar */}
       <aside className="hidden md:block w-64 flex-shrink-0">
         <div className="sticky top-24">
           <NavContent
             roleMode={roleMode}
-            userName={userName}
-            userType={userType}
+            actualRole={user.userType}
+            userName={user.name}
+            userTypeLabel={userTypeLabel}
+            initials={initials}
             links={links}
             pathname={pathname}
+            isLoggingOut={isLoggingOut}
+            onLogout={handleLogout}
             onItemClick={() => {}}
           />
         </div>

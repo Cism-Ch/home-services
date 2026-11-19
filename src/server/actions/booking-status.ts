@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { enqueueFollowUpNotification } from "@/lib/qstash"
+import { requireActionSession } from "@/server/auth-guard"
 
 export interface ServerActionResponse<T> {
   data: T | null
@@ -20,11 +21,31 @@ export async function setProAvailabilityAction(
   status: ProAvailabilityType
 ): Promise<ServerActionResponse<{ proId: string; status: ProAvailabilityType }>> {
   try {
+    const authRes = await requireActionSession(["pro", "admin"])
+    if (authRes.error !== null) {
+      return { data: null, error: authRes.error }
+    }
+
     try {
-      await prisma.proProfile.update({
+      const existingPro = await prisma.proProfile.findUnique({
         where: { id: proId },
-        data: { availabilityStatus: status },
+        select: { id: true, userId: true },
       })
+
+      if (
+        existingPro &&
+        existingPro.userId !== authRes.user.id &&
+        authRes.user.userType !== "admin"
+      ) {
+        return { data: null, error: "Accès non autorisé sur ce profil prestataire." }
+      }
+
+      if (existingPro) {
+        await prisma.proProfile.update({
+          where: { id: proId },
+          data: { availabilityStatus: status },
+        })
+      }
     } catch {
       // Fallback gracieux si l'ID n'est pas encore en DB locale
     }
@@ -52,11 +73,25 @@ export async function validateOfferAction(
   bookingId: string
 ): Promise<ServerActionResponse<{ bookingId: string; status: "IN_PROGRESS"; proStatus: "BUSY_TODAY" }>> {
   try {
+    const authRes = await requireActionSession()
+    if (authRes.error !== null) {
+      return { data: null, error: authRes.error }
+    }
+
     try {
       const booking = await prisma.booking.findUnique({
         where: { id: bookingId },
         include: { pro: { include: { proProfile: true } } },
       })
+
+      if (
+        booking &&
+        booking.clientId !== authRes.user.id &&
+        booking.proId !== authRes.user.id &&
+        authRes.user.userType !== "admin"
+      ) {
+        return { data: null, error: "Accès refusé pour valider cette offre." }
+      }
 
       if (booking) {
         await prisma.booking.update({
@@ -111,6 +146,27 @@ export async function answerTaskFollowUpAction(
   answer: "YES" | "IN_PROGRESS" | "NO"
 ): Promise<ServerActionResponse<{ bookingId: string; bookingStatus: BookingStatusWorkflow; proStatus?: ProAvailabilityType }>> {
   try {
+    const authRes = await requireActionSession()
+    if (authRes.error !== null) {
+      return { data: null, error: authRes.error }
+    }
+
+    try {
+      const existingBooking = await prisma.booking.findUnique({
+        where: { id: bookingId },
+        select: { clientId: true },
+      })
+      if (
+        existingBooking &&
+        existingBooking.clientId !== authRes.user.id &&
+        authRes.user.userType !== "admin"
+      ) {
+        return { data: null, error: "Seul le client concerné peut confirmer l'avancement." }
+      }
+    } catch {
+      // Fallback
+    }
+
     let nextBookingStatus: BookingStatusWorkflow = "IN_PROGRESS"
     let nextProStatus: ProAvailabilityType = "BUSY_TODAY"
 

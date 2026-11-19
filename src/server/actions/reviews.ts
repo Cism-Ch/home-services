@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { createReviewSchema, type CreateReviewInput } from "@/lib/validations/review"
+import { requireActionSession } from "@/server/auth-guard"
 
 export interface ServerActionResponse<T> {
   data: T | null
@@ -24,9 +25,15 @@ export interface ReviewSubmissionResult {
  * Verifie que la mission associee est bien finalisee (COMPLETED).
  */
 export async function submitMutualReviewAction(
-  authorId: string,
+  clientAuthorId: string,
   input: CreateReviewInput
 ): Promise<ServerActionResponse<ReviewSubmissionResult>> {
+  void clientAuthorId
+  const authRes = await requireActionSession()
+  if (authRes.error !== null) {
+    return { data: null, error: authRes.error }
+  }
+
   const parsed = createReviewSchema.safeParse(input)
   if (!parsed.success) {
     const firstIssue = parsed.error.issues[0]?.message || "Donnees d'avis invalides"
@@ -34,6 +41,7 @@ export async function submitMutualReviewAction(
   }
 
   const { bookingId, targetId, rating, comment, authorType } = parsed.data
+  const authorId = authRes.user.id
   let reviewId = `rev-${Date.now().toString(36)}`
 
   try {
@@ -42,10 +50,25 @@ export async function submitMutualReviewAction(
         where: { id: bookingId },
       })
 
-      if (booking && booking.status !== "COMPLETED") {
-        return {
-          data: null,
-          error: "Un avis mutuel ne peut être publié qu'après la finalisation de la prestation.",
+      if (booking) {
+        const expectedParticipant =
+          authorType === "CLIENT_TO_PRO" ? booking.clientId : booking.proId
+        if (
+          expectedParticipant !== authorId &&
+          authRes.user.userType !== "admin"
+        ) {
+          return {
+            data: null,
+            error: "Vous n'êtes pas autorisé à noter cette prestation.",
+          }
+        }
+
+        if (booking.status !== "COMPLETED") {
+          return {
+            data: null,
+            error:
+              "Un avis mutuel ne peut être publié qu'après la finalisation de la prestation.",
+          }
         }
       }
 

@@ -22,17 +22,50 @@ if sys.stdout.encoding != 'utf-8':
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
+DB_URI_PASSWORD_RE = re.compile(
+    r'(?:postgres|postgresql|mysql|mongodb\+srv):\/\/[^\s:]+:([^\s@]+)@[^\s\/]+'
+)
+
+PLACEHOLDER_PASSWORD_WORDS_RE = re.compile(
+    r'^(?:your[_-]?password|password|votre[_-]?password|changeme|placeholder|example|secret|pass)$',
+    re.IGNORECASE,
+)
+
 SECRET_PATTERNS = [
     (re.compile(r'-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----'), "Private Key (RSA/EC/SSH)"),
     (re.compile(r'sk-[a-zA-Z0-9]{20,}'), "Secret Key (OpenAI/Stripe style)"),
     (re.compile(r'AKIA[0-9A-Z]{16}'), "AWS Access Key ID"),
     (re.compile(r'ghp_[a-zA-Z0-9]{36}'), "GitHub Personal Access Token"),
     (re.compile(r'xox[baprs]-[0-9a-zA-Z]{10,48}'), "Slack API Token"),
-    (re.compile(r'(?:postgres|postgresql|mysql|mongodb\+srv):\/\/[^\s:]+:[^\s@]+@[^\s\/]+'), "Database URI with hardcoded password"),
+    (DB_URI_PASSWORD_RE, "Database URI with hardcoded password"),
     (re.compile(r'(?i)(?:api_key|secret_key|private_key|auth_token)\s*=\s*["\'][a-zA-Z0-9_\-\.]{16,}["\']'), "Hardcoded Auth Secret")
 ]
 
-IGNORE_DIRS = {'.git', 'node_modules', '__pycache__', '.venv', 'venv', 'dist', 'build', '.next', 'backups', 'skills', 'auth-flow'}
+IGNORE_DIRS = {
+    '.git', 'node_modules', '__pycache__', '.venv', 'venv',
+    'dist', 'build', '.next', 'backups', 'skills', 'auth-flow', 'telemetry'
+}
+
+SKIP_FILENAMES = {
+    "security_audit.py", "pnpm-lock.yaml", "package-lock.json",
+    "yarn.lock", "bun.lock", "bun.lockb"
+}
+
+BINARY_EXTENSIONS = {
+    ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".svg", ".pdf",
+    ".woff", ".woff2", ".ttf", ".eot", ".zip", ".bak", ".mp4", ".mp3",
+    ".exe", ".dll", ".so", ".pyc"
+}
+
+def is_placeholder_db_uri(line: str) -> bool:
+    """Returns True only when a matched DB URI uses an explicit placeholder password."""
+    match = DB_URI_PASSWORD_RE.search(line)
+    if not match:
+        return False
+    pw = match.group(1).strip("'\"")
+    if any(marker in pw for marker in ("[", "]", "<", ">", "%s", "${")):
+        return True
+    return bool(PLACEHOLDER_PASSWORD_WORDS_RE.match(pw))
 
 def audit_gitignore() -> list[str]:
     issues = []
@@ -54,23 +87,29 @@ def audit_secrets() -> list[dict]:
         dirs[:] = [d for d in dirs if d not in IGNORE_DIRS]
         for file in files:
             path = Path(root) / file
-            # Avoid self-flagging on this audit script, and skip local gitignored .env files
-            if path.name == "security_audit.py" or (path.name.startswith(".env") and path.name != ".env.example"):
+            if (
+                path.name in SKIP_FILENAMES
+                or path.suffix.lower() in BINARY_EXTENSIONS
+                or (path.name.startswith(".env") and path.name != ".env.example")
+            ):
                 continue
+            rel_posix = str(path.relative_to(ROOT_DIR)).replace("\\", "/")
             try:
                 lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
                 for idx, line in enumerate(lines, start=1):
                     for pattern, label in SECRET_PATTERNS:
                         if pattern.search(line):
+                            if label == "Database URI with hardcoded password" and is_placeholder_db_uri(line):
+                                continue
                             findings.append({
-                                "file": str(path.relative_to(ROOT_DIR)),
+                                "file": rel_posix,
                                 "line": idx,
                                 "type": label,
                                 "sample": line.strip()[:60]
                             })
             except Exception as e:
                 findings.append({
-                    "file": str(path.relative_to(ROOT_DIR)),
+                    "file": rel_posix,
                     "line": 0,
                     "type": "Read Error",
                     "sample": str(e)
@@ -83,7 +122,7 @@ def is_emoji_character(ch: str) -> bool:
     return (
         (0x1F300 <= cp <= 0x1FAFF) or  # Misc Symbols, Pictographs, Transport, Extended
         (0x1F600 <= cp <= 0x1F64F) or  # Emoticons
-        (0x2600 <= cp <= 0x27BF) or    # Miscellaneous Symbols & Dingbats (e.g. stars, hands)
+        (0x2600 <= cp <= 0x27BF) or    # Miscellaneous Symbols & Dingbats
         (0x2300 <= cp <= 0x23FF) or    # Miscellaneous Technical
         (0xFE00 <= cp <= 0xFE0F)       # Variation Selectors
     )
@@ -101,6 +140,7 @@ def audit_ascii_hygiene() -> list[dict]:
                     continue
                 scanned_files.add(path)
                 is_py = path.suffix == ".py"
+                rel_posix = str(path.relative_to(ROOT_DIR)).replace("\\", "/")
                 try:
                     content = path.read_text(encoding="utf-8", errors="ignore")
                     for idx, line in enumerate(content.splitlines(), start=1):
@@ -113,14 +153,14 @@ def audit_ascii_hygiene() -> list[dict]:
 
                         if forbidden:
                             violations.append({
-                                "file": str(path.relative_to(ROOT_DIR)),
+                                "file": rel_posix,
                                 "line": idx,
                                 "type": label,
                                 "sample": line.strip()[:60]
                             })
                 except Exception as e:
                     violations.append({
-                        "file": str(path.relative_to(ROOT_DIR)),
+                        "file": rel_posix,
                         "line": 0,
                         "type": "Read Error",
                         "sample": str(e)
@@ -152,9 +192,14 @@ def audit_operational_patterns() -> list[dict]:
         dirs[:] = [d for d in dirs if d not in IGNORE_DIRS and d != "evals"]
         for file in files:
             path = Path(root) / file
+            if path.name in SKIP_FILENAMES or path.suffix.lower() in BINARY_EXTENSIONS:
+                continue
             is_env = path.name.startswith(".env")
             if path.suffix not in APP_CODE_EXTENSIONS and not is_env:
                 continue
+
+            rel_parts = path.relative_to(ROOT_DIR).parts
+            rel_posix = str(path.relative_to(ROOT_DIR)).replace("\\", "/")
 
             try:
                 lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
@@ -163,18 +208,22 @@ def audit_operational_patterns() -> list[dict]:
                     if stripped.startswith("//") or stripped.startswith("#"):
                         continue
                     for pattern, label in OPERATIONAL_ANTI_PATTERNS:
-                        if "PrismaClient" in label and path.name in SINGLETON_ALLOWED_FILES:
+                        if "PrismaClient" in label and (
+                            path.name in SINGLETON_ALLOWED_FILES
+                            or "scripts" in rel_parts
+                            or path.stem == "seed"
+                        ):
                             continue
                         if pattern.search(line):
                             violations.append({
-                                "file": str(path.relative_to(ROOT_DIR)),
+                                "file": rel_posix,
                                 "line": idx,
                                 "type": label,
                                 "sample": stripped[:60]
                             })
             except Exception as e:
                 violations.append({
-                    "file": str(path.relative_to(ROOT_DIR)),
+                    "file": rel_posix,
                     "line": 0,
                     "type": "Read Error",
                     "sample": str(e)

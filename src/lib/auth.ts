@@ -1,19 +1,23 @@
 /**
  * Configuration Better-auth - Serveur
- * 
- * Ce fichier configure l'authentification côté serveur avec:
- * - Base de données PostgreSQL via Prisma (Supabase)
- * - Email/Password avec reset password
+ *
+ * Ce fichier configure l'authentification cote serveur avec:
+ * - Base de donnees PostgreSQL via Prisma (Supabase)
+ * - Champs metier additionnels (userType, phoneNumber)
+ * - Hooks de creation (sanitisation role + provisioning ProProfile)
+ * - Email/Password avec reset password asynchrone (QStash + Resend)
  * - OAuth Google
- * - Sessions sécurisées (7 jours)
+ * - Sessions securisees (7 jours)
  * - Rate limiting
  */
 
+import crypto from "crypto";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { prisma } from "./prisma";
+import { prisma } from "@/lib/prisma";
+import { enqueueFollowUpNotification } from "@/lib/qstash";
+import { sendPasswordResetEmailViaResend } from "@/lib/resend";
 
-// Interface pour les données de l'email de reset password
 interface ResetPasswordEmailData {
   to: string;
   resetUrl: string;
@@ -21,22 +25,41 @@ interface ResetPasswordEmailData {
 }
 
 /**
- * Fonction d'envoi d'email pour reset password
- * À implémenter avec un service email (Resend, SendGrid, etc.)
+ * Envoie l'email de reinitialisation via Upstash QStash + Resend
  */
 async function sendPasswordResetEmail(data: ResetPasswordEmailData): Promise<void> {
-  // En environnement de développement, journaliser sans exposer le token sensible en clair
+  if (process.env.QSTASH_TOKEN) {
+    await enqueueFollowUpNotification(
+      {
+        type: "PASSWORD_RESET_EMAIL",
+        toEmail: data.to,
+        userName: data.userName,
+        resetUrl: data.resetUrl,
+      },
+      0
+    );
+    return;
+  }
+
+  // Fallback direct hors-QStash (dev local ou envoi direct Resend)
   if (process.env.NODE_ENV !== "production") {
     console.log("Email de reinitialisation pret pour:", data.to);
   }
-  
-  // En production, integrer avec le service d'emailing (Resend via QStash)
-  // await resend.emails.send({
-  //   from: process.env.EMAIL_FROM!,
-  //   to: data.to,
-  //   subject: "Reinitialisation de votre mot de passe",
-  //   html: `<p>Bonjour ${data.userName},</p>...`
-  // });
+
+  const digest = crypto
+    .createHash("sha256")
+    .update(data.resetUrl, "utf8")
+    .digest("hex")
+    .slice(0, 16);
+
+  await sendPasswordResetEmailViaResend(
+    data.to,
+    {
+      userName: data.userName,
+      resetUrl: data.resetUrl,
+    },
+    `password-reset-fallback-${digest}`
+  );
 }
 
 /**
@@ -44,23 +67,77 @@ async function sendPasswordResetEmail(data: ResetPasswordEmailData): Promise<voi
  */
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
-  // Base de données: Supabase PostgreSQL via Prisma
   database: prismaAdapter(prisma, {
     provider: "postgresql",
     usePlural: false,
   }),
 
-  // Configuration email/password
+  user: {
+    additionalFields: {
+      userType: {
+        type: "string",
+        required: false,
+        defaultValue: "client",
+        input: true,
+      },
+      phoneNumber: {
+        type: "string",
+        required: false,
+        input: true,
+      },
+    },
+  },
+
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          const requestedType =
+            typeof user.userType === "string" ? user.userType : "client";
+          // Jamais d'auto-elevation en admin via l'inscription publique
+          const sanitizedType = requestedType === "pro" ? "pro" : "client";
+
+          return {
+            data: {
+              ...user,
+              userType: sanitizedType,
+            },
+          };
+        },
+        after: async (user) => {
+          if (user.userType === "pro") {
+            const phone =
+              typeof user.phoneNumber === "string" ? user.phoneNumber : "";
+            const whatsappClean = phone.replace(/[^0-9+]/g, "");
+
+            await prisma.proProfile.upsert({
+              where: { userId: user.id },
+              update: {},
+              create: {
+                userId: user.id,
+                headline: "Prestataire HomeServices",
+                bio: "Profil professionnel en cours de configuration.",
+                phoneNumber: phone,
+                whatsappNumber: whatsappClean || phone,
+                availabilityStatus: "AVAILABLE",
+                kycStatus: "NOT_SUBMITTED",
+              },
+            });
+          }
+        },
+      },
+    },
+  },
+
   emailAndPassword: {
     enabled: true,
-    disableSignUp: false, // Autoriser les inscriptions
-    requireEmailVerification: false, // Phase MVP: pas de vérification email requise
+    disableSignUp: false,
+    requireEmailVerification: false,
     minPasswordLength: 8,
     maxPasswordLength: 128,
-    autoSignIn: true, // Auto-connexion après inscription
-    resetPasswordTokenExpiresIn: 900, // 15 minutes (en secondes)
-    
-    // Fonction d'envoi email pour reset password
+    autoSignIn: true,
+    resetPasswordTokenExpiresIn: 900,
+
     sendResetPassword: async ({ user, url }) => {
       await sendPasswordResetEmail({
         to: user.email,
@@ -70,7 +147,6 @@ export const auth = betterAuth({
     },
   },
 
-  // Providers OAuth (actives dynamiquement selon les variables d'environnement)
   socialProviders: {
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
       ? {
@@ -83,27 +159,23 @@ export const auth = betterAuth({
       : {}),
   },
 
-  // Configuration sessions
   session: {
-    expiresIn: 60 * 60 * 24 * 7, // 7 jours (en secondes)
-    updateAge: 60 * 60 * 24, // Update tous les jours (en secondes)
+    expiresIn: 60 * 60 * 24 * 7,
+    updateAge: 60 * 60 * 24,
     cookieCache: {
       enabled: true,
-      maxAge: 5 * 60, // Cache 5 minutes (en secondes)
+      maxAge: 5 * 60,
     },
   },
 
-  // URLs de base
   baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
 
-  // Rate limiting pour protection contre brute force
   rateLimit: {
     enabled: true,
-    window: 60, // 60 secondes
-    max: 10, // 10 tentatives max par fenêtre
+    window: 60,
+    max: 10,
   },
 });
 
-// Types exportés pour utilisation dans l'application
 export type Session = typeof auth.$Infer.Session;
 export type User = typeof auth.$Infer.Session.user;

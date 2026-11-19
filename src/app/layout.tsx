@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/contexts/auth-context";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -40,14 +41,16 @@ export default function RootLayout({
           disableTransitionOnChange
           themes={["light", "dark", "luxury", "system"]}
         >
-          <TooltipProvider>
-            <div className="relative flex min-h-screen flex-col">
-              <SiteHeader />
-              <div className="flex-1">{children}</div>
-              <SiteFooter />
-            </div>
-            <Toaster position="top-right" richColors />
-          </TooltipProvider>
+          <AuthProvider>
+            <TooltipProvider>
+              <div className="relative flex min-h-screen flex-col">
+                <SiteHeader />
+                <div className="flex-1">{children}</div>
+                <SiteFooter />
+              </div>
+              <Toaster position="top-right" richColors />
+            </TooltipProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

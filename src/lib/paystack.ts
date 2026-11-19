@@ -153,7 +153,7 @@ export function verifyPaystackWebhookSignature(
   rawBody: string,
   signatureHeader: string | null
 ): boolean {
-  const secret = process.env.PAYSTACK_SECRET_KEY || process.env.BETTER_AUTH_SECRET || ""
+  const secret = process.env.PAYSTACK_SECRET_KEY || ""
   if (!secret || !signatureHeader) {
     return false
   }

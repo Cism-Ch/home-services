@@ -32,7 +32,7 @@ export async function middleware(request: NextRequest) {
   // 2. Redirection des utilisateurs deja connectes sur les pages d'auth
   const isAuthPage = AUTH_PAGES.some((page) => pathname === page);
   if (isAuthPage && isAuthenticated) {
-    return NextResponse.redirect(new URL("/dashboard/client", request.url));
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return NextResponse.next();

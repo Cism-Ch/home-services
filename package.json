@@ -7,7 +7,17 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "db:seed": "tsx prisma/seed.ts",
+    "rsi:pulse": "python evals/rsi_orchestrator.py --pulse",
+    "rsi:eval": "python evals/run_fullstack_eval.py --quick",
+    "rsi:eval:full": "python evals/run_fullstack_eval.py",
+    "rsi:scope": "python evals/rsi_orchestrator.py --scope",
+    "rsi:guardrail": "python evals/rsi_orchestrator.py --guardrail",
+    "rsi:map": "python evals/stack_inspector.py --map",
+    "rsi:memory": "python evals/memory_engine.py --audit",
+    "rsi:security": "python evals/security_audit.py",
+    "rsi:verify": "python evals/telemetry_hook.py --verify-contract"
   },
   "dependencies": {
     "@better-auth/infra": "^0.4.26",
@@ -52,11 +62,13 @@
     "@types/pg": "^8.23.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "dotenv": "^18.0.10",
     "eslint": "^9.39.5",
     "eslint-config-next": "16.4.5",
     "prisma": "^7.10.1",
     "shadcn": "^3.8.5",
     "tailwindcss": "^4.3.4",
+    "tsx": "^4.23.15",
     "tw-animate-css": "^1.4.0",
     "typescript": "^5.9.3"
   }

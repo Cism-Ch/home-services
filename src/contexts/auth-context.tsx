@@ -23,6 +23,8 @@ interface User {
   name: string;
   image?: string | null;
   emailVerified: boolean;
+  userType: "client" | "pro" | "admin";
+  phoneNumber?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -80,6 +82,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const session = sessionData?.session || null;
   const isAuthenticated = !!user && !!session;
 
+  const normalizedRole = (
+    rawType?: string | null
+  ): "client" | "pro" | "admin" => {
+    if (rawType === "admin") return "admin";
+    if (rawType === "pro") return "pro";
+    return "client";
+  };
+
   /**
    * Fonction de déconnexion
    */
@@ -119,6 +129,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         name: user.name,
         image: user.image,
         emailVerified: user.emailVerified,
+        userType: normalizedRole((user as { userType?: string | null }).userType),
+        phoneNumber: (user as { phoneNumber?: string | null }).phoneNumber ?? null,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       } : null,

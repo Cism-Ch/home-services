@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
+import { requireActionSession } from "@/server/auth-guard"
 
 export interface ServerActionResponse<T> {
   data: T | null
@@ -15,13 +16,21 @@ export async function verifyProKycAction(
   proProfileId: string,
   decision: "APPROVE" | "REJECT"
 ): Promise<ServerActionResponse<{ proProfileId: string; isVerified: boolean }>> {
+  const authRes = await requireActionSession(["admin"])
+  if (authRes.error !== null) {
+    return { data: null, error: authRes.error }
+  }
+
   const isVerified = decision === "APPROVE"
 
   try {
     try {
       await prisma.proProfile.update({
         where: { id: proProfileId },
-        data: { isVerified },
+        data: {
+          isVerified,
+          kycStatus: isVerified ? "APPROVED" : "REJECTED",
+        },
       })
     } catch {
       // Fallback hors-ligne
@@ -48,6 +57,11 @@ export async function moderateReviewAction(
   reviewId: string,
   decision: "APPROVE" | "REMOVE"
 ): Promise<ServerActionResponse<{ reviewId: string; status: string }>> {
+  const authRes = await requireActionSession(["admin"])
+  if (authRes.error !== null) {
+    return { data: null, error: authRes.error }
+  }
+
   try {
     try {
       if (decision === "REMOVE") {

@@ -1,45 +1,34 @@
 /**
  * Configuration Better-auth - Client
- * 
- * Ce fichier configure l'authentification côté client avec:
- * - Hooks React pour accès session
- * - Méthodes d'authentification (signIn, signUp, signOut, etc.)
+ *
+ * Ce fichier configure l'authentification cote client avec:
+ * - Hooks React pour acces session avec types additionnels inferes
+ * - Methodes d'authentification (signIn, signUp, signOut, reset password)
  * - Gestion des erreurs globale
  */
 
 "use client";
 
 import { createAuthClient } from "better-auth/react";
+import { inferAdditionalFields } from "better-auth/client/plugins";
+import type { auth } from "@/lib/auth";
 
-// Base URL pour les requêtes API
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 export const authClient = createAuthClient({
   baseURL: BASE_URL,
-  
-  // Options supplémentaires pour gestion d'erreurs et tracking
+  plugins: [inferAdditionalFields<typeof auth>()],
+
   fetchOptions: {
     onError(context) {
-      // Gestion globale des erreurs d'authentification
-      console.error("❌ Erreur d'authentification:", {
+      console.error("[Auth] Erreur d'authentification:", {
         error: context.error,
         response: context.response,
       });
-      
-      // Ici, vous pouvez ajouter un toast ou autre notification
-      // toast.error("Erreur d'authentification. Veuillez réessayer.");
-    },
-    onSuccess(context) {
-      // Tracking succès (optionnel - Analytics)
-      console.log("✅ Opération d'authentification réussie:", context.response.url);
-      
-      // Exemple: tracking analytics
-      // analytics.track('auth_success', { action: context.response.url });
     },
   },
 });
 
-// Export des hooks et méthodes pour utilisation dans les composants React
 export const {
   useSession,
   signIn,
@@ -48,14 +37,13 @@ export const {
 } = authClient;
 
 /**
- * Fonction pour demander la réinitialisation du mot de passe
- * Envoie un email avec un lien de réinitialisation
+ * Demande la reinitialisation du mot de passe via Better-auth (/api/auth/request-password-reset)
  */
 export async function forgetPassword(data: {
   email: string;
   redirectTo?: string;
 }): Promise<void> {
-  const response = await fetch(`${BASE_URL}/api/auth/forget-password`, {
+  const response = await fetch(`${BASE_URL}/api/auth/request-password-reset`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -68,12 +56,12 @@ export async function forgetPassword(data: {
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: "Erreur inconnue" }));
-    throw new Error(error.message || "Échec de l'envoi de l'email de réinitialisation");
+    throw new Error(error.message || "Echec de l'envoi de l'email de reinitialisation");
   }
 }
 
 /**
- * Fonction pour réinitialiser le mot de passe avec un token
+ * Reinitialise le mot de passe avec le token recu par email (/api/auth/reset-password)
  */
 export async function resetPassword(data: {
   token: string;
@@ -86,12 +74,12 @@ export async function resetPassword(data: {
     },
     body: JSON.stringify({
       token: data.token,
-      password: data.password,
+      newPassword: data.password,
     }),
   });
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: "Erreur inconnue" }));
-    throw new Error(error.message || "Échec de la réinitialisation du mot de passe");
+    throw new Error(error.message || "Echec de la reinitialisation du mot de passe");
   }
 }

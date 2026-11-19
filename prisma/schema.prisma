@@ -51,6 +51,7 @@ model Session {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("sessions")
 }
 
@@ -60,17 +61,21 @@ model Account {
   userId            String
   accountId         String
   providerId        String
-  accessToken       String?
-  refreshToken      String?
-  idToken           String?
-  expiresAt         DateTime?
-  password          String?
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  expiresAt             DateTime?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([providerId, accountId])
+  @@index([userId])
   @@map("accounts")
 }
 
@@ -105,16 +110,37 @@ model ProProfile {
   isVerified          Boolean    @default(false)
   kycStatus           String     @default("NOT_SUBMITTED") // "NOT_SUBMITTED" | "PENDING" | "APPROVED" | "REJECTED"
   kycDocumentUrl      String?
-  rating              Float      @default(5.0)
-  reviewsCount        Int        @default(0)
-  completedTasks      Int        @default(0)
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
+  rating              Float                  @default(5.0)
+  reviewsCount        Int                    @default(0)
+  completedTasks      Int                    @default(0)
+  portfolioImages     String[]               @default([])
+  languages           String[]               @default(["Français"])
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
 
   services            Service[]
   timeSlots           TimeSlot[]
+  unavailabilities    UnavailabilityPeriod[]
 
+  @@index([cityId])
+  @@index([availabilityStatus])
+  @@index([kycStatus])
   @@map("pro_profiles")
+}
+
+// Modèle UnavailabilityPeriod - Congés et indisponibilités exceptionnelles du prestataire
+model UnavailabilityPeriod {
+  id           String     @id @default(uuid())
+  proProfileId String
+  proProfile   ProProfile @relation(fields: [proProfileId], references: [id], onDelete: Cascade)
+  type         String     @default("other") // "vacation" | "sick" | "other"
+  startDate    DateTime
+  endDate      DateTime
+  reason       String?
+  createdAt    DateTime   @default(now())
+
+  @@index([proProfileId, startDate, endDate])
+  @@map("unavailability_periods")
 }
 
 // Modèle Category - Catégories de métiers
@@ -156,6 +182,9 @@ model Service {
 
   bookings     Booking[]
 
+  @@index([proProfileId])
+  @@index([categoryId])
+  @@index([isActive, price])
   @@map("services")
 }
 
@@ -171,6 +200,7 @@ model TimeSlot {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
+  @@index([proProfileId, dayOfWeek])
   @@map("time_slots")
 }
 
@@ -197,6 +227,10 @@ model Booking {
 
   reviews         Review[]
 
+  @@index([serviceId])
+  @@index([clientId, status])
+  @@index([proId, status])
+  @@index([bookingDate])
   @@map("bookings")
 }
 
@@ -217,6 +251,10 @@ model Review {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  @@unique([bookingId, authorId])
+  @@index([bookingId])
+  @@index([authorId])
+  @@index([targetId, authorType])
   @@map("reviews")
 }
 
@@ -239,5 +277,6 @@ model Subscription {
   createdAt                DateTime  @default(now())
   updatedAt                DateTime  @updatedAt
 
+  @@index([userId, status])
   @@map("subscriptions")
 }

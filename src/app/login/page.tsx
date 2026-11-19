@@ -1,78 +1,204 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Github, Mail } from "lucide-react"
+"use client";
+
+import * as React from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import { signIn } from "@/lib/auth-client";
+import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { LoadingButton } from "@/components/auth/loading-button";
+import { SocialAuthButtons } from "@/components/auth/social-auth-buttons";
+
+function sanitizeCallbackUrl(rawUrl: string | null): string | null {
+  if (!rawUrl) return null;
+  if (rawUrl.startsWith("/") && !rawUrl.startsWith("//") && !rawUrl.includes("\\")) {
+    return rawUrl;
+  }
+  return null;
+}
+
+function LoginForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = sanitizeCallbackUrl(searchParams.get("callbackUrl"));
+
+  const [rememberMe, setRememberMe] = React.useState(true);
+  const [serverError, setServerError] = React.useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  const onSubmit = async (values: LoginFormData) => {
+    setServerError(null);
+    const { data, error } = await signIn.email({
+      email: values.email,
+      password: values.password,
+      rememberMe,
+    });
+
+    if (error) {
+      const msg = error.message || "Email ou mot de passe incorrect.";
+      setServerError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    toast.success("Connexion réussie !");
+    const userType = (data?.user as { userType?: string } | undefined)?.userType;
+    const defaultTarget =
+      userType === "admin"
+        ? "/dashboard/admin"
+        : userType === "pro"
+        ? "/dashboard/pro"
+        : "/dashboard/client";
+
+    router.push(callbackUrl || defaultTarget);
+    router.refresh();
+  };
+
+  return (
+    <Card>
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl text-center">Connexion</CardTitle>
+        <CardDescription className="text-center">
+          Entrez votre email et mot de passe pour accéder à votre espace
+        </CardDescription>
+      </CardHeader>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <CardContent className="grid gap-4">
+          <SocialAuthButtons callbackURL={callbackUrl || "/dashboard"} />
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Ou continuer avec
+              </span>
+            </div>
+          </div>
+
+          {serverError && (
+            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              {serverError}
+            </div>
+          )}
+
+          <div className="grid gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="nom@exemple.ci"
+              autoComplete="email"
+              {...register("email")}
+            />
+            {errors.email && (
+              <p className="text-xs text-destructive">{errors.email.message}</p>
+            )}
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="password">Mot de passe</Label>
+            <Input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              {...register("password")}
+            />
+            {errors.password && (
+              <p className="text-xs text-destructive">{errors.password.message}</p>
+            )}
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="remember"
+              checked={rememberMe}
+              onCheckedChange={(checked) => setRememberMe(checked === true)}
+            />
+            <Label
+              htmlFor="remember"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Se souvenir de moi
+            </Label>
+          </div>
+        </CardContent>
+
+        <CardFooter className="flex flex-col gap-4 pt-2">
+          <LoadingButton
+            type="submit"
+            loading={isSubmitting}
+            loadingText="Connexion en cours..."
+            className="w-full"
+          >
+            Se connecter
+          </LoadingButton>
+          <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
+            <Link
+              href="/forgot-password"
+              className="hover:text-primary underline underline-offset-4"
+            >
+              Mot de passe oublié ?
+            </Link>
+            <p>
+              Pas encore de compte ?{" "}
+              <Link
+                href="/register"
+                className="hover:text-primary underline underline-offset-4"
+              >
+                S&apos;inscrire
+              </Link>
+            </p>
+          </div>
+        </CardFooter>
+      </form>
+    </Card>
+  );
+}
 
 export default function LoginPage() {
   return (
-    <div className="container relative flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-1 lg:px-0 min-h-[calc(100vh-4rem)]">
+    <div className="container relative flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-1 lg:px-0 min-h-[calc(100vh-4rem)] py-10">
       <div className="lg:p-8">
-        <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-          <Card>
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl text-center">Connexion</CardTitle>
-              <CardDescription className="text-center">
-                Entrez votre email et mot de passe pour accéder à votre compte
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4">
-              <div className="grid grid-cols-2 gap-6">
-                <Button variant="outline">
-                  <Github className="mr-2 h-4 w-4" />
-                  Github
-                </Button>
-                <Button variant="outline">
-                  <Mail className="mr-2 h-4 w-4" />
-                  Google
-                </Button>
-              </div>
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    Ou continuer avec
-                  </span>
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="m@example.com" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="password">Mot de passe</Label>
-                <Input id="password" type="password" />
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox id="remember" />
-                <Label htmlFor="remember" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                  Se souvenir de moi
-                </Label>
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-4">
-              <Link href="/dashboard/client" className="w-full">
-                <Button className="w-full">Se connecter</Button>
-              </Link>
-              <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
-                <Link href="/forgot-password" className="hover:text-primary underline underline-offset-4">
-                  Mot de passe oublié ?
-                </Link>
-                <p>
-                  Pas encore de compte ?{" "}
-                  <Link href="/register" className="hover:text-primary underline underline-offset-4">
-                    S&apos;inscrire
-                  </Link>
-                </p>
-              </div>
-            </CardFooter>
-          </Card>
+        <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[380px]">
+          <React.Suspense
+            fallback={
+              <Card>
+                <CardContent className="p-8 text-center text-sm text-muted-foreground">
+                  Chargement...
+                </CardContent>
+              </Card>
+            }
+          >
+            <LoginForm />
+          </React.Suspense>
         </div>
       </div>
     </div>
-  )
+  );
 }
