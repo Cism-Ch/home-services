@@ -9,7 +9,7 @@ interface ServiceCardProps {
 
 export function ServiceCard({ title, icon: Icon, description }: ServiceCardProps) {
     return (
-        <Card className="group relative overflow-hidden cursor-pointer transition-all duration-300 shadow-md hover:shadow-2xl hover:-translate-y-2 hover:border-[hsl(var(--brand))]/40 bg-card/50 backdrop-blur-sm animate-appear opacity-0 border-border/50">
+        <Card className="group relative overflow-hidden cursor-pointer transition-all duration-300 shadow-md hover:shadow-2xl hover:-translate-y-1 hover:border-[hsl(var(--brand))]/40 bg-card/50 backdrop-blur-sm animate-appear border-border/50">
             {/* Gradient background on hover */}
             <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--brand))]/8 via-transparent to-[hsl(var(--brand-foreground))]/8 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 

@@ -168,7 +168,7 @@ export function ClientSettingsView({
       </div>
 
       <Tabs defaultValue={callbackRef ? "gold" : "profile"} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:w-[440px]">
+        <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 p-1 sm:inline-flex sm:w-fit">
           <TabsTrigger value="profile">Profil</TabsTrigger>
           <TabsTrigger value="gold">Badge Or (2 000 F)</TabsTrigger>
           <TabsTrigger value="security">Sécurité</TabsTrigger>

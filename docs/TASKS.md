@@ -10,40 +10,48 @@
 
 ```
 +-------------------------+  +-------------------------+  +-------------------------+
-| [>] IN PROGRESS (SP 06) |  |   [?] SPRINT 06 QUEUE   |  |       [X] ARCHIVES      |
+| [>] IN PROGRESS (SP 07) |  |   [?] SPRINT 07 QUEUE   |  |       [X] ARCHIVES      |
 +-------------------------+  +-------------------------+  +-------------------------+
-| (All Sprint 06 Done!)   |  | (Next: Sprint 07 UI/A11y|  | Sprint 02 (11 tasks)    |
-|                         |  |  Mobile-First & Shadcn) |  | Sprint 03 (4 tasks)     |
+| (All Sprint 07 Done!)   |  | (All Sprints 02-07 Done)|  | Sprint 02 (11 tasks)    |
+|                         |  |                         |  | Sprint 03 (4 tasks)     |
 |                         |  |                         |  | Sprint 04 (3 tasks)     |
 |                         |  |                         |  | Sprint 05 (4 tasks)     |
 |                         |  |                         |  | Sprint 06 (3 tasks)     |
+|                         |  |                         |  | Sprint 07 (4 tasks)     |
 +-------------------------+  +-------------------------+  +-------------------------+
 ```
 
 ---
 
-## Active Sprint 06: Admin Governance, Legal/SEO & Go-Live Readiness
+## Active Sprint 07: Audit de Conformite shadcn/ui & Responsivite Mobile-First
 
-- [x] **`TASK-ADMIN-DB-01` - [Scope: L] Admin Dashboard 100% Prisma, Signed KYC Viewer, Review Recalculation & Mock Removal**
+- [x] **`TASK-UI-TOKENS-01` - [Scope: M] Tailwind v4 & Design Tokens Hardening (`globals.css`)**
   - **Priority:** HIGH
-  - **Target files:** `src/server/queries/admin.ts`, `src/server/actions/admin.ts`, `src/app/dashboard/admin/page.tsx`, `src/app/dashboard/admin/admin-dashboard-view.tsx`, `src/lib/mock-data.ts`, `docs/TASKS.md`
+  - **Target files:** `src/app/globals.css`, `docs/TASKS.md`
   - **Acceptance criteria:**
-    - [x] `TASK-ADMIN-DB-01.01`: Implement `src/server/queries/admin.ts` and upgrade `src/server/actions/admin.ts` (`getKycSignedDocumentUrlAction`, transactional review recalculation, Category & City CRUD).
-    - [x] `TASK-ADMIN-DB-01.02`: Migrate `/dashboard/admin` to RSC + Prisma (`admin-dashboard-view.tsx`), verify zero `mock-data` imports across `src/` & `prisma/`, and delete `src/lib/mock-data.ts`.
+    - [x] `TASK-UI-TOKENS-01.01`: Fix `:root` WCAG AA contrast tokens, wrap all bare HSL triplets in `.luxury` inside `hsl(...)`, expose `--color-brand` in `@theme inline`.
+    - [x] `TASK-UI-TOKENS-01.02`: Add `overflow-x: clip` on `body` and `@media (prefers-reduced-motion: reduce)` safeguards.
 
-- [x] **`TASK-LEGAL-SEO-01` - [Scope: M] Legal Pages, Error/404 Boundaries, Footer Links & Dynamic SEO**
-  - **Priority:** MEDIUM
-  - **Target files:** `src/app/legal/**/*`, `src/app/not-found.tsx`, `src/app/error.tsx`, `src/app/robots.ts`, `src/app/sitemap.ts`, `src/app/layout.tsx`, `src/components/site-footer.tsx`, `docs/TASKS.md`
+- [x] **`TASK-UI-SHADCN-01` - [Scope: L] Strict `shadcn/ui` Compliance & Primitive Cleanup**
+  - **Priority:** HIGH
+  - **Target files:** `src/components/ui/table.tsx`, `src/components/ui/responsive-table.tsx`, `src/components/marketing/**/*`, `src/components/skeleton-premium.tsx`, `src/components/city-combobox.tsx`, `src/components/pro-card.tsx`, `src/components/quick-search.tsx`, `docs/TASKS.md`
   - **Acceptance criteria:**
-    - [x] `TASK-LEGAL-SEO-01.01`: Create `/legal/cgu`, `/legal/confidentialite`, `/legal/mentions-legales`, branded `not-found.tsx` and `error.tsx`.
-    - [x] `TASK-LEGAL-SEO-01.02`: Add dynamic `robots.ts`, `sitemap.ts`, French OpenGraph `metadata` in `src/app/layout.tsx`, and replace `#` placeholders in `SiteFooter`.
+    - [x] `TASK-UI-SHADCN-01.01`: Install shadcn `ui/table.tsx`, migrate `ResponsiveTable`, move marketing components out of `src/components/ui/`, delete unused `ui/icons.tsx`.
+    - [x] `TASK-UI-SHADCN-01.02`: Eliminate nested `<Link><Button>` and nested `<Button><div role="button">` across components (`asChild`, sibling controls, real category slugs in `QuickSearch`).
 
-- [x] **`TASK-E2E-TESTS-01` - [Scope: M] Playwright E2E Spec, Deployment Runbook & Live Smoke Check**
-  - **Priority:** MEDIUM
-  - **Target files:** `package.json`, `playwright.config.ts`, `e2e/critical-flows.spec.ts`, `docs/DEPLOYMENT.md`, `docs/TASKS.md`
+- [x] **`TASK-UI-MOBILE-01` - [Scope: L] Mobile-First Layout Refactoring (320px-1440px)**
+  - **Priority:** HIGH
+  - **Target files:** `src/components/site-header.tsx`, `src/app/dashboard/layout.tsx`, `src/components/dashboard/dashboard-sidebar.tsx`, `src/app/dashboard/**/*`, `src/components/booking-stepper.tsx`, `src/app/page.tsx`, `src/app/about/page.tsx`, `src/app/professionals/**/*`, `src/app/services/**/*`, `docs/TASKS.md`
   - **Acceptance criteria:**
-    - [x] `TASK-E2E-TESTS-01.01`: Install `@playwright/test`, configure `playwright.config.ts`, author `e2e/critical-flows.spec.ts`, and write `docs/DEPLOYMENT.md`.
-    - [x] `TASK-E2E-TESTS-01.02`: Execute live production HTTP smoke verification (public 200, RBAC 307, webhooks/queues 401, 404) and pass `python evals/run_fullstack_eval.py` (100/100 PASS).
+    - [x] `TASK-UI-MOBILE-01.01`: Update `SiteHeader` (`lg:` breakpoint), add `min-w-0` to Dashboard `<main>`, fix `TabsList` multi-row wrapping, and fix stacked mobile borders/widths in Schedule, Bookings & Availability.
+    - [x] `TASK-UI-MOBILE-01.02`: Refactor `BookingStepper`, `HeroSection`, `page.tsx`, `professionals-browser.tsx`, `services-browser.tsx`, and `about/page.tsx` (RSC + mobile padding, zero blocking `opacity-0`).
+
+- [x] **`TASK-UI-A11Y-01` - [Scope: M] Multi-Viewport Responsive/A11y E2E Spec & Full Verification**
+  - **Priority:** MEDIUM
+  - **Target files:** `e2e/responsive-a11y.spec.ts`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-UI-A11Y-01.01`: Create `e2e/responsive-a11y.spec.ts` verifying 320px/375px/768px/1280px viewports (zero horizontal overflow, no nested interactive controls).
+    - [x] `TASK-UI-A11Y-01.02`: Pass `python evals/run_fullstack_eval.py` (`100/100 PASS`) and live production HTTP smoke verification.
 
 ---
 

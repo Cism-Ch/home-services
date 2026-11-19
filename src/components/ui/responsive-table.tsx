@@ -1,6 +1,14 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/card"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 
 export interface ColumnDef<T> {
   header: string
@@ -37,7 +45,7 @@ export function ResponsiveTable<T>({
 
   return (
     <div className={cn("w-full space-y-4", className)}>
-      {/* Mobile Card View (visible below md) */}
+      {/* Vue Cartes Mobile (< md) */}
       <div className="grid gap-3 md:hidden">
         {data.map((item) => {
           const key = keyExtractor(item)
@@ -45,21 +53,31 @@ export function ResponsiveTable<T>({
             return <React.Fragment key={key}>{mobileCard(item)}</React.Fragment>
           }
 
+          const visibleColumns = columns.filter((col) => !col.hideOnMobile)
+
           return (
             <Card key={key} className="shadow-xs border bg-card">
-              <CardContent className="p-4 space-y-2.5">
-                {columns.map((col, idx) => (
-                  <div key={idx} className="flex items-center justify-between text-sm gap-2">
+              <CardContent className="p-4 space-y-3">
+                {visibleColumns.map((col, idx) => (
+                  <div
+                    key={idx}
+                    className="flex flex-wrap items-center justify-between gap-2 text-sm"
+                  >
                     <span className="text-muted-foreground font-medium shrink-0">
                       {col.header}
                     </span>
-                    <span className={cn("font-medium text-right truncate", col.className)}>
+                    <div
+                      className={cn(
+                        "font-medium text-right min-w-0 break-words",
+                        col.className
+                      )}
+                    >
                       {col.cell
                         ? col.cell(item)
                         : col.accessorKey
                         ? String(item[col.accessorKey] ?? "")
                         : null}
-                    </span>
+                    </div>
                   </div>
                 ))}
               </CardContent>
@@ -68,39 +86,40 @@ export function ResponsiveTable<T>({
         })}
       </div>
 
-      {/* Desktop Table View (visible on md and above) */}
+      {/* Vue Table Desktop (>= md) avec primitives shadcn/ui */}
       <div className="hidden md:block overflow-hidden rounded-xl border bg-card shadow-xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-muted/50 border-b text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              <tr>
-                {columns.map((col, idx) => (
-                  <th key={idx} className={cn("px-4 py-3.5", col.className)}>
-                    {col.header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {data.map((item) => (
-                <tr
-                  key={keyExtractor(item)}
-                  className="transition-colors hover:bg-muted/40"
+        <Table>
+          <TableHeader className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
+            <TableRow className="hover:bg-transparent">
+              {columns.map((col, idx) => (
+                <TableHead
+                  key={idx}
+                  className={cn("h-11 px-4 font-semibold", col.className)}
                 >
-                  {columns.map((col, idx) => (
-                    <td key={idx} className={cn("px-4 py-3.5 align-middle", col.className)}>
-                      {col.cell
-                        ? col.cell(item)
-                        : col.accessorKey
-                        ? String(item[col.accessorKey] ?? "")
-                        : null}
-                    </td>
-                  ))}
-                </tr>
+                  {col.header}
+                </TableHead>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data.map((item) => (
+              <TableRow key={keyExtractor(item)}>
+                {columns.map((col, idx) => (
+                  <TableCell
+                    key={idx}
+                    className={cn("px-4 py-3.5 whitespace-normal", col.className)}
+                  >
+                    {col.cell
+                      ? col.cell(item)
+                      : col.accessorKey
+                      ? String(item[col.accessorKey] ?? "")
+                      : null}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     </div>
   )

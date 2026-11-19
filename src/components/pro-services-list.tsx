@@ -48,9 +48,9 @@ export function ProServicesList({ proId, services }: ProServicesListProps) {
                 {formatFCFA(service.price)}
               </span>
             </div>
-            <Link href={`/book/${proId}/${service.id}`}>
-              <Button size="sm">Choisir ce créneau</Button>
-            </Link>
+            <Button asChild size="sm">
+              <Link href={`/book/${proId}/${service.id}`}>Choisir ce créneau</Link>
+            </Button>
           </CardFooter>
         </Card>
       ))}

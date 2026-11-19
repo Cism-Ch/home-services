@@ -216,7 +216,7 @@ export function ProScheduleView({
         </div>
 
         <div className="md:col-span-8 lg:col-span-9 space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <h2 className="text-xl font-semibold flex items-center gap-2">
               <CalendarIcon className="h-5 w-5" />
               {date?.toLocaleDateString("fr-FR", {
@@ -248,7 +248,7 @@ export function ProScheduleView({
                   >
                     <CardContent className="p-6">
                       <div className="flex flex-col md:flex-row gap-6">
-                        <div className="flex-shrink-0 flex flex-col items-center justify-center min-w-[110px] border-r pr-6">
+                        <div className="shrink-0 flex flex-row md:flex-col items-center justify-between md:justify-center border-b pb-3 md:border-b-0 md:border-r md:pb-0 md:pr-6 md:min-w-[110px]">
                           <span className="text-lg font-bold text-primary">
                             {booking.timeSlot}
                           </span>
@@ -292,7 +292,7 @@ export function ProScheduleView({
                           </div>
                         </div>
 
-                        <div className="flex flex-col justify-center gap-2 border-l pl-6 min-w-[160px]">
+                        <div className="flex flex-col justify-center gap-2 border-t pt-4 md:border-t-0 md:border-l md:pt-0 md:pl-6 md:min-w-[160px]">
                           {booking.status === "NEGOTIATING" && (
                             <Button
                               size="sm"

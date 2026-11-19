@@ -9,7 +9,7 @@ export default async function DashboardLayout({
   const { user } = await requireSession()
 
   return (
-    <div className="container mx-auto px-4 py-8 flex flex-col md:flex-row gap-8 min-h-[calc(100vh-4rem)]">
+    <div className="container mx-auto px-4 py-6 md:py-8 flex flex-col md:flex-row gap-6 md:gap-8 min-h-[calc(100vh-4rem)]">
       <DashboardSidebar
         user={{
           id: user.id,
@@ -19,7 +19,7 @@ export default async function DashboardLayout({
           userType: user.userType,
         }}
       />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 min-w-0">{children}</main>
     </div>
   )
 }

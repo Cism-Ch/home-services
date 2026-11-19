@@ -80,12 +80,15 @@ export function ServiceListingCard({ service }: ServiceListingCardProps) {
                         </span>
                     </div>
                 </div>
-                <Link href={`/book/${service.proProfileId}/${service.id}`}>
-                    <Button className="bg-[hsl(var(--brand))] hover:bg-[hsl(var(--brand))]/90 text-white shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 gap-2 font-semibold">
-                        <Sparkles className="h-4 w-4" />
-                        Réserver
-                    </Button>
-                </Link>
+                <Button
+                  asChild
+                  className="bg-[hsl(var(--brand))] hover:bg-[hsl(var(--brand))]/90 text-white shadow-md hover:shadow-lg transition-all duration-300 gap-2 font-semibold"
+                >
+                  <Link href={`/book/${service.proProfileId}/${service.id}`}>
+                    <Sparkles className="h-4 w-4" />
+                    Réserver
+                  </Link>
+                </Button>
             </CardFooter>
 
             {/* Bottom accent line */}

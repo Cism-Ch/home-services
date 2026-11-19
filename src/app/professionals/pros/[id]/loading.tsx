@@ -1,4 +1,4 @@
-import { SkeletonPremium } from "@/components/ui/skeleton-premium"
+import { SkeletonPremium } from "@/components/skeleton-premium"
 
 export default function ProfessionalDetailLoading() {
   return (

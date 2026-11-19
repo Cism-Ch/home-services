@@ -1,6 +1,6 @@
-import React from "react";
-import { cn } from "@/lib/utils";
-import { cva, type VariantProps } from "class-variance-authority";
+import React from "react"
+import { cn } from "@/lib/utils"
+import { cva, type VariantProps } from "class-variance-authority"
 
 const mockupVariants = cva(
   "flex relative z-10 overflow-hidden shadow-2xl border border-border/5 border-t-border/15",
@@ -14,8 +14,8 @@ const mockupVariants = cva(
     defaultVariants: {
       type: "responsive",
     },
-  },
-);
+  }
+)
 
 export interface MockupProps
   extends React.HTMLAttributes<HTMLDivElement>,
@@ -28,9 +28,9 @@ const Mockup = React.forwardRef<HTMLDivElement, MockupProps>(
       className={cn(mockupVariants({ type, className }))}
       {...props}
     />
-  ),
-);
-Mockup.displayName = "Mockup";
+  )
+)
+Mockup.displayName = "Mockup"
 
 const frameVariants = cva(
   "bg-accent/5 flex relative z-10 overflow-hidden rounded-2xl",
@@ -44,8 +44,8 @@ const frameVariants = cva(
     defaultVariants: {
       size: "small",
     },
-  },
-);
+  }
+)
 
 export interface MockupFrameProps
   extends React.HTMLAttributes<HTMLDivElement>,
@@ -58,8 +58,8 @@ const MockupFrame = React.forwardRef<HTMLDivElement, MockupFrameProps>(
       className={cn(frameVariants({ size, className }))}
       {...props}
     />
-  ),
-);
-MockupFrame.displayName = "MockupFrame";
+  )
+)
+MockupFrame.displayName = "MockupFrame"
 
-export { Mockup, MockupFrame };
+export { Mockup, MockupFrame }

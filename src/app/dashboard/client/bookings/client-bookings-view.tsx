@@ -165,7 +165,7 @@ function BookingList({
                 )}
               </div>
 
-              <div className="bg-muted/30 p-6 flex flex-col justify-center items-center md:items-end border-t md:border-t-0 md:border-l min-w-[210px] gap-2">
+              <div className="bg-muted/30 p-5 sm:p-6 flex flex-col justify-center items-stretch md:items-end border-t md:border-t-0 md:border-l md:min-w-[210px] gap-2">
                 <div className="text-2xl font-extrabold text-primary">
                   {formatFCFA(booking.indicativePrice)}
                 </div>
@@ -316,7 +316,7 @@ export function ClientBookingsView({
         />
 
         <Tabs defaultValue="active" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 lg:w-[450px]">
+          <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 p-1 sm:inline-flex sm:w-fit">
             <TabsTrigger value="active">Actifs ({activeBookings.length})</TabsTrigger>
             <TabsTrigger value="completed">
               Finalisés ({completedBookings.length})

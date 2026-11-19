@@ -6,7 +6,6 @@ import { Search, Users, Award, Star, Filter } from "lucide-react"
 import { ProCard } from "@/components/pro-card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import type { CatalogCategory, CatalogProfessional } from "@/lib/types/catalog"
 
 interface ProfessionalsBrowserProps {
@@ -49,24 +48,24 @@ export function ProfessionalsBrowser({
   return (
     <div className="min-h-screen">
       {/* Hero Header Section */}
-      <section className="relative bg-gradient-to-br from-[hsl(var(--brand))]/10 via-background to-[hsl(var(--brand-foreground))]/10 py-20 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-[hsl(var(--brand))]/10 via-background to-[hsl(var(--brand-foreground))]/10 py-14 sm:py-20 overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
-        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-[hsl(var(--brand))]/20 rounded-full blur-3xl -z-10" />
-        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-[hsl(var(--brand-foreground))]/20 rounded-full blur-3xl -z-10" />
+        <div className="pointer-events-none absolute top-0 left-0 w-full max-w-lg h-[400px] bg-[hsl(var(--brand))]/20 rounded-full blur-3xl -z-10" />
+        <div className="pointer-events-none absolute bottom-0 right-0 w-full max-w-md h-[350px] bg-[hsl(var(--brand-foreground))]/20 rounded-full blur-3xl -z-10" />
 
         <div className="container mx-auto px-4 relative">
-          <div className="max-w-4xl mx-auto text-center animate-appear opacity-0">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(var(--brand))]/10 border border-[hsl(var(--brand))]/20 text-sm font-medium mb-6 backdrop-blur-sm">
-              <div className="w-2 h-2 rounded-full bg-[hsl(var(--brand))] animate-pulse"></div>
+          <div className="max-w-4xl mx-auto text-center animate-appear">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[hsl(var(--brand))]/10 border border-[hsl(var(--brand))]/20 text-xs sm:text-sm font-medium mb-6 backdrop-blur-sm">
+              <div className="w-2 h-2 rounded-full bg-[hsl(var(--brand))] animate-pulse" />
               <span className="text-[hsl(var(--brand))]">PROFESSIONNELS VÉRIFIÉS</span>
             </div>
 
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 gradient-brand">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold tracking-tight mb-6 gradient-brand">
               Nos Professionnels
             </h1>
 
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
-              Découvrez nos professionnels qualifiés et expérimentés, prêts à répondre à tous vos besoins.
+            <p className="text-base sm:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
+              Découvrez nos artisans qualifiés et expérimentés, prêts à intervenir près de chez vous.
               <span className="text-foreground font-medium">
                 {" "}
                 {filteredProfessionals.length} expert(s) disponible(s)
@@ -75,14 +74,14 @@ export function ProfessionalsBrowser({
             </p>
 
             {/* Search Bar */}
-            <div className="max-w-2xl mx-auto animate-appear opacity-0 delay-300">
+            <div className="max-w-2xl mx-auto animate-appear">
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Rechercher un professionnel, un métier ou une commune..."
-                  className="pl-12 pr-4 h-14 text-lg bg-background/80 backdrop-blur-sm border-border/50 focus:border-[hsl(var(--brand))] transition-colors shadow-lg"
+                  className="pl-12 pr-4 h-12 sm:h-14 text-base sm:text-lg bg-background/80 backdrop-blur-sm border-border/50 focus:border-[hsl(var(--brand))] transition-colors shadow-lg"
                 />
               </div>
             </div>
@@ -91,67 +90,69 @@ export function ProfessionalsBrowser({
       </section>
 
       {/* Stats Section */}
-      <section className="container mx-auto px-4 -mt-8 relative z-10 animate-appear opacity-0 delay-700">
-        <div className="max-w-4xl mx-auto grid grid-cols-3 gap-4">
-          <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 text-center border border-border/50 shadow-elevated hover:shadow-elevated-lg transition-all duration-300 glow-brand">
-            <Users className="h-8 w-8 mx-auto mb-3 text-[hsl(var(--brand))]" />
-            <div className="text-3xl font-bold mb-1 gradient-brand">
+      <section className="container mx-auto px-4 -mt-6 sm:-mt-8 relative z-10 animate-appear">
+        <div className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <div className="bg-card/85 backdrop-blur-sm rounded-2xl p-5 sm:p-6 text-center border border-border/50 shadow-elevated">
+            <Users className="h-7 w-7 mx-auto mb-2 text-[hsl(var(--brand))]" />
+            <div className="text-2xl sm:text-3xl font-bold mb-1 gradient-brand">
               {initialProfessionals.length}
             </div>
             <div className="text-sm text-muted-foreground">Professionnels</div>
           </div>
-          <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 text-center border border-border/50 shadow-elevated hover:shadow-elevated-lg transition-all duration-300 glow-brand">
-            <Award className="h-8 w-8 mx-auto mb-3 text-[hsl(var(--brand))]" />
-            <div className="text-3xl font-bold mb-1 gradient-brand">
+          <div className="bg-card/85 backdrop-blur-sm rounded-2xl p-5 sm:p-6 text-center border border-border/50 shadow-elevated">
+            <Award className="h-7 w-7 mx-auto mb-2 text-[hsl(var(--brand))]" />
+            <div className="text-2xl sm:text-3xl font-bold mb-1 gradient-brand">
               {initialProfessionals.filter((p) => p.isVerified).length}
             </div>
             <div className="text-sm text-muted-foreground">Profils vérifiés</div>
           </div>
-          <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 text-center border border-border/50 shadow-elevated hover:shadow-elevated-lg transition-all duration-300 glow-brand">
-            <Star className="h-8 w-8 mx-auto mb-3 text-[hsl(var(--brand))]" />
-            <div className="text-3xl font-bold mb-1 gradient-brand">{averageRating}</div>
+          <div className="bg-card/85 backdrop-blur-sm rounded-2xl p-5 sm:p-6 text-center border border-border/50 shadow-elevated">
+            <Star className="h-7 w-7 mx-auto mb-2 text-[hsl(var(--brand))]" />
+            <div className="text-2xl sm:text-3xl font-bold mb-1 gradient-brand">
+              {averageRating}
+            </div>
             <div className="text-sm text-muted-foreground">Note moyenne</div>
           </div>
         </div>
       </section>
 
       {/* Filters Section */}
-      <section className="container mx-auto px-4 py-12">
-        <div className="flex flex-wrap items-center gap-3 mb-8 animate-appear opacity-0 delay-1000">
-          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+      <section className="container mx-auto px-4 py-8 sm:py-12">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 animate-appear">
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mr-1">
             <Filter className="h-4 w-4" />
-            <span>Filtrer par:</span>
+            <span>Filtrer par :</span>
           </div>
-          <Badge
-            onClick={() => setSelectedCategoryId("ALL")}
+          <Button
+            type="button"
+            size="sm"
             variant={selectedCategoryId === "ALL" ? "default" : "outline"}
-            className="cursor-pointer transition-all duration-300 text-sm px-4 py-2"
+            onClick={() => setSelectedCategoryId("ALL")}
+            className="rounded-full"
           >
             Tous les métiers
-          </Badge>
+          </Button>
           {categories.slice(0, 6).map((cat) => (
-            <Badge
+            <Button
               key={cat.id}
-              onClick={() => setSelectedCategoryId(cat.id)}
+              type="button"
+              size="sm"
               variant={selectedCategoryId === cat.id ? "default" : "outline"}
-              className="cursor-pointer hover:bg-[hsl(var(--brand))] hover:text-white hover:border-[hsl(var(--brand))] transition-all duration-300 text-sm px-4 py-2"
+              onClick={() => setSelectedCategoryId(cat.id)}
+              className="rounded-full"
             >
               {cat.name}
-            </Badge>
+            </Button>
           ))}
         </div>
       </section>
 
       {/* Professionals Grid */}
-      <section className="container mx-auto px-4 pb-20">
+      <section className="container mx-auto px-4 pb-16 sm:pb-20">
         {filteredProfessionals.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredProfessionals.map((pro, index) => (
-              <div
-                key={pro.id}
-                className="animate-appear opacity-0"
-                style={{ animationDelay: `${100 + index * 75}ms` }}
-              >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {filteredProfessionals.map((pro) => (
+              <div key={pro.id} className="animate-appear">
                 <ProCard pro={pro} />
               </div>
             ))}
@@ -162,6 +163,7 @@ export function ProfessionalsBrowser({
               Aucun professionnel ne correspond à votre recherche.
             </p>
             <Button
+              type="button"
               variant="outline"
               onClick={() => {
                 setSearchQuery("")
@@ -176,37 +178,31 @@ export function ProfessionalsBrowser({
 
       {/* Featured Section */}
       {initialProfessionals.length > 0 && (
-        <section className="bg-gradient-to-b from-muted/20 to-background py-20 relative overflow-hidden">
+        <section className="bg-gradient-to-b from-muted/20 to-background py-14 sm:py-20 relative overflow-hidden">
           <div className="container mx-auto px-4 relative">
-            <div className="text-center mb-12 animate-appear opacity-0">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(var(--brand))]/10 border border-[hsl(var(--brand))]/20 text-sm font-medium mb-6 backdrop-blur-sm">
+            <div className="text-center mb-10 sm:mb-12 animate-appear">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[hsl(var(--brand))]/10 border border-[hsl(var(--brand))]/20 text-xs sm:text-sm font-medium mb-4 backdrop-blur-sm">
                 <Star className="h-4 w-4 text-[hsl(var(--brand))]" />
                 <span className="text-[hsl(var(--brand))]">LES MIEUX NOTÉS</span>
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4 gradient-brand">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-4 gradient-brand">
                 Professionnels d&apos;Excellence
               </h2>
-              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
                 Découvrez nos professionnels les plus appréciés par nos clients
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-              {initialProfessionals.slice(0, 3).map((pro, index) => (
-                <div
-                  key={pro.id}
-                  className="animate-appear opacity-0"
-                  style={{ animationDelay: `${300 + index * 100}ms` }}
-                >
-                  <div className="relative">
-                    <div className="absolute -top-3 -right-3 z-10">
-                      <div className="bg-[hsl(var(--brand))] text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg glow-brand flex items-center gap-1">
-                        <Star className="h-3 w-3 fill-current" />
-                        TOP
-                      </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-5xl mx-auto">
+              {initialProfessionals.slice(0, 3).map((pro) => (
+                <div key={pro.id} className="relative animate-appear">
+                  <div className="absolute -top-3 -right-2 sm:-right-3 z-10">
+                    <div className="bg-[hsl(var(--brand))] text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg glow-brand flex items-center gap-1">
+                      <Star className="h-3 w-3 fill-current" />
+                      TOP
                     </div>
-                    <ProCard pro={pro} />
                   </div>
+                  <ProCard pro={pro} />
                 </div>
               ))}
             </div>
@@ -215,26 +211,27 @@ export function ProfessionalsBrowser({
       )}
 
       {/* CTA Section */}
-      <section className="container mx-auto px-4 py-20">
-        <div className="relative bg-gradient-to-br from-[hsl(var(--brand))] to-[hsl(var(--brand-foreground))] text-white rounded-3xl p-12 md:p-20 flex flex-col md:flex-row items-center justify-between gap-12 shadow-elevated-lg overflow-hidden group glow-brand-lg animate-appear opacity-0">
-          <div className="space-y-6 max-w-2xl relative z-10">
-            <h2 className="text-3xl md:text-5xl font-bold leading-tight">
+      <section className="container mx-auto px-4 py-14 sm:py-20">
+        <div className="relative bg-gradient-to-br from-[hsl(var(--brand))] to-[hsl(var(--brand-foreground))] text-white rounded-3xl p-6 sm:p-10 md:p-16 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 shadow-elevated-lg overflow-hidden group glow-brand-lg animate-appear">
+          <div className="space-y-4 max-w-2xl relative z-10">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold leading-tight">
               Vous êtes professionnel ?
             </h2>
-            <p className="text-white/90 text-xl leading-relaxed">
+            <p className="text-white/90 text-base sm:text-xl leading-relaxed">
               Rejoignez notre réseau d&apos;artisans locaux, gérez vos créneaux horaires et développez votre clientèle sans commission sur vos travaux.
             </p>
           </div>
-          <Link href="/register">
-            <Button
-              size="lg"
-              variant="secondary"
-              className="relative z-10 whitespace-nowrap text-lg px-8 py-6 h-auto shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 font-bold bg-white text-[hsl(var(--brand))] hover:bg-white/90"
-            >
+          <Button
+            asChild
+            size="lg"
+            variant="secondary"
+            className="relative z-10 w-full md:w-auto whitespace-nowrap text-base sm:text-lg px-8 py-6 h-auto shadow-lg hover:shadow-xl transition-all duration-300 font-bold bg-white text-[hsl(var(--brand))] hover:bg-white/90"
+          >
+            <Link href="/register">
               Devenir partenaire
               <span className="ml-2">→</span>
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </section>
     </div>

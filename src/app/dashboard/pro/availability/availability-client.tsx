@@ -373,9 +373,9 @@ export function AvailabilityClient({
             return (
               <div
                 key={day.id}
-                className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b last:border-0 last:pb-0"
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-4 border-b last:border-0 last:pb-0"
               >
-                <div className="flex items-center gap-4 min-w-[150px]">
+                <div className="flex items-center gap-3 min-w-0 sm:min-w-[150px]">
                   <Switch
                     id={`active-${day.id}`}
                     checked={state.isActive}
@@ -391,13 +391,13 @@ export function AvailabilityClient({
                   </Label>
                 </div>
 
-                <div className="flex items-center gap-2 flex-1">
+                <div className="flex items-center gap-2 flex-1 w-full sm:w-auto">
                   <Select
                     value={state.startTime}
                     disabled={!state.isActive}
                     onValueChange={(val) => updateDay(day.dayOfWeek, { startTime: val })}
                   >
-                    <SelectTrigger className="w-[100px]">
+                    <SelectTrigger className="w-full sm:w-[110px]">
                       <SelectValue placeholder="Début" />
                     </SelectTrigger>
                     <SelectContent>
@@ -408,13 +408,13 @@ export function AvailabilityClient({
                       ))}
                     </SelectContent>
                   </Select>
-                  <span className="text-muted-foreground">-</span>
+                  <span className="text-muted-foreground shrink-0">-</span>
                   <Select
                     value={state.endTime}
                     disabled={!state.isActive}
                     onValueChange={(val) => updateDay(day.dayOfWeek, { endTime: val })}
                   >
-                    <SelectTrigger className="w-[100px]">
+                    <SelectTrigger className="w-full sm:w-[110px]">
                       <SelectValue placeholder="Fin" />
                     </SelectTrigger>
                     <SelectContent>

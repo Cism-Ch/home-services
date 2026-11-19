@@ -302,3 +302,24 @@
   - **Acceptance criteria:**
     - [x] `TASK-REALTIME-01.01`: Enable `supabase_realtime` publication on `public.pro_profiles`, add `supabase-client.ts` + `supabase-server.ts` broadcast helper, and trigger booking status broadcasts from booking mutations.
     - [x] `TASK-REALTIME-01.02`: Implement `useProAvailabilityRealtime` and `useBookingStatusRealtime` hooks and wire them into `ProLiveStatusBanner`, `ProHeader`, `ClientBookingsView`, and `ProScheduleView`.
+
+- [x] **`TASK-ADMIN-DB-01` - [Scope: L] Admin Dashboard 100% Prisma, Signed KYC Viewer, Review Recalculation & Mock Removal**
+  - **Priority:** HIGH
+  - **Target files:** `src/server/queries/admin.ts`, `src/server/actions/admin.ts`, `src/app/dashboard/admin/page.tsx`, `src/app/dashboard/admin/admin-dashboard-view.tsx`, `src/lib/mock-data.ts`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-ADMIN-DB-01.01`: Implement `src/server/queries/admin.ts` and upgrade `src/server/actions/admin.ts` (`getKycSignedDocumentUrlAction`, transactional review recalculation, Category & City CRUD).
+    - [x] `TASK-ADMIN-DB-01.02`: Migrate `/dashboard/admin` to RSC + Prisma (`admin-dashboard-view.tsx`), verify zero `mock-data` imports across `src/` & `prisma/`, and delete `src/lib/mock-data.ts`.
+
+- [x] **`TASK-LEGAL-SEO-01` - [Scope: M] Legal Pages, Error/404 Boundaries, Footer Links & Dynamic SEO**
+  - **Priority:** MEDIUM
+  - **Target files:** `src/app/legal/**/*`, `src/app/not-found.tsx`, `src/app/error.tsx`, `src/app/robots.ts`, `src/app/sitemap.ts`, `src/app/layout.tsx`, `src/components/site-footer.tsx`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-LEGAL-SEO-01.01`: Create `/legal/cgu`, `/legal/confidentialite`, `/legal/mentions-legales`, branded `not-found.tsx` and `error.tsx`.
+    - [x] `TASK-LEGAL-SEO-01.02`: Add dynamic `robots.ts`, `sitemap.ts`, French OpenGraph `metadata` in `src/app/layout.tsx`, and replace `#` placeholders in `SiteFooter`.
+
+- [x] **`TASK-E2E-TESTS-01` - [Scope: M] Playwright E2E Spec, Deployment Runbook & Live Smoke Check**
+  - **Priority:** MEDIUM
+  - **Target files:** `package.json`, `playwright.config.ts`, `e2e/critical-flows.spec.ts`, `docs/DEPLOYMENT.md`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-E2E-TESTS-01.01`: Install `@playwright/test`, configure `playwright.config.ts`, author `e2e/critical-flows.spec.ts`, and write `docs/DEPLOYMENT.md`.
+    - [x] `TASK-E2E-TESTS-01.02`: Execute live production HTTP smoke verification (public 200, RBAC 307, webhooks/queues 401, 404) and pass `python evals/run_fullstack_eval.py` (100/100 PASS).

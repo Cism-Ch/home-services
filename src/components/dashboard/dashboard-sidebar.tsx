@@ -100,18 +100,20 @@ function NavContent({
               : pathname.startsWith(link.href)
 
             return (
-              <Link key={link.href} href={link.href} onClick={onItemClick}>
-                <Button
-                  variant={isActive ? "secondary" : "ghost"}
-                  className={cn(
-                    "w-full justify-start gap-2",
-                    isActive && "font-medium"
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                  {link.label}
-                </Button>
-              </Link>
+              <Button
+                key={link.href}
+                asChild
+                variant={isActive ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start gap-2 min-h-10",
+                  isActive && "font-medium"
+                )}
+              >
+                <Link href={link.href} onClick={onItemClick}>
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{link.label}</span>
+                </Link>
+              </Button>
             )
           })}
         </nav>
@@ -121,36 +123,39 @@ function NavContent({
             <p className="px-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
               Espaces autorisés
             </p>
-            <Link href="/dashboard/client" onClick={onItemClick}>
-              <Button
-                variant={roleMode === "client" ? "secondary" : "ghost"}
-                size="sm"
-                className="w-full justify-start text-xs h-8"
-              >
+            <Button
+              asChild
+              variant={roleMode === "client" ? "secondary" : "ghost"}
+              size="sm"
+              className="w-full justify-start text-xs min-h-9"
+            >
+              <Link href="/dashboard/client" onClick={onItemClick}>
                 Espace Client
-              </Button>
-            </Link>
-            {canAccessPro && (
-              <Link href="/dashboard/pro" onClick={onItemClick}>
-                <Button
-                  variant={roleMode === "pro" ? "secondary" : "ghost"}
-                  size="sm"
-                  className="w-full justify-start text-xs h-8"
-                >
-                  Espace Prestataire
-                </Button>
               </Link>
+            </Button>
+            {canAccessPro && (
+              <Button
+                asChild
+                variant={roleMode === "pro" ? "secondary" : "ghost"}
+                size="sm"
+                className="w-full justify-start text-xs min-h-9"
+              >
+                <Link href="/dashboard/pro" onClick={onItemClick}>
+                  Espace Prestataire
+                </Link>
+              </Button>
             )}
             {canAccessAdmin && (
-              <Link href="/dashboard/admin" onClick={onItemClick}>
-                <Button
-                  variant={roleMode === "admin" ? "secondary" : "ghost"}
-                  size="sm"
-                  className="w-full justify-start text-xs h-8"
-                >
+              <Button
+                asChild
+                variant={roleMode === "admin" ? "secondary" : "ghost"}
+                size="sm"
+                className="w-full justify-start text-xs min-h-9"
+              >
+                <Link href="/dashboard/admin" onClick={onItemClick}>
                   Portail Admin
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             )}
           </div>
         )}
@@ -291,7 +296,7 @@ export function DashboardSidebar({ user }: { user: SidebarUserProps }) {
               Menu Dashboard
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-[300px] sm:w-[400px] p-0 pt-10">
+          <SheetContent side="left" className="w-[min(85vw,320px)] sm:w-[360px] p-0 pt-10">
             <SheetTitle className="sr-only">Menu de navigation</SheetTitle>
             <div className="px-4">
               <NavContent
@@ -311,7 +316,7 @@ export function DashboardSidebar({ user }: { user: SidebarUserProps }) {
         </Sheet>
       </div>
 
-      <aside className="hidden md:block w-64 flex-shrink-0">
+      <aside className="hidden md:block w-64 shrink-0">
         <div className="sticky top-24">
           <NavContent
             roleMode={roleMode}

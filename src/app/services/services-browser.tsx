@@ -94,23 +94,23 @@ export function ServicesBrowser({
   return (
     <div className="min-h-screen">
       {/* Hero Header Section */}
-      <section className="relative bg-gradient-to-br from-[hsl(var(--brand))]/10 via-background to-[hsl(var(--brand-foreground))]/10 py-20 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-[hsl(var(--brand))]/10 via-background to-[hsl(var(--brand-foreground))]/10 py-14 sm:py-20 overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[hsl(var(--brand))]/20 rounded-full blur-3xl -z-10" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[hsl(var(--brand-foreground))]/20 rounded-full blur-3xl -z-10" />
+        <div className="pointer-events-none absolute top-0 right-0 w-full max-w-lg h-[400px] bg-[hsl(var(--brand))]/20 rounded-full blur-3xl -z-10" />
+        <div className="pointer-events-none absolute bottom-0 left-0 w-full max-w-md h-[350px] bg-[hsl(var(--brand-foreground))]/20 rounded-full blur-3xl -z-10" />
 
         <div className="container mx-auto px-4 relative">
-          <div className="max-w-4xl mx-auto text-center animate-appear opacity-0">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(var(--brand))]/10 border border-[hsl(var(--brand))]/20 text-sm font-medium mb-6 backdrop-blur-sm">
-              <div className="w-2 h-2 rounded-full bg-[hsl(var(--brand))] animate-pulse"></div>
+          <div className="max-w-4xl mx-auto text-center animate-appear">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[hsl(var(--brand))]/10 border border-[hsl(var(--brand))]/20 text-xs sm:text-sm font-medium mb-6 backdrop-blur-sm">
+              <div className="w-2 h-2 rounded-full bg-[hsl(var(--brand))] animate-pulse" />
               <span className="text-[hsl(var(--brand))]">TROUVEZ LE SERVICE PARFAIT</span>
             </div>
 
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 gradient-brand">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold tracking-tight mb-6 gradient-brand">
               Tous nos Services
             </h1>
 
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
               Découvrez notre gamme complète de services professionnels pour votre maison.
               <span className="text-foreground font-medium">
                 {" "}
@@ -120,7 +120,7 @@ export function ServicesBrowser({
             </p>
 
             {/* Mobile Filter Button */}
-            <div className="md:hidden mt-8">
+            <div className="md:hidden mt-6">
               <Sheet>
                 <SheetTrigger asChild>
                   <Button
@@ -131,7 +131,7 @@ export function ServicesBrowser({
                     Filtrer les services
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+                <SheetContent side="left" className="w-[min(85vw,320px)] sm:w-[360px] overflow-y-auto">
                   <SheetTitle className="sr-only">Filtres de recherche</SheetTitle>
                   <div className="py-6">
                     <ServiceFilter
@@ -159,7 +159,7 @@ export function ServicesBrowser({
       <section className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <aside className="hidden md:block col-span-1">
-            <div className="sticky top-24 animate-appear opacity-0 delay-300">
+            <div className="sticky top-24 animate-appear">
               <div className="relative bg-card/60 backdrop-blur-md rounded-2xl border border-border/50 p-6 shadow-elevated overflow-hidden group hover:shadow-elevated-lg transition-shadow duration-500">
                 <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--brand))]/5 via-transparent to-[hsl(var(--brand-foreground))]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="relative z-10">
@@ -197,21 +197,17 @@ export function ServicesBrowser({
             </div>
           </aside>
 
-          <main className="col-span-1 md:col-span-3">
+          <main className="col-span-1 md:col-span-3 min-w-0">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredServices.map((service, index) => (
-                <div
-                  key={service.id}
-                  className="animate-appear opacity-0"
-                  style={{ animationDelay: `${100 + index * 50}ms` }}
-                >
+              {filteredServices.map((service) => (
+                <div key={service.id} className="animate-appear">
                   <ServiceListingCard service={service} />
                 </div>
               ))}
             </div>
 
             {filteredServices.length === 0 && (
-              <div className="text-center py-20 animate-appear opacity-0 space-y-4">
+              <div className="text-center py-20 animate-appear space-y-4">
                 <div className="w-20 h-20 mx-auto rounded-full bg-muted flex items-center justify-center">
                   <SlidersHorizontal className="h-10 w-10 text-muted-foreground" />
                 </div>
@@ -229,32 +225,33 @@ export function ServicesBrowser({
       </section>
 
       {/* CTA Section */}
-      <section className="container mx-auto px-4 py-20">
-        <div className="relative bg-gradient-to-br from-[hsl(var(--brand))] to-[hsl(var(--brand-foreground))] text-white rounded-3xl p-12 md:p-16 text-center shadow-elevated-lg overflow-hidden group glow-brand-lg animate-appear opacity-0 delay-700">
+      <section className="container mx-auto px-4 py-14 sm:py-20">
+        <div className="relative bg-gradient-to-br from-[hsl(var(--brand))] to-[hsl(var(--brand-foreground))] text-white rounded-3xl p-6 sm:p-10 md:p-16 text-center shadow-elevated-lg overflow-hidden group glow-brand-lg animate-appear">
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:32px_32px]" />
-          <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700" />
+          <div className="pointer-events-none absolute top-0 right-0 w-72 h-72 sm:w-96 sm:h-96 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700" />
 
           <div className="relative z-10 max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-sm font-medium mb-6 backdrop-blur-sm">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-xs sm:text-sm font-medium mb-6 backdrop-blur-sm">
               <Sparkles className="h-4 w-4" />
               VOUS ÊTES PROFESSIONNEL ?
             </div>
-            <h2 className="text-3xl md:text-5xl font-bold mb-6">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-6">
               Proposez vos services sur notre plateforme
             </h2>
-            <p className="text-white/90 text-lg mb-8 leading-relaxed">
+            <p className="text-white/90 text-base sm:text-lg mb-8 leading-relaxed">
               Rejoignez notre réseau d&apos;artisans vérifiés et recevez des créneaux de rendez-vous directement sur WhatsApp.
             </p>
-            <Link href="/register">
-              <Button
-                size="lg"
-                variant="secondary"
-                className="text-lg px-8 py-6 h-auto shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 font-bold bg-white text-[hsl(var(--brand))] hover:bg-white/90"
-              >
+            <Button
+              asChild
+              size="lg"
+              variant="secondary"
+              className="w-full sm:w-auto text-base sm:text-lg px-8 py-6 h-auto shadow-lg hover:shadow-xl transition-all duration-300 font-bold bg-white text-[hsl(var(--brand))] hover:bg-white/90"
+            >
+              <Link href="/register">
                 Devenir partenaire
                 <span className="ml-2">→</span>
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </div>
       </section>

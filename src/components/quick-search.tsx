@@ -2,8 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Search, Zap, Droplets, Paintbrush, Snowflake, ShieldCheck, Wrench } from "lucide-react"
+import { Search, Zap, Droplets, Paintbrush, Snowflake, ShieldCheck, Hammer } from "lucide-react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { CityCombobox } from "@/components/city-combobox"
@@ -14,8 +13,8 @@ const categories = [
   { name: "Électricité", icon: Zap, slug: "electricite" },
   { name: "Climatisation", icon: Snowflake, slug: "climatisation" },
   { name: "Peinture", icon: Paintbrush, slug: "peinture" },
-  { name: "Bricolage", icon: Wrench, slug: "bricolage" },
-  { name: "Sécurité & Entretien", icon: ShieldCheck, slug: "gardiennage" },
+  { name: "Menuiserie", icon: Hammer, slug: "menuiserie" },
+  { name: "Sécurité & Gardiennage", icon: ShieldCheck, slug: "securite" },
 ]
 
 export function QuickSearch() {
@@ -48,53 +47,47 @@ export function QuickSearch() {
   }
 
   return (
-    <section className="py-16 container mx-auto px-4 relative overflow-hidden">
-      {/* Decorative background */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-3xl -z-10" />
+    <section className="py-12 md:py-16 container mx-auto px-4 relative overflow-hidden">
+      <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl h-[500px] bg-primary/5 rounded-full blur-3xl -z-10" />
 
       <div className="max-w-4xl mx-auto">
-        {/* Title */}
         <div className="text-center mb-8 animate-appear">
-          <div className="inline-flex items-center gap-2 text-sm font-medium text-primary mb-3 bg-primary/10 px-4 py-2 rounded-full">
+          <div className="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-primary mb-3 bg-primary/10 px-4 py-1.5 rounded-full">
             <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
             RECHERCHE GÉOLOCALISÉE
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-2">
             Trouvez un artisan qualifié près de chez vous
           </h2>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-base sm:text-lg">
             Recherchez par métier et par localité (villes et communes)
           </p>
         </div>
 
-        {/* Dual Search Box (Service + City Combobox) */}
         <form onSubmit={handleSearch} className="relative mb-6">
           <div className="relative group">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="relative flex flex-col md:flex-row gap-2 bg-card/90 backdrop-blur-md border-2 border-border hover:border-primary/50 rounded-2xl p-2.5 transition-all duration-300 shadow-md">
-              {/* Service Input */}
-              <div className="flex-1 flex items-center gap-3 px-3">
+              <div className="flex-1 flex items-center gap-3 px-2 sm:px-3 min-w-0">
                 <Search className="h-5 w-5 text-muted-foreground shrink-0" />
                 <Input
                   type="text"
                   placeholder="Quel métier ou service ? (ex: Plombier, Clim...)"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-base placeholder:text-muted-foreground"
+                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm sm:text-base placeholder:text-muted-foreground"
                 />
               </div>
 
-              {/* City Combobox with sorting and filtering */}
-              <div className="w-full md:w-[280px] shrink-0 border-t md:border-t-0 md:border-l pt-2 md:pt-0 md:pl-2">
+              <div className="w-full md:w-[260px] shrink-0 border-t md:border-t-0 md:border-l pt-2 md:pt-0 md:pl-2">
                 <CityCombobox
                   value={selectedLocation?.id}
                   onChange={setSelectedLocation}
-                  placeholder="Ville ou commune (ex: Cocody, Bouaké...)"
+                  placeholder="Ville ou commune (ex: Cocody...)"
                   triggerClassName="border-0 bg-transparent hover:bg-muted/40 shadow-none"
                 />
               </div>
 
-              {/* Submit Button */}
               <Button
                 type="submit"
                 size="lg"
@@ -106,61 +99,55 @@ export function QuickSearch() {
           </div>
         </form>
 
-        {/* Category Filters */}
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground text-center">
             Ou parcourez directement par métier :
           </p>
-          <div className="flex flex-wrap justify-center gap-2.5">
+          <div className="flex flex-wrap justify-center gap-2">
             {categories.map((category) => {
               const Icon = category.icon
               const isSelected = selectedCategory === category.slug
 
               return (
-                <Badge
+                <Button
                   key={category.slug}
+                  type="button"
+                  size="sm"
                   variant={isSelected ? "default" : "outline"}
-                  className={`
-                    cursor-pointer px-3.5 py-2 text-sm font-medium transition-all duration-200 hover:scale-105 select-none
-                    ${isSelected
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "hover:border-primary/50 hover:bg-primary/5"
-                    }
-                  `}
                   onClick={() => handleCategoryClick(category.slug)}
+                  className="rounded-full gap-1.5 h-9 px-3.5"
                 >
-                  <Icon className="h-4 w-4 mr-2 inline-block shrink-0" />
-                  {category.name}
-                </Badge>
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span>{category.name}</span>
+                </Button>
               )
             })}
           </div>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-6 mt-12 pt-8 border-t">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mt-10 pt-8 border-t">
           <div className="text-center">
             <div className="text-2xl sm:text-3xl font-extrabold text-foreground mb-1">
-              500+
+              0 % commission
             </div>
             <div className="text-xs sm:text-sm text-muted-foreground">
-              Artisans disponibles
+              Sur le montant de vos interventions
             </div>
           </div>
           <div className="text-center">
             <div className="text-2xl sm:text-3xl font-extrabold text-foreground mb-1">
-              30+
+              50+ zones GEO
             </div>
             <div className="text-xs sm:text-sm text-muted-foreground">
-              Villes & communes couvertes
+              Communes d&apos;Abidjan et villes de Côte d&apos;Ivoire
             </div>
           </div>
           <div className="text-center">
             <div className="text-2xl sm:text-3xl font-extrabold text-foreground mb-1">
-              4.8 / 5
+              100 % direct
             </div>
             <div className="text-xs sm:text-sm text-muted-foreground">
-              Satisfaction clients
+              Rendez-vous par créneaux + contact WhatsApp
             </div>
           </div>
         </div>

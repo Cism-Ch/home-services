@@ -235,7 +235,7 @@ export function ProSettingsView({
       </div>
 
       <Tabs defaultValue={callbackRef ? "billing" : "business"} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:w-[440px]">
+        <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 p-1 sm:inline-flex sm:w-fit">
           <TabsTrigger value="business">Établissement</TabsTrigger>
           <TabsTrigger value="billing">Abonnement Paystack</TabsTrigger>
           <TabsTrigger value="security">Sécurité</TabsTrigger>

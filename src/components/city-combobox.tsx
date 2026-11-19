@@ -18,7 +18,12 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
-import { locationsData, getSortedLocations, type LocationItem, type SortStrategy } from "@/lib/cities-data"
+import {
+  locationsData,
+  getSortedLocations,
+  type LocationItem,
+  type SortStrategy,
+} from "@/lib/cities-data"
 
 interface CityComboboxProps {
   value?: string
@@ -43,7 +48,10 @@ export function CityCombobox({
     if (!value) return null
     return (
       locationsData.find(
-        (loc) => loc.id === value || loc.city.toLowerCase() === value.toLowerCase() || loc.label.toLowerCase() === value.toLowerCase()
+        (loc) =>
+          loc.id === value ||
+          loc.city.toLowerCase() === value.toLowerCase() ||
+          loc.label.toLowerCase() === value.toLowerCase()
       ) || null
     )
   }, [value])
@@ -73,44 +81,31 @@ export function CityCombobox({
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
+            type="button"
             variant="outline"
             role="combobox"
             aria-expanded={open}
             className={cn(
-              "w-full justify-between font-normal h-11 bg-background text-left px-3.5",
+              "w-full justify-between font-normal h-11 bg-background text-left pl-3.5",
+              selectedLocation ? "pr-14" : "pr-3.5",
               !selectedLocation && "text-muted-foreground",
               triggerClassName
             )}
           >
-            <div className="flex items-center gap-2 truncate">
+            <div className="flex items-center gap-2 min-w-0 truncate">
               <MapPin className="h-4 w-4 shrink-0 text-primary" />
               <span className="truncate">
                 {selectedLocation ? selectedLocation.label : placeholder}
               </span>
             </div>
-            <div className="flex items-center gap-1.5 ml-2 shrink-0">
-              {selectedLocation && (
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={handleClear}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault()
-                      handleClear(e as unknown as React.MouseEvent)
-                    }
-                  }}
-                  className="rounded-full p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </div>
-              )}
-              <ChevronsUpDown className="h-4 w-4 opacity-50" />
-            </div>
+            <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0 ml-2" />
           </Button>
         </PopoverTrigger>
 
-        <PopoverContent className="w-[340px] sm:w-[420px] p-0 shadow-lg border" align="start">
+        <PopoverContent
+          className="w-[min(calc(100vw-2rem),420px)] p-0 shadow-lg border"
+          align="start"
+        >
           <Command shouldFilter={false}>
             <div className="p-2 border-b space-y-2 bg-muted/20">
               <CommandInput
@@ -120,15 +115,14 @@ export function CityCombobox({
                 className="h-9"
               />
 
-              {/* Sorting toolbar */}
-              <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 px-1">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground pt-1 px-1">
                 <span className="font-medium">Trier par :</span>
                 <div className="flex items-center gap-1">
                   <Button
                     type="button"
                     variant={sortBy === "popular" ? "secondary" : "ghost"}
                     size="sm"
-                    className="h-6 px-2 text-[11px] gap-1"
+                    className="h-7 px-2 text-xs gap-1"
                     onClick={() => setSortBy("popular")}
                   >
                     <Star className="h-3 w-3" />
@@ -138,7 +132,7 @@ export function CityCombobox({
                     type="button"
                     variant={sortBy === "alpha" ? "secondary" : "ghost"}
                     size="sm"
-                    className="h-6 px-2 text-[11px] gap-1"
+                    className="h-7 px-2 text-xs gap-1"
                     onClick={() => setSortBy("alpha")}
                   >
                     <ArrowDownAZ className="h-3 w-3" />
@@ -148,7 +142,7 @@ export function CityCombobox({
                     type="button"
                     variant={sortBy === "region" ? "secondary" : "ghost"}
                     size="sm"
-                    className="h-6 px-2 text-[11px] gap-1"
+                    className="h-7 px-2 text-xs gap-1"
                     onClick={() => setSortBy("region")}
                   >
                     <Layers className="h-3 w-3" />
@@ -192,7 +186,10 @@ export function CityCombobox({
                       </div>
 
                       {loc.isPopular && (
-                        <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4 shrink-0 bg-primary/5 text-primary border-primary/20">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] py-0 px-1.5 h-4 shrink-0 bg-primary/5 text-primary border-primary/20"
+                        >
                           Populaire
                         </Badge>
                       )}
@@ -204,6 +201,17 @@ export function CityCombobox({
           </Command>
         </PopoverContent>
       </Popover>
+
+      {selectedLocation && (
+        <button
+          type="button"
+          onClick={handleClear}
+          aria-label="Effacer la localisation"
+          className="absolute right-8 top-1/2 -translate-y-1/2 z-10 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
     </div>
   )
 }
