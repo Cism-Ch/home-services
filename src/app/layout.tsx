@@ -18,9 +18,24 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
 export const metadata: Metadata = {
-  title: "Home Services Platform",
-  description: "Find the best professionals for your home services.",
+  metadataBase: new URL(appBaseUrl),
+  title: {
+    default: "HomeServices | Artisans et services à domicile en Côte d'Ivoire",
+    template: "%s | HomeServices",
+  },
+  description:
+    "Réservez un créneau horaire gratuit auprès d'artisans qualifiés (plomberie, électricité, climatisation, ménage) à Abidjan et en Côte d'Ivoire, sans commission sur les interventions.",
+  openGraph: {
+    type: "website",
+    locale: "fr_CI",
+    siteName: "HomeServices",
+    title: "HomeServices | Artisans qualifiés près de chez vous",
+    description:
+      "Prise de rendez-vous directe par créneaux horaires, contact WhatsApp & téléphone et tarification transparente en FCFA.",
+  },
 };
 
 export default function RootLayout({

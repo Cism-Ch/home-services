@@ -9,6 +9,7 @@
     "lint": "eslint",
     "postinstall": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
+    "test:e2e": "playwright test",
     "rsi:pulse": "python evals/rsi_orchestrator.py --pulse",
     "rsi:eval": "python evals/run_fullstack_eval.py --quick",
     "rsi:eval:full": "python evals/run_fullstack_eval.py",
@@ -62,6 +63,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
     "@tailwindcss/postcss": "^4.3.4",
     "@types/node": "^20.19.43",
     "@types/pg": "^8.23.1",

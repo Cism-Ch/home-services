@@ -274,3 +274,31 @@
   - **Acceptance criteria:**
     - [x] `TASK-DASHBOARDS-DB-01.01`: Implement `src/server/queries/dashboard.ts` and migrate Client and Pro dashboard pages to real Prisma data.
     - [x] `TASK-DASHBOARDS-DB-01.02`: Remove silent `catch {}` fallbacks, send real booking metadata to QStash, atomically recalculate `rating` / `reviewsCount` / `completedTasks` on `ProProfile`, and verify zero `mock-data` imports outside Admin.
+
+- [x] **`TASK-REDIS-CACHE-01` - [Scope: M] Upstash Redis Cache-Aside & Server Action Rate Limiting**
+  - **Priority:** HIGH
+  - **Target files:** `src/lib/redis.ts`, `src/server/queries/catalog.ts`, `src/server/actions/booking.ts`, `src/server/actions/reviews.ts`, `src/server/actions/pro-catalog.ts`, `src/server/actions/booking-status.ts`, `src/server/actions/subscription.ts`, `src/server/actions/admin.ts`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-REDIS-CACHE-01.01`: Implement `src/lib/redis.ts` singleton client, catalog cache helpers (`getCachedOrFetch`, `invalidateCatalogCache`), and sliding-window `Ratelimit` (`enforceRateLimit`).
+    - [x] `TASK-REDIS-CACHE-01.02`: Wire cache-aside + invalidation on public catalog queries/mutations and enforce rate limits on booking, review, upload presign, and Paystack checkout Server Actions.
+
+- [x] **`TASK-TIGRIS-REAL-01` - [Scope: M] Real Tigris S3 Direct Upload, Portfolio/KYC Persistence & QStash Cleanup Worker**
+  - **Priority:** HIGH
+  - **Target files:** `next.config.ts`, `src/lib/storage.ts`, `src/app/api/queues/follow-up/route.ts`, `src/server/actions/pro-catalog.ts`, `src/app/dashboard/pro/profile/pro-profile-view.tsx`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-TIGRIS-REAL-01.01`: Upgrade `src/lib/storage.ts` using `@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner` (MIME + 5 MB limits, read URL, `DeleteObjectCommand`) and wire real deletion in `/api/queues/follow-up`.
+    - [x] `TASK-TIGRIS-REAL-01.02`: Implement `confirmPortfolioUploadAction`, `confirmAvatarUploadAction`, `confirmKycUploadAction`, ownership-verified `removeStoredAssetAction`, and real `<input type="file">` direct S3 `PUT` upload UI in `pro-profile-view.tsx`.
+
+- [x] **`TASK-PAYSTACK-PROD-01` - [Scope: L] Paystack Recurring Plans, Callback Verification, Webhook Hardening & Settings Migration**
+  - **Priority:** HIGH
+  - **Target files:** `src/lib/paystack.ts`, `src/app/api/webhooks/paystack/route.ts`, `src/server/actions/subscription.ts`, `src/server/queries/dashboard.ts`, `src/components/dashboard/billing-invoices.tsx`, `src/app/dashboard/client/settings/**/*`, `src/app/dashboard/pro/settings/**/*`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-PAYSTACK-PROD-01.01`: Support Paystack recurring plan codes, add `verifyPaystackTransaction`, harden `/api/webhooks/paystack` (`invoice.create`, `invoice.payment_failed`), and add `verifyAndSyncSubscriptionAction` + profile/business settings actions.
+    - [x] `TASK-PAYSTACK-PROD-01.02`: Refactor `BillingInvoices`, `/dashboard/client/settings`, and `/dashboard/pro/settings` to Prisma + `@/lib/formatters` (zero `mock-data` imports) with callback verification and password change.
+
+- [x] **`TASK-REALTIME-01` - [Scope: M] Supabase Realtime Selective Subscriptions & Optimistic UI**
+  - **Priority:** MEDIUM
+  - **Target files:** `prisma/migrations/**/*`, `src/lib/supabase-client.ts`, `src/lib/supabase-server.ts`, `src/hooks/use-realtime-status.ts`, `src/components/dashboard/pro-live-status-banner.tsx`, `src/components/pro-live-status-badge.tsx`, `src/components/pro-header.tsx`, `src/app/dashboard/client/bookings/**/*`, `src/app/dashboard/pro/schedule/**/*`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-REALTIME-01.01`: Enable `supabase_realtime` publication on `public.pro_profiles`, add `supabase-client.ts` + `supabase-server.ts` broadcast helper, and trigger booking status broadcasts from booking mutations.
+    - [x] `TASK-REALTIME-01.02`: Implement `useProAvailabilityRealtime` and `useBookingStatusRealtime` hooks and wire them into `ProLiveStatusBanner`, `ProHeader`, `ClientBookingsView`, and `ProScheduleView`.
