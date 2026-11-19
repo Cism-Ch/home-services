@@ -2,11 +2,11 @@ import { Star } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
-import { Professional } from "@/lib/mock-data"
+import { CatalogProfessional } from "@/lib/types/catalog"
 import Link from "next/link"
 
 interface ProCardProps {
-    pro: Professional
+    pro: CatalogProfessional
 }
 
 export function ProCard({ pro }: ProCardProps) {
@@ -21,7 +21,7 @@ export function ProCard({ pro }: ProCardProps) {
             <CardHeader className="relative flex flex-row items-center gap-4 pb-4">
                 <div className="relative">
                     <Avatar className="h-16 w-16 ring-2 ring-background group-hover:ring-[hsl(var(--brand))]/30 transition-all duration-500 shadow-md group-hover:scale-105">
-                        <AvatarImage src={pro.avatar} alt={pro.name} className="object-cover" />
+                        <AvatarImage src={pro.avatar || undefined} alt={pro.name} className="object-cover" />
                         <AvatarFallback className="bg-[hsl(var(--brand))]/10 text-[hsl(var(--brand))] font-semibold text-lg">
                             {pro.name.substring(0, 2)}
                         </AvatarFallback>

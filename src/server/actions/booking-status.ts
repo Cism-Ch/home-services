@@ -11,7 +11,11 @@ export interface ServerActionResponse<T> {
 }
 
 export type ProAvailabilityType = "AVAILABLE" | "BUSY_TODAY" | "OFFLINE"
-export type BookingStatusWorkflow = "NEGOTIATING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED"
+export type BookingStatusWorkflow =
+  | "NEGOTIATING"
+  | "IN_PROGRESS"
+  | "COMPLETED"
+  | "CANCELLED"
 
 /**
  * Server Action pour modifier manuellement le statut de disponibilite du professionnel
@@ -26,41 +30,40 @@ export async function setProAvailabilityAction(
       return { data: null, error: authRes.error }
     }
 
-    try {
-      const existingPro = await prisma.proProfile.findUnique({
-        where: { id: proId },
-        select: { id: true, userId: true },
-      })
+    const existingPro = await prisma.proProfile.findUnique({
+      where: { id: proId },
+      select: { id: true, userId: true },
+    })
 
-      if (
-        existingPro &&
-        existingPro.userId !== authRes.user.id &&
-        authRes.user.userType !== "admin"
-      ) {
-        return { data: null, error: "Accès non autorisé sur ce profil prestataire." }
-      }
-
-      if (existingPro) {
-        await prisma.proProfile.update({
-          where: { id: proId },
-          data: { availabilityStatus: status },
-        })
-      }
-    } catch {
-      // Fallback gracieux si l'ID n'est pas encore en DB locale
+    if (!existingPro) {
+      return { data: null, error: "Profil prestataire introuvable." }
     }
+
+    if (
+      existingPro.userId !== authRes.user.id &&
+      authRes.user.userType !== "admin"
+    ) {
+      return { data: null, error: "Accès non autorisé sur ce profil prestataire." }
+    }
+
+    await prisma.proProfile.update({
+      where: { id: existingPro.id },
+      data: { availabilityStatus: status },
+    })
 
     revalidatePath("/dashboard/pro")
     revalidatePath("/dashboard/pro/availability")
     revalidatePath("/dashboard/pro/schedule")
     revalidatePath("/professionals")
+    revalidatePath(`/professionals/pros/${existingPro.id}`)
 
     return {
-      data: { proId, status },
+      data: { proId: existingPro.id, status },
       error: null,
     }
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Erreur de mise a jour de disponibilite"
+    const message =
+      err instanceof Error ? err.message : "Erreur de mise à jour de disponibilité"
     return { data: null, error: message }
   }
 }
@@ -71,100 +74,125 @@ export async function setProAvailabilityAction(
  */
 export async function validateOfferAction(
   bookingId: string
-): Promise<ServerActionResponse<{ bookingId: string; status: "IN_PROGRESS"; proStatus: "BUSY_TODAY" }>> {
+): Promise<
+  ServerActionResponse<{
+    bookingId: string
+    status: "IN_PROGRESS"
+    proStatus: "BUSY_TODAY"
+  }>
+> {
   try {
     const authRes = await requireActionSession()
     if (authRes.error !== null) {
       return { data: null, error: authRes.error }
     }
 
-    try {
-      const booking = await prisma.booking.findUnique({
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        client: { select: { email: true, name: true } },
+        pro: { select: { name: true, proProfile: true } },
+        service: { select: { title: true } },
+      },
+    })
+
+    if (!booking) {
+      return { data: null, error: "Réservation introuvable." }
+    }
+
+    if (
+      booking.clientId !== authRes.user.id &&
+      booking.proId !== authRes.user.id &&
+      authRes.user.userType !== "admin"
+    ) {
+      return { data: null, error: "Accès refusé pour valider cette offre." }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.booking.update({
         where: { id: bookingId },
-        include: { pro: { include: { proProfile: true } } },
+        data: { status: "IN_PROGRESS" },
       })
 
-      if (
-        booking &&
-        booking.clientId !== authRes.user.id &&
-        booking.proId !== authRes.user.id &&
-        authRes.user.userType !== "admin"
-      ) {
-        return { data: null, error: "Accès refusé pour valider cette offre." }
-      }
-
-      if (booking) {
-        await prisma.booking.update({
-          where: { id: bookingId },
-          data: { status: "IN_PROGRESS" },
+      if (booking.pro.proProfile) {
+        await tx.proProfile.update({
+          where: { id: booking.pro.proProfile.id },
+          data: { availabilityStatus: "BUSY_TODAY" },
         })
-
-        if (booking.pro.proProfile) {
-          await prisma.proProfile.update({
-            where: { id: booking.pro.proProfile.id },
-            data: { availabilityStatus: "BUSY_TODAY" },
-          })
-        }
       }
-    } catch {
-      // Fallback
-    }
+    })
 
     await enqueueFollowUpNotification({
       type: "TASK_FOLLOW_UP_EMAIL",
       bookingId,
-      clientEmail: "client@homeservices.ci",
-      clientName: "Client HomeServices",
-      proName: "Artisan Partenaire",
-      serviceTitle: "Prestation en cours",
-      timeSlot: "09:00 - 11:00",
-      indicativePriceFCFA: 15000,
+      clientEmail: booking.client.email,
+      clientName: booking.clientName || booking.client.name,
+      proName: booking.pro.name,
+      serviceTitle: booking.service.title,
+      timeSlot: booking.timeSlot,
+      indicativePriceFCFA: booking.indicativePrice,
     })
 
     revalidatePath("/dashboard/client")
     revalidatePath("/dashboard/client/bookings")
     revalidatePath("/dashboard/pro")
     revalidatePath("/dashboard/pro/schedule")
+    revalidatePath("/professionals")
 
     return {
       data: { bookingId, status: "IN_PROGRESS", proStatus: "BUSY_TODAY" },
       error: null,
     }
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Erreur lors de la validation de l'offre"
+    const message =
+      err instanceof Error ? err.message : "Erreur lors de la validation de l'offre"
     return { data: null, error: message }
   }
 }
 
 /**
- * Server Action pour le suivi interactif client:
+ * Server Action pour le suivi interactif client/pro:
  * "Vos taches ont-elles ete finalisees ? [Oui / En cours / Non]"
- * Si OUI: cloture la mission en COMPLETED et debloque la disponibilite du pro vers AVAILABLE
+ * Si OUI: cloture la mission en COMPLETED, incremente completedTasks et debloque le pro vers AVAILABLE
  */
 export async function answerTaskFollowUpAction(
   bookingId: string,
   answer: "YES" | "IN_PROGRESS" | "NO"
-): Promise<ServerActionResponse<{ bookingId: string; bookingStatus: BookingStatusWorkflow; proStatus?: ProAvailabilityType }>> {
+): Promise<
+  ServerActionResponse<{
+    bookingId: string
+    bookingStatus: BookingStatusWorkflow
+    proStatus?: ProAvailabilityType
+  }>
+> {
   try {
     const authRes = await requireActionSession()
     if (authRes.error !== null) {
       return { data: null, error: authRes.error }
     }
 
-    try {
-      const existingBooking = await prisma.booking.findUnique({
-        where: { id: bookingId },
-        select: { clientId: true },
-      })
-      if (
-        existingBooking &&
-        existingBooking.clientId !== authRes.user.id &&
-        authRes.user.userType !== "admin"
-      ) {
-        return { data: null, error: "Seul le client concerné peut confirmer l'avancement." }
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        client: { select: { email: true, name: true } },
+        pro: { select: { name: true, proProfile: true } },
+        service: { select: { title: true } },
+      },
+    })
+
+    if (!booking) {
+      return { data: null, error: "Réservation introuvable." }
+    }
+
+    if (
+      booking.clientId !== authRes.user.id &&
+      booking.proId !== authRes.user.id &&
+      authRes.user.userType !== "admin"
+    ) {
+      return {
+        data: null,
+        error: "Vous n'êtes pas autorisé à actualiser cette mission.",
       }
-    } catch {
-      // Fallback
     }
 
     let nextBookingStatus: BookingStatusWorkflow = "IN_PROGRESS"
@@ -174,58 +202,57 @@ export async function answerTaskFollowUpAction(
       nextBookingStatus = "COMPLETED"
       nextProStatus = "AVAILABLE"
 
-      try {
-        const booking = await prisma.booking.findUnique({
+      await prisma.$transaction(async (tx) => {
+        const wasAlreadyCompleted = booking.status === "COMPLETED"
+
+        await tx.booking.update({
           where: { id: bookingId },
-          include: { pro: { include: { proProfile: true } } },
+          data: {
+            status: "COMPLETED",
+            completedAt: booking.completedAt || new Date(),
+          },
         })
 
-        if (booking) {
-          await prisma.booking.update({
-            where: { id: bookingId },
-            data: {
-              status: "COMPLETED",
-              completedAt: new Date(),
+        if (booking.pro.proProfile) {
+          const otherActiveBookings = await tx.booking.count({
+            where: {
+              proId: booking.proId,
+              status: "IN_PROGRESS",
+              id: { not: bookingId },
             },
           })
 
-          if (booking.pro.proProfile) {
-            // Verifier s'il n'y a pas d'autre reservation IN_PROGRESS pour aujourd'hui
-            const otherActiveBookings = await prisma.booking.count({
-              where: {
-                proId: booking.proId,
-                status: "IN_PROGRESS",
-                id: { not: bookingId },
-              },
-            })
-
-            if (otherActiveBookings === 0) {
-              await prisma.proProfile.update({
-                where: { id: booking.pro.proProfile.id },
-                data: { availabilityStatus: "AVAILABLE" },
-              })
-            }
+          if (otherActiveBookings > 0) {
+            nextProStatus = "BUSY_TODAY"
           }
+
+          await tx.proProfile.update({
+            where: { id: booking.pro.proProfile.id },
+            data: {
+              ...(wasAlreadyCompleted
+                ? {}
+                : { completedTasks: { increment: 1 } }),
+              ...(otherActiveBookings === 0
+                ? { availabilityStatus: "AVAILABLE" }
+                : {}),
+            },
+          })
         }
-      } catch {
-        // Fallback
-      }
+      })
     } else if (answer === "NO") {
-      // Cas de litige ou probleme signale
       nextBookingStatus = "IN_PROGRESS"
     } else {
-      // IN_PROGRESS : toujours en cours, reprogramme un rappel QStash ulterieur
       nextBookingStatus = "IN_PROGRESS"
       nextProStatus = "BUSY_TODAY"
       await enqueueFollowUpNotification({
         type: "TASK_FOLLOW_UP_EMAIL",
         bookingId,
-        clientEmail: "client@homeservices.ci",
-        clientName: "Client HomeServices",
-        proName: "Artisan Partenaire",
-        serviceTitle: "Prestation en cours",
-        timeSlot: "09:00 - 11:00",
-        indicativePriceFCFA: 15000,
+        clientEmail: booking.client.email,
+        clientName: booking.clientName || booking.client.name,
+        proName: booking.pro.name,
+        serviceTitle: booking.service.title,
+        timeSlot: booking.timeSlot,
+        indicativePriceFCFA: booking.indicativePrice,
       })
     }
 
@@ -233,6 +260,7 @@ export async function answerTaskFollowUpAction(
     revalidatePath("/dashboard/client/bookings")
     revalidatePath("/dashboard/pro")
     revalidatePath("/dashboard/pro/schedule")
+    revalidatePath("/professionals")
 
     return {
       data: {
@@ -243,7 +271,8 @@ export async function answerTaskFollowUpAction(
       error: null,
     }
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Erreur lors du suivi de fin de tache"
+    const message =
+      err instanceof Error ? err.message : "Erreur lors du suivi de fin de tâche"
     return { data: null, error: message }
   }
 }

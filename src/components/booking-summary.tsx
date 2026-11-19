@@ -1,11 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, Clock, MapPin, User, ShieldAlert } from "lucide-react"
-import { Professional, Service, formatFCFA } from "@/lib/mock-data"
+import { formatFCFA } from "@/lib/formatters"
+import type { CatalogProfessional, CatalogService } from "@/lib/types/catalog"
 
 interface BookingSummaryProps {
-  professional: Professional
-  service: Service
+  professional: CatalogProfessional
+  service: CatalogService
   selectedDate?: Date
   selectedTime?: string
 }
@@ -36,7 +37,7 @@ export function BookingSummary({
         <div className="border-t pt-3">
           <div className="flex justify-between items-start mb-1">
             <span className="font-medium text-sm">{service.title}</span>
-            <Badge variant="outline" className="text-xs">{service.category}</Badge>
+            <Badge variant="outline" className="text-xs">{service.categoryName}</Badge>
           </div>
           <p className="text-xs text-muted-foreground line-clamp-2">{service.description}</p>
         </div>

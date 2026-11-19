@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Download, Eye } from "lucide-react"
-import { formatFCFA } from "@/lib/mock-data"
+import { formatFCFA } from "@/lib/formatters"
 import { toast } from "sonner"
 
 interface Invoice {

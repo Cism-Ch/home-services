@@ -21,12 +21,14 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { serviceTemplates, serviceCategories } from "@/lib/service-templates"
-import { formatFCFA } from "@/lib/mock-data"
+import { formatFCFA } from "@/lib/formatters"
+import type { CatalogCategory } from "@/lib/types/catalog"
 import { Badge } from "@/components/ui/badge"
 
 interface CreateServiceDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  categories?: CatalogCategory[]
   onCreateService: (service: {
     title: string
     description: string
@@ -36,9 +38,18 @@ interface CreateServiceDialogProps {
   }) => void
 }
 
+function normalizeSlug(input: string): string {
+  return input
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .split(/[^a-z0-9]+/)[0] || "plomberie"
+}
+
 export function CreateServiceDialog({
   open,
   onOpenChange,
+  categories,
   onCreateService,
 }: CreateServiceDialogProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<string>("")
@@ -54,7 +65,9 @@ export function CreateServiceDialog({
       setSelectedTemplate(templateId)
       setTitle(template.title)
       setDescription(template.description)
-      setCategory(template.category)
+      const slug = normalizeSlug(template.category)
+      const matchedDbCat = categories?.find((c) => c.id === slug)
+      setCategory(matchedDbCat ? matchedDbCat.id : categories ? categories[0]?.id || slug : template.category)
       setPrice(template.typicalPrice.toString())
       setDuration(template.duration.toString())
     }
@@ -153,11 +166,17 @@ export function CreateServiceDialog({
                     <SelectValue placeholder="Choisir..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {serviceCategories.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat}
-                      </SelectItem>
-                    ))}
+                    {categories && categories.length > 0
+                      ? categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </SelectItem>
+                        ))
+                      : serviceCategories.map((cat) => (
+                          <SelectItem key={cat} value={normalizeSlug(cat)}>
+                            {cat}
+                          </SelectItem>
+                        ))}
                   </SelectContent>
                 </Select>
               </div>

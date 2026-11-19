@@ -1,22 +1,55 @@
 "use client"
 
+import { useState } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
-import { categories, formatFCFA } from "@/lib/mock-data"
+import { Switch } from "@/components/ui/switch"
+import { formatFCFA } from "@/lib/formatters"
+import type { CatalogCategory } from "@/lib/types/catalog"
 import { CityCombobox } from "@/components/city-combobox"
 import type { LocationItem } from "@/lib/cities-data"
-import { useState } from "react"
 import { Star, MapPin } from "lucide-react"
 
 interface ServiceFilterProps {
+  categories?: CatalogCategory[]
   selectedCity?: string
+  selectedCategories?: string[]
+  priceRange?: number[]
+  minRating?: number | null
+  availableOnly?: boolean
   onCityChange?: (cityId: string) => void
+  onCategoryToggle?: (categoryId: string) => void
+  onPriceRangeChange?: (range: number[]) => void
+  onMinRatingChange?: (rating: number | null) => void
+  onAvailableOnlyChange?: (availableOnly: boolean) => void
 }
 
-export function ServiceFilter({ selectedCity, onCityChange }: ServiceFilterProps) {
+const DEFAULT_CATEGORIES: CatalogCategory[] = [
+  { id: "plomberie", name: "Plomberie", description: null, icon: "Droplets" },
+  { id: "electricite", name: "Électricité", description: null, icon: "Zap" },
+  { id: "climatisation", name: "Climatisation", description: null, icon: "Snowflake" },
+  { id: "menage", name: "Ménage", description: null, icon: "Sparkles" },
+]
+
+export function ServiceFilter({
+  categories = DEFAULT_CATEGORIES,
+  selectedCity,
+  selectedCategories = [],
+  priceRange: controlledPriceRange,
+  minRating = null,
+  availableOnly = false,
+  onCityChange,
+  onCategoryToggle,
+  onPriceRangeChange,
+  onMinRatingChange,
+  onAvailableOnlyChange,
+}: ServiceFilterProps) {
   const [internalCity, setInternalCity] = useState(selectedCity || "")
-  const [priceRange, setPriceRange] = useState([5000, 75000])
+  const [internalPriceRange, setInternalPriceRange] = useState([2000, 150000])
+
+  const activeCity = selectedCity !== undefined ? selectedCity : internalCity
+  const activePriceRange = controlledPriceRange ?? internalPriceRange
 
   const handleCitySelect = (location: LocationItem | null) => {
     const cityId = location ? location.id : ""
@@ -24,8 +57,30 @@ export function ServiceFilter({ selectedCity, onCityChange }: ServiceFilterProps
     onCityChange?.(cityId)
   }
 
+  const handleSliderChange = (nextRange: number[]) => {
+    setInternalPriceRange(nextRange)
+    onPriceRangeChange?.(nextRange)
+  }
+
   return (
     <div className="space-y-6">
+      {/* Disponibilite aujourd'hui */}
+      <div className="flex items-center justify-between gap-2 p-3 rounded-lg bg-muted/40 border">
+        <div className="space-y-0.5">
+          <Label htmlFor="available-today" className="text-sm font-medium cursor-pointer">
+            Disponible aujourd&apos;hui
+          </Label>
+          <p className="text-xs text-muted-foreground">
+            Masquer les pros déjà en intervention
+          </p>
+        </div>
+        <Switch
+          id="available-today"
+          checked={availableOnly}
+          onCheckedChange={(checked) => onAvailableOnlyChange?.(checked)}
+        />
+      </div>
+
       {/* Localisation Geo Section */}
       <div className="space-y-3">
         <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
@@ -38,7 +93,7 @@ export function ServiceFilter({ selectedCity, onCityChange }: ServiceFilterProps
           Sélectionnez votre commune ou ville en Côte d&apos;Ivoire
         </p>
         <CityCombobox
-          value={internalCity}
+          value={activeCity}
           onChange={handleCitySelect}
           placeholder="Toutes les villes & communes..."
           className="w-full"
@@ -55,9 +110,13 @@ export function ServiceFilter({ selectedCity, onCityChange }: ServiceFilterProps
         <div className="space-y-3">
           {categories.map((category) => (
             <div key={category.id} className="flex items-center gap-2">
-              <Checkbox id={category.id} />
+              <Checkbox
+                id={`cat-${category.id}`}
+                checked={selectedCategories.includes(category.id)}
+                onCheckedChange={() => onCategoryToggle?.(category.id)}
+              />
               <Label
-                htmlFor={category.id}
+                htmlFor={`cat-${category.id}`}
                 className="text-sm font-normal cursor-pointer hover:text-primary transition-colors duration-200"
               >
                 {category.name}
@@ -76,23 +135,27 @@ export function ServiceFilter({ selectedCity, onCityChange }: ServiceFilterProps
         </h3>
         <div className="space-y-4 px-1">
           <Slider
-            defaultValue={[5000, 75000]}
+            defaultValue={[2000, 150000]}
             min={2000}
             max={150000}
             step={1000}
-            value={priceRange}
-            onValueChange={setPriceRange}
+            value={activePriceRange}
+            onValueChange={handleSliderChange}
             className="py-4"
           />
           <div className="flex items-center justify-between">
             <div className="flex flex-col">
               <span className="text-xs text-muted-foreground">Minimum</span>
-              <span className="text-sm font-bold text-foreground">{formatFCFA(priceRange[0])}</span>
+              <span className="text-sm font-bold text-foreground">
+                {formatFCFA(activePriceRange[0])}
+              </span>
             </div>
             <div className="h-px flex-1 mx-3 bg-border" />
             <div className="flex flex-col items-end">
               <span className="text-xs text-muted-foreground">Maximum</span>
-              <span className="text-sm font-bold text-foreground">{formatFCFA(priceRange[1])}+</span>
+              <span className="text-sm font-bold text-foreground">
+                {formatFCFA(activePriceRange[1])}+
+              </span>
             </div>
           </div>
         </div>
@@ -113,6 +176,10 @@ export function ServiceFilter({ selectedCity, onCityChange }: ServiceFilterProps
             >
               <Checkbox
                 id={`rating-${rating}`}
+                checked={minRating === rating}
+                onCheckedChange={(checked) =>
+                  onMinRatingChange?.(checked ? rating : null)
+                }
                 className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
               />
               <Label

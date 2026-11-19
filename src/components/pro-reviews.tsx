@@ -1,16 +1,14 @@
-import { reviews as allReviews, Review } from "@/lib/mock-data"
+import type { CatalogReview } from "@/lib/types/catalog"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Star, ShieldCheck } from "lucide-react"
 
 interface ProReviewsProps {
-  proId: string
+  reviews: CatalogReview[]
 }
 
-export function ProReviews({ proId }: ProReviewsProps) {
-  const reviews: Review[] = allReviews.filter((r: Review) => r.professionalId === proId)
-
+export function ProReviews({ reviews }: ProReviewsProps) {
   if (reviews.length === 0) {
     return (
       <section>
@@ -32,25 +30,25 @@ export function ProReviews({ proId }: ProReviewsProps) {
         </Badge>
       </div>
       <div className="space-y-4">
-        {reviews.map((review: Review) => (
+        {reviews.map((review) => (
           <Card key={review.id}>
             <CardHeader className="flex flex-row items-center gap-4 pb-2">
               <Avatar>
                 <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                  {review.author.substring(0, 2).toUpperCase()}
+                  {review.authorName.substring(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <h4 className="font-semibold">{review.author}</h4>
+                    <h4 className="font-semibold">{review.authorName}</h4>
                     <Badge variant="secondary" className="text-[10px]">
                       {review.authorType === "PRO_TO_CLIENT"
                         ? "Avis Prestataire -> Client"
                         : "Avis Client -> Prestataire"}
                     </Badge>
                   </div>
-                  <span className="text-xs text-muted-foreground">{review.date}</span>
+                  <span className="text-xs text-muted-foreground">{review.dateLabel}</span>
                 </div>
                 <div className="flex items-center gap-0.5 mt-1">
                   {Array.from({ length: 5 }).map((_, i: number) => (

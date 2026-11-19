@@ -31,8 +31,8 @@ export interface BookingResult {
 }
 
 /**
- * Server Action pour reserver un creneau horaire sans paiement direct en ligne
- * Initie la mise en relation en statut NEGOTIATING
+ * Server Action pour reserver un creneau horaire sans paiement direct en ligne.
+ * Resout canoniquement proId -> User.id et empeche les doubles reservations via transaction Prisma.
  */
 export async function createSlotBooking(
   input: CreateBookingInput
@@ -44,7 +44,6 @@ export async function createSlotBooking(
     }
 
     const validated = createBookingSchema.safeParse(input)
-
     if (!validated.success) {
       return {
         data: null,
@@ -53,30 +52,106 @@ export async function createSlotBooking(
     }
 
     const data = validated.data
-    const generatedId = `book-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`
+    const requestedDate = new Date(data.bookingDate)
+    if (Number.isNaN(requestedDate.getTime())) {
+      return { data: null, error: "Date de réservation invalide." }
+    }
 
-    let createdRecord: BookingResult
+    const dayStart = new Date(requestedDate)
+    dayStart.setHours(0, 0, 0, 0)
+    const dayEnd = new Date(requestedDate)
+    dayEnd.setHours(23, 59, 59, 999)
 
-    try {
-      // Tentative de persistance en base de donnees via le singleton Prisma
-      const dbBooking = await prisma.booking.create({
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+
+    const txResult = await prisma.$transaction(async (tx) => {
+      const service = await tx.service.findUnique({
+        where: { id: data.serviceId },
+        include: { proProfile: true },
+      })
+
+      if (!service || !service.isActive) {
+        return { error: "Ce service n'est plus disponible." as const, record: null }
+      }
+
+      const matchesPro =
+        service.proProfile.id === data.proId ||
+        service.proProfile.userId === data.proId
+      if (!matchesPro) {
+        return {
+          error: "Le prestataire sélectionné ne propose pas ce service." as const,
+          record: null,
+        }
+      }
+
+      if (service.proProfile.availabilityStatus === "OFFLINE") {
+        return {
+          error: "Ce prestataire est actuellement hors ligne." as const,
+          record: null,
+        }
+      }
+
+      const isToday = dayStart.getTime() === todayStart.getTime()
+      if (isToday && service.proProfile.availabilityStatus === "BUSY_TODAY") {
+        return {
+          error:
+            "Ce prestataire est déjà occupé aujourd'hui sur une offre en traitement." as const,
+          record: null,
+        }
+      }
+
+      const overlappingBooking = await tx.booking.findFirst({
+        where: {
+          proId: service.proProfile.userId,
+          bookingDate: { gte: dayStart, lte: dayEnd },
+          timeSlot: data.timeSlot,
+          status: { in: ["NEGOTIATING", "IN_PROGRESS"] },
+        },
+        select: { id: true },
+      })
+
+      if (overlappingBooking) {
+        return {
+          error:
+            "Ce créneau horaire vient d'être réservé. Veuillez en choisir un autre." as const,
+          record: null,
+        }
+      }
+
+      const dbBooking = await tx.booking.create({
         data: {
-          id: generatedId,
-          proId: data.proId,
-          serviceId: data.serviceId,
+          proId: service.proProfile.userId,
+          serviceId: service.id,
           clientId: authRes.user.id,
           clientName: data.clientName,
           clientPhone: data.clientPhone,
           clientAddress: data.clientAddress,
           clientNotes: data.clientNotes || "",
-          bookingDate: new Date(data.bookingDate),
+          bookingDate: requestedDate,
           timeSlot: data.timeSlot,
           status: "NEGOTIATING",
-          indicativePrice: data.indicativePrice,
+          indicativePrice: service.price,
         },
       })
 
-      createdRecord = {
+      return { error: null, record: dbBooking }
+    })
+
+    if (txResult.error || !txResult.record) {
+      return { data: null, error: txResult.error || "Impossible de créer la réservation." }
+    }
+
+    const dbBooking = txResult.record
+
+    revalidatePath("/dashboard/client")
+    revalidatePath("/dashboard/client/bookings")
+    revalidatePath("/dashboard/pro")
+    revalidatePath("/dashboard/pro/schedule")
+    revalidatePath(`/book/${data.proId}/${data.serviceId}`)
+
+    return {
+      data: {
         id: dbBooking.id,
         proId: dbBooking.proId,
         serviceId: dbBooking.serviceId,
@@ -87,43 +162,15 @@ export async function createSlotBooking(
         clientAddress: dbBooking.clientAddress,
         clientNotes: dbBooking.clientNotes || undefined,
         indicativePrice: dbBooking.indicativePrice,
-        status: dbBooking.status as "NEGOTIATING",
+        status: dbBooking.status as BookingResult["status"],
         createdAt: dbBooking.createdAt.toISOString(),
-      }
-    } catch {
-      // Fallback gracieux si la base locale n'est pas encore executee en local
-      createdRecord = {
-        id: generatedId,
-        proId: data.proId,
-        serviceId: data.serviceId,
-        bookingDate: data.bookingDate,
-        timeSlot: data.timeSlot,
-        clientName: data.clientName,
-        clientPhone: data.clientPhone,
-        clientAddress: data.clientAddress,
-        clientNotes: data.clientNotes,
-        indicativePrice: data.indicativePrice,
-        status: "NEGOTIATING",
-        createdAt: new Date().toISOString(),
-      }
-    }
-
-    // Revalidation des routes cote client et pro
-    revalidatePath("/dashboard/client")
-    revalidatePath("/dashboard/client/bookings")
-    revalidatePath("/dashboard/pro")
-    revalidatePath("/dashboard/pro/schedule")
-
-    return {
-      data: createdRecord,
+      },
       error: null,
     }
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Erreur inattendue lors de la reservation"
-    return {
-      data: null,
-      error: message,
-    }
+    const message =
+      err instanceof Error ? err.message : "Erreur inattendue lors de la réservation"
+    return { data: null, error: message }
   }
 }
 
@@ -140,7 +187,6 @@ export async function updateBookingStatusAction(
     }
 
     const validated = updateBookingStatusSchema.safeParse(input)
-
     if (!validated.success) {
       return {
         data: null,
@@ -150,32 +196,34 @@ export async function updateBookingStatusAction(
 
     const { bookingId, status } = validated.data
 
-    try {
-      const existing = await prisma.booking.findUnique({
-        where: { id: bookingId },
-        select: { clientId: true, proId: true },
-      })
+    const existing = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      select: { id: true, clientId: true, proId: true },
+    })
 
-      if (
-        existing &&
-        existing.clientId !== authRes.user.id &&
-        existing.proId !== authRes.user.id &&
-        authRes.user.userType !== "admin"
-      ) {
-        return { data: null, error: "Accès refusé pour cette réservation." }
-      }
-
-      if (existing) {
-        await prisma.booking.update({
-          where: { id: bookingId },
-          data: { status },
-        })
-      }
-    } catch {
-      // Fallback developpement si l'id n'est pas encore synchronise
+    if (!existing) {
+      return { data: null, error: "Réservation introuvable." }
     }
 
+    if (
+      existing.clientId !== authRes.user.id &&
+      existing.proId !== authRes.user.id &&
+      authRes.user.userType !== "admin"
+    ) {
+      return { data: null, error: "Accès refusé pour cette réservation." }
+    }
+
+    await prisma.booking.update({
+      where: { id: bookingId },
+      data: {
+        status,
+        completedAt: status === "COMPLETED" ? new Date() : undefined,
+      },
+    })
+
+    revalidatePath("/dashboard/client")
     revalidatePath("/dashboard/client/bookings")
+    revalidatePath("/dashboard/pro")
     revalidatePath("/dashboard/pro/schedule")
 
     return {
@@ -183,10 +231,8 @@ export async function updateBookingStatusAction(
       error: null,
     }
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Erreur de mise a jour du statut"
-    return {
-      data: null,
-      error: message,
-    }
+    const message =
+      err instanceof Error ? err.message : "Erreur de mise à jour du statut"
+    return { data: null, error: message }
   }
 }

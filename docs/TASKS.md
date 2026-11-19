@@ -10,48 +10,40 @@
 
 ```
 +-------------------------+  +-------------------------+  +-------------------------+
-| [>] IN PROGRESS (SP 03) |  |   [?] SPRINT 03 QUEUE   |  |       [X] ARCHIVES      |
+| [>] IN PROGRESS (SP 04) |  |   [?] SPRINT 04 QUEUE   |  |       [X] ARCHIVES      |
 +-------------------------+  +-------------------------+  +-------------------------+
-| (All Sprint 03 Done!)   |  | (Queue Empty)           |  | Sprint 02 (11 tasks)    |
-|                         |  |                         |  | [x] TASK-PROD-ENV-01 [S]|
-|                         |  |                         |  | [x] TASK-DB-MIGRATE [L] |
-|                         |  |                         |  | [x] TASK-AUTH-REAL  [L] |
-|                         |  |                         |  | [x] TASK-RBAC-GUARD [M] |
+| (All Sprint 04 Done!)   |  | (Queue Empty)           |  | Sprint 02 (11 tasks)    |
+|                         |  |                         |  | Sprint 03 (4 tasks)     |
+|                         |  |                         |  | [x] TASK-CATALOG-DB [L] |
+|                         |  |                         |  | [x] TASK-SLOTS-DB-01 [L]|
+|                         |  |                         |  | [x] TASK-DASH-DB-01  [L]|
 +-------------------------+  +-------------------------+  +-------------------------+
 ```
 
 ---
 
-## Active Sprint 03: Production Foundations (Env, Supabase DB + RLS & Real Auth/RBAC)
+## Active Sprint 04: 100% Prisma Production Data & End of mock-data.ts
 
-- [x] **`TASK-PROD-ENV-01` - [Scope: S] Environment Validation (`src/env.ts`), `.env.local` Shadowing Fix & Paystack Secret Hardening**
+- [x] **`TASK-CATALOG-DB-01` - [Scope: L] Shared Formatters/Types, Prisma Public Catalog Queries & Public Pages Migration**
   - **Priority:** CRITICAL
-  - **Target files:** `src/env.ts`, `.env.example`, `.env.local`, `.env`, `src/lib/paystack.ts`, `docs/TASKS.md`
+  - **Target files:** `src/lib/formatters.ts`, `src/lib/types/catalog.ts`, `src/server/queries/catalog.ts`, `src/components/**/*`, `src/app/page.tsx`, `src/app/services/**/*`, `src/app/professionals/**/*`, `docs/TASKS.md`
   - **Acceptance criteria:**
-    - [x] `TASK-PROD-ENV-01.01`: Comment out empty assignments in `.env.local` so `.env` keys are not shadowed, ensure `BETTER_AUTH_SECRET` is configured in `.env`, and document Paystack env keys in `.env.example`.
-    - [x] `TASK-PROD-ENV-01.02`: Implement Zod runtime env validation in `src/env.ts` and remove the `BETTER_AUTH_SECRET` fallback from `verifyPaystackWebhookSignature` in `src/lib/paystack.ts`.
+    - [x] `TASK-CATALOG-DB-01.01`: Extract `formatFCFA` into `src/lib/formatters.ts`, create `src/lib/types/catalog.ts`, and implement `src/server/queries/catalog.ts` backed by Prisma with subscriber priority sorting.
+    - [x] `TASK-CATALOG-DB-01.02`: Refactor UI components (`ProCard`, `ProHeader`, `ProServicesList`, `ProReviews`, `ServiceListingCard`, `ServiceFilter`, `BookingSummary`, `BookingTicket`, `CreateServiceDialog`, `BillingInvoices`) off `mock-data.ts` and migrate `/`, `/services`, `/professionals`, `/professionals/pros/[id]` to RSC + Prisma with Skeletons and zero emojis.
 
-- [x] **`TASK-DB-MIGRATE-01` - [Scope: L] Prisma 7 Config, Schema Indexes, Supabase Migration, Seed & RLS Policies**
+- [x] **`TASK-SLOTS-DB-01` - [Scope: L] Real TimeSlot & Unavailability Persistence, Dynamic DateTimePicker & Anti-Double-Booking**
   - **Priority:** CRITICAL
-  - **Target files:** `prisma.config.ts`, `prisma/prisma.config.ts`, `prisma/schema.prisma`, `prisma/migrations/**/*`, `prisma/seed.ts`, `package.json`, `docs/TASKS.md`
+  - **Target files:** `src/server/actions/availability.ts`, `src/server/actions/booking.ts`, `src/components/date-time-picker.tsx`, `src/app/dashboard/pro/availability/**/*`, `src/app/book/**/*`, `docs/TASKS.md`
   - **Acceptance criteria:**
-    - [x] `TASK-DB-MIGRATE-01.01`: Migrate to root `prisma.config.ts` (Prisma 7 `defineConfig` format) and install `dotenv` + `tsx`.
-    - [x] `TASK-DB-MIGRATE-01.02`: Extend `prisma/schema.prisma` with `UnavailabilityPeriod`, `portfolioImages`, `languages`, uniqueness/FK indexes, and apply migration + `prisma generate`.
-    - [x] `TASK-DB-MIGRATE-01.03`: Enable Supabase Row Level Security (`ENABLE ROW LEVEL SECURITY`) across all 13 tables with explicit public catalog policies and create idempotent `prisma/seed.ts`.
+    - [x] `TASK-SLOTS-DB-01.01`: Implement `src/server/actions/availability.ts` and persist Pro weekly `TimeSlot` + `UnavailabilityPeriod` entries in `/dashboard/pro/availability`.
+    - [x] `TASK-SLOTS-DB-01.02`: Upgrade `DateTimePicker`, migrate `/book/[proId]/[serviceId]` to RSC + Prisma, and enforce transactional anti-double-booking with canonical `User.id` FK in `src/server/actions/booking.ts`.
 
-- [x] **`TASK-AUTH-REAL-01` - [Scope: L] Real Better-Auth Wiring (Login, Role-Based Register, ProProfile Provisioning, Forgot/Reset Password)**
+- [x] **`TASK-DASHBOARDS-DB-01` - [Scope: L] Client & Pro Dashboards 100% Prisma, Atomic Rating/Task Counters & Real Error Handling**
   - **Priority:** CRITICAL
-  - **Target files:** `src/lib/auth.ts`, `src/lib/auth-client.ts`, `src/lib/validations/auth.ts`, `src/contexts/auth-context.tsx`, `src/emails/reset-password-email.tsx`, `src/lib/qstash.ts`, `src/lib/resend.ts`, `src/app/api/queues/follow-up/route.ts`, `src/app/api/auth/[...all]/route.ts.disabled`, `src/app/login/page.tsx`, `src/app/register/page.tsx`, `src/app/forgot-password/page.tsx`, `src/app/reset-password/page.tsx`, `docs/TASKS.md`
+  - **Target files:** `src/server/queries/dashboard.ts`, `src/server/actions/booking-status.ts`, `src/server/actions/reviews.ts`, `src/server/actions/pro-catalog.ts`, `src/app/dashboard/client/**/*`, `src/app/dashboard/pro/**/*`, `docs/TASKS.md`
   - **Acceptance criteria:**
-    - [x] `TASK-AUTH-REAL-01.01`: Configure `user.additionalFields` (`userType`, `phoneNumber`), role sanitization + auto `ProProfile` creation hooks in `src/lib/auth.ts`, `inferAdditionalFields` + zero emojis in `src/lib/auth-client.ts`, and remove legacy `route.ts.disabled`.
-    - [x] `TASK-AUTH-REAL-01.02`: Wire QStash + Resend password reset emails and connect `/login`, `/register`, `/forgot-password`, and `/reset-password` to real Better-Auth flows.
-
-- [x] **`TASK-RBAC-GUARD-01` - [Scope: M] Server-Side RBAC Guards, Dynamic Session Sidebar/Header & Server Action Auth Hardening**
-  - **Priority:** HIGH
-  - **Target files:** `src/server/auth-guard.ts`, `src/middleware.ts`, `src/app/dashboard/**/*`, `src/components/dashboard/dashboard-sidebar.tsx`, `src/components/site-header.tsx`, `src/server/actions/*.ts`, `src/app/**/*`, `src/components/**/*`, `docs/TASKS.md`
-  - **Acceptance criteria:**
-    - [x] `TASK-RBAC-GUARD-01.01`: Implement `src/server/auth-guard.ts` and protect `/dashboard`, `/dashboard/client`, `/dashboard/pro`, and `/dashboard/admin` layouts by session & role.
-    - [x] `TASK-RBAC-GUARD-01.02`: Update `DashboardSidebar` and `SiteHeader` with real authenticated user session + logout, and enforce `requireActionSession` / ownership checks across all Server Actions.
+    - [x] `TASK-DASHBOARDS-DB-01.01`: Implement `src/server/queries/dashboard.ts` and migrate Client and Pro dashboard pages to real Prisma data.
+    - [x] `TASK-DASHBOARDS-DB-01.02`: Remove silent `catch {}` fallbacks, send real booking metadata to QStash, atomically recalculate `rating` / `reviewsCount` / `completedTasks` on `ProProfile`, and verify zero `mock-data` imports outside Admin.
 
 ---
 

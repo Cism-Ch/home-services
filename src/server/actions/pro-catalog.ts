@@ -32,43 +32,51 @@ export async function createProServiceAction(
 
   const parsed = createServiceSchema.safeParse(input)
   if (!parsed.success) {
-    const firstIssue = parsed.error.issues[0]?.message || "Donnees de service invalides"
+    const firstIssue = parsed.error.issues[0]?.message || "Données de service invalides"
     return { data: null, error: firstIssue }
   }
 
   try {
-    let createdId = `srv-${Date.now()}`
-    try {
-      const created = await prisma.service.create({
-        data: {
-          proProfileId: authRes.proProfile.id,
-          categoryId: parsed.data.categoryId,
-          title: parsed.data.title,
-          description: parsed.data.description,
-          price: parsed.data.price,
-          duration: parsed.data.duration,
-          isActive: parsed.data.isActive,
-        },
-      })
-      createdId = created.id
-    } catch {
-      // Fallback hors-ligne si la DB n'est pas connectee localement
+    const categoryExists = await prisma.category.findUnique({
+      where: { id: parsed.data.categoryId },
+      select: { id: true },
+    })
+
+    if (!categoryExists) {
+      return {
+        data: null,
+        error: "Catégorie introuvable. Veuillez sélectionner une catégorie valide.",
+      }
     }
+
+    const created = await prisma.service.create({
+      data: {
+        proProfileId: authRes.proProfile.id,
+        categoryId: parsed.data.categoryId,
+        title: parsed.data.title,
+        description: parsed.data.description,
+        price: parsed.data.price,
+        duration: parsed.data.duration,
+        isActive: parsed.data.isActive,
+      },
+    })
 
     revalidatePath("/dashboard/pro/services")
     revalidatePath("/services")
+    revalidatePath(`/professionals/pros/${authRes.proProfile.id}`)
+
     return {
       data: {
-        id: createdId,
-        title: parsed.data.title,
-        price: parsed.data.price,
+        id: created.id,
+        title: created.title,
+        price: created.price,
       },
       error: null,
     }
   } catch (err) {
     return {
       data: null,
-      error: err instanceof Error ? err.message : "Erreur lors de la creation du service",
+      error: err instanceof Error ? err.message : "Erreur lors de la création du service",
     }
   }
 }
@@ -85,31 +93,30 @@ export async function deleteProServiceAction(
   }
 
   try {
-    try {
-      const existing = await prisma.service.findUnique({
-        where: { id: serviceId },
-        select: { proProfileId: true },
-      })
+    const existing = await prisma.service.findUnique({
+      where: { id: serviceId },
+      select: { proProfileId: true },
+    })
 
-      if (
-        existing &&
-        existing.proProfileId !== authRes.proProfile.id &&
-        authRes.user.userType !== "admin"
-      ) {
-        return { data: null, error: "Vous ne pouvez pas supprimer ce service." }
-      }
-
-      if (existing) {
-        await prisma.service.delete({
-          where: { id: serviceId },
-        })
-      }
-    } catch {
-      // Fallback
+    if (!existing) {
+      return { data: null, error: "Service introuvable." }
     }
+
+    if (
+      existing.proProfileId !== authRes.proProfile.id &&
+      authRes.user.userType !== "admin"
+    ) {
+      return { data: null, error: "Vous ne pouvez pas supprimer ce service." }
+    }
+
+    await prisma.service.delete({
+      where: { id: serviceId },
+    })
 
     revalidatePath("/dashboard/pro/services")
     revalidatePath("/services")
+    revalidatePath(`/professionals/pros/${authRes.proProfile.id}`)
+
     return { data: { deletedId: serviceId }, error: null }
   } catch (err) {
     return {
@@ -124,7 +131,7 @@ export async function deleteProServiceAction(
  */
 export async function updateProProfileAction(
   clientProProfileId: string,
-  input: ProProfileInput
+  input: ProProfileInput & { languages?: string[]; name?: string }
 ): Promise<ServerActionResponse<{ id: string; updatedAt: string }>> {
   void clientProProfileId
   const authRes = await requireProProfile()
@@ -139,8 +146,8 @@ export async function updateProProfileAction(
   }
 
   try {
-    try {
-      await prisma.proProfile.update({
+    await prisma.$transaction(async (tx) => {
+      await tx.proProfile.update({
         where: { id: authRes.proProfile.id },
         data: {
           headline: parsed.data.headline,
@@ -148,19 +155,32 @@ export async function updateProProfileAction(
           phoneNumber: parsed.data.phoneNumber,
           whatsappNumber: parsed.data.whatsappNumber,
           yearsOfExperience: parsed.data.yearsOfExperience,
-          cityId: parsed.data.cityId,
+          cityId: parsed.data.cityId || null,
           commune: parsed.data.commune,
           address: parsed.data.address,
           availabilityStatus: parsed.data.availabilityStatus,
+          ...(Array.isArray(input.languages) && input.languages.length > 0
+            ? { languages: input.languages }
+            : {}),
         },
       })
-    } catch {
-      // Fallback
-    }
+
+      if (input.name && input.name.trim().length >= 2) {
+        await tx.user.update({
+          where: { id: authRes.user.id },
+          data: {
+            name: input.name.trim(),
+            phoneNumber: parsed.data.phoneNumber,
+          },
+        })
+      }
+    })
 
     revalidatePath("/dashboard/pro/profile")
     revalidatePath("/dashboard/pro/settings")
     revalidatePath("/professionals")
+    revalidatePath(`/professionals/pros/${authRes.proProfile.id}`)
+
     return {
       data: { id: authRes.proProfile.id, updatedAt: new Date().toISOString() },
       error: null,
@@ -204,7 +224,7 @@ export async function requestPresignedUploadAction(
   } catch (err) {
     return {
       data: null,
-      error: err instanceof Error ? err.message : "Erreur de generation de l'URL signee Tigris",
+      error: err instanceof Error ? err.message : "Erreur de génération de l'URL signée Tigris",
     }
   }
 }

@@ -1,18 +1,18 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Professional } from "@/lib/mock-data"
+import { CatalogProfessional } from "@/lib/types/catalog"
 import { MapPin, Star, Globe, Clock, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
 import { ProContactActions } from "@/components/pro-contact-actions"
 
 interface ProHeaderProps {
-  professional: Professional
+  professional: CatalogProfessional
 }
 
 export function ProHeader({ professional }: ProHeaderProps) {
   // Premier service pour le lien direct de reservation de creneau
-  const firstServiceId = professional.services[0]?.id || ""
+  const firstServiceId = professional.services?.[0]?.id || ""
 
   const getStatusBadge = () => {
     switch (professional.availabilityStatus) {
@@ -49,7 +49,7 @@ export function ProHeader({ professional }: ProHeaderProps) {
       <div className="container mx-auto px-4">
         <div className="relative -top-12 md:-top-16 flex flex-col md:flex-row items-start md:items-end gap-6">
           <Avatar className="h-24 w-24 md:h-32 md:w-32 border-4 border-background shadow-xl ring-2 ring-primary/20">
-            <AvatarImage src={professional.avatar} alt={professional.name} className="object-cover" />
+            <AvatarImage src={professional.avatar || undefined} alt={professional.name} className="object-cover" />
             <AvatarFallback className="text-xl md:text-2xl font-bold bg-primary/10 text-primary">
               {professional.name.substring(0, 2).toUpperCase()}
             </AvatarFallback>
@@ -83,7 +83,7 @@ export function ProHeader({ professional }: ProHeaderProps) {
               </div>
               <div className="flex items-center gap-1">
                 <Clock className="h-4 w-4" />
-                <span>{professional.experience} d&apos;expérience</span>
+                <span>{professional.experienceLabel} d&apos;expérience</span>
               </div>
               <div className="flex items-center gap-1">
                 <Globe className="h-4 w-4" />
@@ -93,11 +93,13 @@ export function ProHeader({ professional }: ProHeaderProps) {
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto md:pb-4">
-            <Button size="lg" className="shadow-md" asChild>
-              <Link href={`/book/${professional.id}/${firstServiceId}`}>
-                Prendre rendez-vous
-              </Link>
-            </Button>
+            {firstServiceId && (
+              <Button size="lg" className="shadow-md" asChild>
+                <Link href={`/book/${professional.id}/${firstServiceId}`}>
+                  Prendre rendez-vous
+                </Link>
+              </Button>
+            )}
             <ProContactActions
               proName={professional.name}
               phoneNumber={professional.phoneNumber}

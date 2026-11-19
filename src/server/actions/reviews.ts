@@ -22,7 +22,7 @@ export interface ReviewSubmissionResult {
 
 /**
  * Soumet un avis mutuel (Client -> Prestataire ou Prestataire -> Client)
- * Verifie que la mission associee est bien finalisee (COMPLETED).
+ * Verifie COMPLETED, previent les doublons et recalcule atomiquement rating + reviewsCount du Pro.
  */
 export async function submitMutualReviewAction(
   clientAuthorId: string,
@@ -36,78 +36,127 @@ export async function submitMutualReviewAction(
 
   const parsed = createReviewSchema.safeParse(input)
   if (!parsed.success) {
-    const firstIssue = parsed.error.issues[0]?.message || "Donnees d'avis invalides"
+    const firstIssue = parsed.error.issues[0]?.message || "Données d'avis invalides"
     return { data: null, error: firstIssue }
   }
 
-  const { bookingId, targetId, rating, comment, authorType } = parsed.data
+  const { bookingId, rating, comment, authorType } = parsed.data
   const authorId = authRes.user.id
-  let reviewId = `rev-${Date.now().toString(36)}`
 
   try {
-    try {
-      const booking = await prisma.booking.findUnique({
-        where: { id: bookingId },
-      })
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        pro: { select: { id: true, proProfile: { select: { id: true } } } },
+      },
+    })
 
-      if (booking) {
-        const expectedParticipant =
-          authorType === "CLIENT_TO_PRO" ? booking.clientId : booking.proId
-        if (
-          expectedParticipant !== authorId &&
-          authRes.user.userType !== "admin"
-        ) {
-          return {
-            data: null,
-            error: "Vous n'êtes pas autorisé à noter cette prestation.",
-          }
-        }
+    if (!booking) {
+      return { data: null, error: "Réservation associée introuvable." }
+    }
 
-        if (booking.status !== "COMPLETED") {
-          return {
-            data: null,
-            error:
-              "Un avis mutuel ne peut être publié qu'après la finalisation de la prestation.",
-          }
-        }
+    const expectedParticipant =
+      authorType === "CLIENT_TO_PRO" ? booking.clientId : booking.proId
+    if (
+      expectedParticipant !== authorId &&
+      authRes.user.userType !== "admin"
+    ) {
+      return {
+        data: null,
+        error: "Vous n'êtes pas autorisé à noter cette prestation.",
       }
+    }
 
-      const created = await prisma.review.create({
+    if (booking.status !== "COMPLETED") {
+      return {
+        data: null,
+        error:
+          "Un avis mutuel ne peut être publié qu'après la finalisation de la prestation.",
+      }
+    }
+
+    const existingReview = await prisma.review.findUnique({
+      where: {
+        bookingId_authorId: { bookingId, authorId },
+      },
+      select: { id: true },
+    })
+
+    if (existingReview) {
+      return {
+        data: null,
+        error: "Vous avez déjà publié un avis pour cette prestation.",
+      }
+    }
+
+    // Resolution canonique du destinataire pour empecher toute usurpation de targetId
+    const canonicalTargetId =
+      authorType === "CLIENT_TO_PRO" ? booking.proId : booking.clientId
+
+    const created = await prisma.$transaction(async (tx) => {
+      const rev = await tx.review.create({
         data: {
           bookingId,
           authorId,
-          targetId,
+          targetId: canonicalTargetId,
           authorType,
           rating,
           comment,
           isModerated: true,
         },
       })
-      reviewId = created.id
-    } catch {
-      // Fallback hors-ligne en developpement local
-    }
 
-    revalidatePath(`/professionals/pros/${targetId}`)
+      if (authorType === "CLIENT_TO_PRO" && booking.pro.proProfile) {
+        const agg = await tx.review.aggregate({
+          where: {
+            targetId: booking.proId,
+            authorType: "CLIENT_TO_PRO",
+            isModerated: true,
+            isReported: false,
+          },
+          _avg: { rating: true },
+          _count: { id: true },
+        })
+
+        const roundedRating = Number((agg._avg.rating || rating).toFixed(1))
+        await tx.proProfile.update({
+          where: { id: booking.pro.proProfile.id },
+          data: {
+            rating: roundedRating,
+            reviewsCount: agg._count.id,
+          },
+        })
+      }
+
+      return rev
+    })
+
+    if (booking.pro.proProfile) {
+      revalidatePath(`/professionals/pros/${booking.pro.proProfile.id}`)
+    }
+    revalidatePath("/professionals")
+    revalidatePath("/dashboard/client")
     revalidatePath("/dashboard/client/bookings")
+    revalidatePath("/dashboard/pro")
     revalidatePath("/dashboard/pro/schedule")
 
     return {
       data: {
-        id: reviewId,
-        bookingId,
-        targetId,
+        id: created.id,
+        bookingId: created.bookingId,
+        targetId: created.targetId,
         authorType,
-        rating,
-        comment,
-        createdAt: new Date().toISOString(),
+        rating: created.rating,
+        comment: created.comment,
+        createdAt: created.createdAt.toISOString(),
       },
       error: null,
     }
   } catch (err) {
     return {
       data: null,
-      error: err instanceof Error ? err.message : "Erreur lors de l'enregistrement de l'avis",
+      error:
+        err instanceof Error ? err.message : "Erreur lors de l'enregistrement de l'avis",
     }
   }
 }

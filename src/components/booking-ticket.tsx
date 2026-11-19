@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, Clock, MapPin, User, Printer, ShieldCheck } from "lucide-react"
-import { formatFCFA } from "@/lib/mock-data"
+import { formatFCFA } from "@/lib/formatters"
 import { ProContactActions } from "@/components/pro-contact-actions"
 
 export type BookingStatusType = "negotiating" | "in_progress" | "upcoming" | "completed" | "cancelled"

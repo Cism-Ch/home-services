@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Service, formatFCFA } from "@/lib/mock-data"
+import { formatFCFA } from "@/lib/formatters"
+import type { CatalogService } from "@/lib/types/catalog"
 import Image from "next/image"
 import Link from "next/link"
 
 interface ServiceListingCardProps {
-    service: Service
+    service: CatalogService
 }
 
 export function ServiceListingCard({ service }: ServiceListingCardProps) {
@@ -26,13 +27,14 @@ export function ServiceListingCard({ service }: ServiceListingCardProps) {
                     src={service.image}
                     alt={service.title}
                     fill
+                    unoptimized
                     className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-105"
                 />
                 {/* Gradient overlay on image */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
 
                 <Badge className="absolute top-4 right-4 bg-white/95 text-gray-900 hover:bg-white backdrop-blur-md shadow-lg font-semibold px-3 py-1">
-                    {service.category}
+                    {service.categoryName}
                 </Badge>
             </div>
 
@@ -58,7 +60,7 @@ export function ServiceListingCard({ service }: ServiceListingCardProps) {
                 </p>
                 <div className="flex items-center gap-3 pt-4 border-t border-border/50 group-hover:border-[hsl(var(--brand))]/20 transition-colors duration-300">
                     <Avatar className="h-9 w-9 ring-2 ring-border/50 group-hover:ring-[hsl(var(--brand))]/30 transition-all duration-300">
-                        <AvatarImage src={service.providerAvatar} className="object-cover" />
+                        <AvatarImage src={service.providerAvatar || undefined} className="object-cover" />
                         <AvatarFallback className="bg-[hsl(var(--brand))]/10 text-[hsl(var(--brand))] font-semibold">
                             {service.providerName.substring(0, 2)}
                         </AvatarFallback>
@@ -78,7 +80,7 @@ export function ServiceListingCard({ service }: ServiceListingCardProps) {
                         </span>
                     </div>
                 </div>
-                <Link href={`/book/${service.providerId}/${service.id}`}>
+                <Link href={`/book/${service.proProfileId}/${service.id}`}>
                     <Button className="bg-[hsl(var(--brand))] hover:bg-[hsl(var(--brand))]/90 text-white shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 gap-2 font-semibold">
                         <Sparkles className="h-4 w-4" />
                         Réserver

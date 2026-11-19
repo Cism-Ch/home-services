@@ -26,7 +26,7 @@ interface AddReviewFormProps {
 export function AddReviewForm({
   professionalId,
   professionalName,
-  bookingId = "booking-completed-ref",
+  bookingId,
   authorType = "CLIENT_TO_PRO",
   onReviewSubmitted,
 }: AddReviewFormProps) {
@@ -34,6 +34,26 @@ export function AddReviewForm({
   const [hoverRating, setHoverRating] = useState(0)
   const [comment, setComment] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  if (!bookingId) {
+    return (
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Évaluation vérifiée post-prestation</CardTitle>
+              <CardDescription>
+                Pour garantir l&apos;authenticité des avis sur {professionalName},
+                l&apos;évaluation se fait uniquement depuis votre espace client une
+                fois le rendez-vous marqué comme finalisé.
+              </CardDescription>
+            </div>
+            <ShieldCheck className="h-5 w-5 text-emerald-600 shrink-0" />
+          </div>
+        </CardHeader>
+      </Card>
+    )
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
