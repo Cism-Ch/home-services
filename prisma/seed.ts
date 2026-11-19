@@ -1,78 +1,155 @@
 /**
- * Script d'initialisation idempotent (Seed) pour Supabase PostgreSQL
- * Injecte les categories metiers, le referentiel GEO (cities-data.ts), un compte Admin,
- * des artisans exemples et leurs prestations en FCFA (XOF/XAF).
+ * Script d'initialisation idempotent (Seed) pour Supabase PostgreSQL (Sprint 08)
+ *
+ * Injecte les categories metiers, le referentiel GEO (cities-data.ts),
+ * 1 Admin, 5 Clients et 20 Professionnels avec comptes Better-Auth fonctionnels
+ * (`providerId: "credential"` + scrypt hash), services FCFA, creneaux horaires,
+ * indisponibilites, abonnements Paystack, reservations et avis mutuels.
  */
 
-import "dotenv/config"
-import { prisma } from "../src/lib/prisma"
+import "./load-env"
+import { hashPassword } from "better-auth/crypto"
 import { locationsData } from "../src/lib/cities-data"
+import { prisma } from "../src/lib/prisma"
+import { invalidateCatalogCache } from "../src/lib/redis"
+import {
+  SEED_ADMIN,
+  SEED_BOOKINGS,
+  SEED_CATEGORIES,
+  SEED_CLIENTS,
+  SEED_PASSWORDS,
+  SEED_PROS,
+  SEED_REVIEWS,
+  SEED_UNAVAILABILITIES,
+  type SeedSubscriptionFixture,
+  type SeedUserFixture,
+} from "./seed-data"
 
-const SEED_CATEGORIES = [
-  {
-    id: "plomberie",
-    name: "Plomberie",
-    description: "Dépannage de fuites, installation sanitaire, débouchage et chauffe-eau.",
-    icon: "Droplets",
-  },
-  {
-    id: "electricite",
-    name: "Électricité",
-    description: "Tableaux électriques, dépannage court-circuit, prises et onduleurs solaires.",
-    icon: "Zap",
-  },
-  {
-    id: "climatisation",
-    name: "Climatisation & Froid",
-    description: "Entretien split, recharge gaz frigorifique, installation et réparation.",
-    icon: "Snowflake",
-  },
-  {
-    id: "menage",
-    name: "Ménage & Entretien",
-    description: "Nettoyage à domicile, fin de chantier et entretien régulier.",
-    icon: "Sparkles",
-  },
-  {
-    id: "peinture",
-    name: "Peinture & Décoration",
-    description: "Peinture intérieure/extérieure, enduits et rafraîchissement.",
-    icon: "Paintbrush",
-  },
-  {
-    id: "demenagement",
-    name: "Déménagement & Manutention",
-    description: "Transport de mobilier, emballage et logistique urbaine.",
-    icon: "Truck",
-  },
-  {
-    id: "securite",
-    name: "Serrurerie & Sécurité",
-    description: "Ouverture de porte, serrures haute sécurité, caméras et interphones.",
-    icon: "ShieldCheck",
-  },
-  {
-    id: "menuiserie",
-    name: "Menuiserie & Ébénisterie",
-    description: "Fabrication et réparation de portes, placards, meubles sur mesure.",
-    icon: "Hammer",
-  },
-  {
-    id: "maconnerie",
-    name: "Maçonnerie & Carrelage",
-    description: "Rénovation, pose de carreaux, étanchéité toiture et gros œuvre.",
-    icon: "Wrench",
-  },
-  {
-    id: "jardinage",
-    name: "Jardinage & Espaces Verts",
-    description: "Tonte, taille de haies, aménagement paysager et désherbage.",
-    icon: "Trees",
-  },
-]
+const WEEKLY_SLOTS = [
+  { startTime: "08:00", endTime: "10:00" },
+  { startTime: "10:00", endTime: "12:00" },
+  { startTime: "14:00", endTime: "16:00" },
+  { startTime: "16:00", endTime: "18:00" },
+] as const
+
+function addDaysUtc(base: Date, offsetDays: number, hourUtc = 12): Date {
+  const date = new Date(base)
+  date.setUTCDate(date.getUTCDate() + offsetDays)
+  date.setUTCHours(hourUtc, 0, 0, 0)
+  return date
+}
+
+/**
+ * Cree ou met a jour un utilisateur ainsi que son compte Better-Auth email/mot de passe.
+ * Better-Auth exige `providerId === "credential"` et `accountId === user.id`.
+ */
+async function upsertUserWithCredentialAccount(
+  userInput: SeedUserFixture,
+  plainPassword: string
+) {
+  const normalizedEmail = userInput.email.toLowerCase().trim()
+
+  const user = await prisma.user.upsert({
+    where: { email: normalizedEmail },
+    update: {
+      name: userInput.name,
+      userType: userInput.userType,
+      emailVerified: true,
+      phoneNumber: userInput.phoneNumber,
+      ...(userInput.image ? { image: userInput.image } : {}),
+    },
+    create: {
+      id: userInput.id,
+      email: normalizedEmail,
+      name: userInput.name,
+      userType: userInput.userType,
+      emailVerified: true,
+      phoneNumber: userInput.phoneNumber,
+      ...(userInput.image ? { image: userInput.image } : {}),
+    },
+  })
+
+  const hashedPassword = await hashPassword(plainPassword)
+
+  await prisma.account.upsert({
+    where: {
+      providerId_accountId: {
+        providerId: "credential",
+        accountId: user.id,
+      },
+    },
+    update: {
+      userId: user.id,
+      password: hashedPassword,
+    },
+    create: {
+      id: `seed-acc-${user.id}`,
+      userId: user.id,
+      accountId: user.id,
+      providerId: "credential",
+      password: hashedPassword,
+    },
+  })
+
+  return user
+}
+
+async function upsertSubscription(
+  sub: SeedSubscriptionFixture,
+  userId: string,
+  now: Date
+) {
+  const currentPeriodEnd = addDaysUtc(now, sub.periodEndOffsetDays, 23)
+  const currentPeriodStart = addDaysUtc(currentPeriodEnd, -30, 0)
+  const trialStartDate = sub.trialDays
+    ? addDaysUtc(currentPeriodEnd, -sub.trialDays, 0)
+    : null
+  const trialEndDate = sub.trialDays ? currentPeriodEnd : null
+
+  await prisma.subscription.upsert({
+    where: { id: sub.id },
+    update: {
+      userId,
+      plan: sub.plan,
+      amount: sub.amount,
+      currency: "XOF",
+      status: sub.status,
+      trialStartDate,
+      trialEndDate,
+      currentPeriodStart,
+      currentPeriodEnd,
+    },
+    create: {
+      id: sub.id,
+      userId,
+      plan: sub.plan,
+      amount: sub.amount,
+      currency: "XOF",
+      status: sub.status,
+      trialStartDate,
+      trialEndDate,
+      currentPeriodStart,
+      currentPeriodEnd,
+    },
+  })
+}
 
 async function main() {
-  console.log("[Seed] Synchronisation des categories...")
+  if (
+    process.env.NODE_ENV === "production" &&
+    process.env.ALLOW_TEST_SEED !== "true"
+  ) {
+    throw new Error(
+      "[Seed] Refus d'injecter les comptes de test en production. Definir ALLOW_TEST_SEED=true pour forcer."
+    )
+  }
+
+  const now = new Date()
+  const userIdByKey = new Map<string, string>()
+  const proProfileIdByKey = new Map<string, string>()
+  const clientByKey = new Map(SEED_CLIENTS.map((c) => [c.id, c]))
+
+  console.log("[Seed] 1/8 Synchronisation des 10 categories...")
   for (const cat of SEED_CATEGORIES) {
     await prisma.category.upsert({
       where: { id: cat.id },
@@ -81,11 +158,18 @@ async function main() {
         description: cat.description,
         icon: cat.icon,
       },
-      create: cat,
+      create: {
+        id: cat.id,
+        name: cat.name,
+        description: cat.description,
+        icon: cat.icon,
+      },
     })
   }
 
-  console.log(`[Seed] Synchronisation de ${locationsData.length} villes/communes GEO...`)
+  console.log(
+    `[Seed] 2/8 Synchronisation de ${locationsData.length} villes/communes GEO...`
+  )
   for (const loc of locationsData) {
     const currency = loc.country === "Cameroun" ? "XAF" : "XOF"
     await prisma.city.upsert({
@@ -104,220 +188,321 @@ async function main() {
     })
   }
 
-  console.log("[Seed] Synchronisation des comptes utilisateurs de base...")
-  await prisma.user.upsert({
-    where: { email: "admin@homeservices.ci" },
-    update: {
-      name: "Direction HomeServices",
-      userType: "admin",
-      emailVerified: true,
-    },
-    create: {
-      id: "seed-admin-1",
-      email: "admin@homeservices.ci",
-      name: "Direction HomeServices",
-      userType: "admin",
-      emailVerified: true,
-      phoneNumber: "+225 07 00 00 00 01",
-    },
-  })
+  console.log("[Seed] 3/8 Synchronisation Admin + 5 Clients + comptes Better-Auth...")
+  const adminUser = await upsertUserWithCredentialAccount(
+    SEED_ADMIN,
+    SEED_PASSWORDS.admin
+  )
+  userIdByKey.set(SEED_ADMIN.id, adminUser.id)
 
-  await prisma.user.upsert({
-    where: { email: "client@homeservices.ci" },
-    update: {
-      name: "Jean-Marc Kouadio",
-      userType: "client",
-      emailVerified: true,
-    },
-    create: {
-      id: "seed-client-1",
-      email: "client@homeservices.ci",
-      name: "Jean-Marc Kouadio",
-      userType: "client",
-      emailVerified: true,
-      phoneNumber: "+225 05 06 07 08 09",
-    },
-  })
+  for (const client of SEED_CLIENTS) {
+    const createdClient = await upsertUserWithCredentialAccount(
+      client,
+      SEED_PASSWORDS.client
+    )
+    userIdByKey.set(client.id, createdClient.id)
 
-  const pro1User = await prisma.user.upsert({
-    where: { email: "amadou.kouassi@homeservices.ci" },
-    update: {
-      name: "Amadou Kouassi",
-      userType: "pro",
-      emailVerified: true,
-    },
-    create: {
-      id: "seed-pro-user-1",
-      email: "amadou.kouassi@homeservices.ci",
-      name: "Amadou Kouassi",
-      userType: "pro",
-      emailVerified: true,
-      phoneNumber: "+225 07 08 09 10 11",
-    },
-  })
+    if (client.subscription) {
+      await upsertSubscription(client.subscription, createdClient.id, now)
+    }
+  }
 
-  const pro1Profile = await prisma.proProfile.upsert({
-    where: { userId: pro1User.id },
-    update: {
-      headline: "Artisan Plombier & Climatiseur Certifié",
-      cityId: "ci-abidjan-cocody",
-      commune: "Cocody",
-    },
-    create: {
-      id: "seed-pro-profile-1",
-      userId: pro1User.id,
-      headline: "Artisan Plombier & Climatiseur Certifié",
-      bio: "Plombier et frigoriste qualifié avec plus de 12 ans d'expérience sur le Grand Abidjan.",
-      phoneNumber: "+225 07 08 09 10 11",
-      whatsappNumber: "+2250708091011",
-      yearsOfExperience: 12,
-      cityId: "ci-abidjan-cocody",
-      commune: "Cocody",
-      address: "Riviera 2, Cocody",
-      availabilityStatus: "AVAILABLE",
-      isVerified: true,
-      kycStatus: "APPROVED",
-      rating: 4.9,
-      reviewsCount: 142,
-      completedTasks: 168,
-      languages: ["Français", "Baoulé", "Dioula"],
-    },
-  })
+  console.log(
+    "[Seed] 4/8 Synchronisation des 20 Professionnels, profils, services et abonnements..."
+  )
+  const slotsBatch: Array<{
+    id: string
+    proProfileId: string
+    dayOfWeek: number
+    startTime: string
+    endTime: string
+    isAvailable: boolean
+  }> = []
 
-  await prisma.service.upsert({
-    where: { id: "seed-service-plomberie-1" },
-    update: {
-      title: "Dépannage plomberie et fuite d'eau",
-      price: 15000,
-    },
-    create: {
-      id: "seed-service-plomberie-1",
-      proProfileId: pro1Profile.id,
-      categoryId: "plomberie",
-      title: "Dépannage plomberie et fuite d'eau",
-      description:
-        "Intervention rapide pour toute fuite d'eau, débouchage, robinetterie ou chauffe-eau sanitaire.",
-      price: 15000,
-      duration: 60,
-      isActive: true,
-    },
-  })
+  for (const pro of SEED_PROS) {
+    const proUser = await upsertUserWithCredentialAccount(
+      pro.user,
+      SEED_PASSWORDS.pro
+    )
+    userIdByKey.set(pro.user.id, proUser.id)
 
-  await prisma.service.upsert({
-    where: { id: "seed-service-clim-1" },
-    update: {
-      title: "Entretien & recharge climatiseur Split",
-      price: 20000,
-    },
-    create: {
-      id: "seed-service-clim-1",
-      proProfileId: pro1Profile.id,
-      categoryId: "climatisation",
-      title: "Entretien & recharge climatiseur Split",
-      description:
-        "Nettoyage complet haute pression, vérification des filtres et recharge gaz réfrigérant.",
-      price: 20000,
-      duration: 90,
-      isActive: true,
-    },
-  })
+    const profile = await prisma.proProfile.upsert({
+      where: { userId: proUser.id },
+      update: {
+        headline: pro.profile.headline,
+        bio: pro.profile.bio,
+        phoneNumber: pro.profile.phoneNumber,
+        whatsappNumber: pro.profile.whatsappNumber,
+        yearsOfExperience: pro.profile.yearsOfExperience,
+        cityId: pro.profile.cityId,
+        commune: pro.profile.commune,
+        address: pro.profile.address,
+        availabilityStatus: pro.profile.availabilityStatus,
+        isVerified: pro.profile.isVerified,
+        kycStatus: pro.profile.kycStatus,
+        kycDocumentUrl: null,
+        portfolioImages: pro.profile.portfolioImages,
+        languages: pro.profile.languages,
+      },
+      create: {
+        id: pro.profile.id,
+        userId: proUser.id,
+        headline: pro.profile.headline,
+        bio: pro.profile.bio,
+        phoneNumber: pro.profile.phoneNumber,
+        whatsappNumber: pro.profile.whatsappNumber,
+        yearsOfExperience: pro.profile.yearsOfExperience,
+        cityId: pro.profile.cityId,
+        commune: pro.profile.commune,
+        address: pro.profile.address,
+        availabilityStatus: pro.profile.availabilityStatus,
+        isVerified: pro.profile.isVerified,
+        kycStatus: pro.profile.kycStatus,
+        kycDocumentUrl: null,
+        portfolioImages: pro.profile.portfolioImages,
+        languages: pro.profile.languages,
+      },
+    })
+    proProfileIdByKey.set(pro.profile.id, profile.id)
 
-  const pro2User = await prisma.user.upsert({
-    where: { email: "moussa.diop@homeservices.ci" },
-    update: {
-      name: "Moussa Diop",
-      userType: "pro",
-      emailVerified: true,
-    },
-    create: {
-      id: "seed-pro-user-2",
-      email: "moussa.diop@homeservices.ci",
-      name: "Moussa Diop",
-      userType: "pro",
-      emailVerified: true,
-      phoneNumber: "+221 77 123 45 67",
-    },
-  })
+    for (const svc of pro.services) {
+      await prisma.service.upsert({
+        where: { id: svc.id },
+        update: {
+          proProfileId: profile.id,
+          categoryId: svc.categoryId,
+          title: svc.title,
+          description: svc.description,
+          price: svc.price,
+          duration: svc.duration,
+          isActive: true,
+        },
+        create: {
+          id: svc.id,
+          proProfileId: profile.id,
+          categoryId: svc.categoryId,
+          title: svc.title,
+          description: svc.description,
+          price: svc.price,
+          duration: svc.duration,
+          isActive: true,
+        },
+      })
+    }
 
-  const pro2Profile = await prisma.proProfile.upsert({
-    where: { userId: pro2User.id },
-    update: {
-      headline: "Maître Électricien & Énergie Solaire",
-      cityId: "sn-dakar-almadies",
-      commune: "Almadies",
-    },
-    create: {
-      id: "seed-pro-profile-2",
-      userId: pro2User.id,
-      headline: "Maître Électricien & Énergie Solaire",
-      bio: "Électricien certifié opérant sur Dakar et sa banlieue. Mise aux normes et onduleurs solaires.",
-      phoneNumber: "+221 77 123 45 67",
-      whatsappNumber: "+221771234567",
-      yearsOfExperience: 10,
-      cityId: "sn-dakar-almadies",
-      commune: "Almadies",
-      address: "Route des Almadies, Dakar",
-      availabilityStatus: "AVAILABLE",
-      isVerified: true,
-      kycStatus: "APPROVED",
-      rating: 4.8,
-      reviewsCount: 89,
-      completedTasks: 104,
-      languages: ["Français", "Wolof"],
-    },
-  })
+    if (pro.subscription) {
+      await upsertSubscription(pro.subscription, proUser.id, now)
+    }
 
-  await prisma.service.upsert({
-    where: { id: "seed-service-elec-1" },
-    update: {
-      title: "Diagnostic & mise aux normes tableau électrique",
-      price: 25000,
-    },
-    create: {
-      id: "seed-service-elec-1",
-      proProfileId: pro2Profile.id,
-      categoryId: "electricite",
-      title: "Diagnostic & mise aux normes tableau électrique",
-      description:
-        "Vérification disjoncteurs différentiels, détection de court-circuit et raccordement sécurisé.",
-      price: 25000,
-      duration: 90,
-      isActive: true,
-    },
-  })
-
-  // Creneaux horaires hebdomadaires (Lundi=1 a Samedi=6) pour chaque Pro
-  const defaultSlots = [
-    { startTime: "08:00", endTime: "10:00" },
-    { startTime: "10:00", endTime: "12:00" },
-    { startTime: "14:00", endTime: "16:00" },
-    { startTime: "16:00", endTime: "18:00" },
-  ]
-
-  for (const profileId of [pro1Profile.id, pro2Profile.id]) {
+    // Creneaux hebdomadaires du Lundi (1) au Samedi (6)
     for (let day = 1; day <= 6; day++) {
-      for (let idx = 0; idx < defaultSlots.length; idx++) {
-        const slot = defaultSlots[idx]
-        const slotId = `seed-slot-${profileId}-d${day}-${idx}`
-        await prisma.timeSlot.upsert({
-          where: { id: slotId },
-          update: {
-            isAvailable: true,
-          },
-          create: {
-            id: slotId,
-            proProfileId: profileId,
-            dayOfWeek: day,
-            startTime: slot.startTime,
-            endTime: slot.endTime,
-            isAvailable: true,
-          },
+      for (let idx = 0; idx < WEEKLY_SLOTS.length; idx++) {
+        const slot = WEEKLY_SLOTS[idx]
+        slotsBatch.push({
+          id: `seed-slot-${profile.id}-d${day}-${idx}`,
+          proProfileId: profile.id,
+          dayOfWeek: day,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          isAvailable: true,
         })
       }
     }
   }
 
+  console.log(
+    `[Seed] 5/8 Injection de ${slotsBatch.length} creneaux horaires & ${SEED_UNAVAILABILITIES.length} indisponibilites...`
+  )
+  await prisma.timeSlot.createMany({
+    data: slotsBatch,
+    skipDuplicates: true,
+  })
+
+  for (const unavail of SEED_UNAVAILABILITIES) {
+    const proProfileId = proProfileIdByKey.get(unavail.proProfileKey)
+    if (!proProfileId) {
+      throw new Error(`[Seed] Profil introuvable pour indisponibilite ${unavail.id}`)
+    }
+
+    const startDate = addDaysUtc(now, unavail.startOffsetDays, 0)
+    const endDate = addDaysUtc(now, unavail.endOffsetDays, 23)
+
+    await prisma.unavailabilityPeriod.upsert({
+      where: { id: unavail.id },
+      update: {
+        proProfileId,
+        type: unavail.type,
+        startDate,
+        endDate,
+        reason: unavail.reason,
+      },
+      create: {
+        id: unavail.id,
+        proProfileId,
+        type: unavail.type,
+        startDate,
+        endDate,
+        reason: unavail.reason,
+      },
+    })
+  }
+
+  console.log(
+    `[Seed] 6/8 Synchronisation des ${SEED_BOOKINGS.length} reservations & ${SEED_REVIEWS.length} avis mutuels...`
+  )
+  for (const booking of SEED_BOOKINGS) {
+    const clientId = userIdByKey.get(booking.clientKey)
+    const proId = userIdByKey.get(booking.proUserKey)
+    const clientMeta = clientByKey.get(booking.clientKey)
+
+    if (!clientId || !proId || !clientMeta) {
+      throw new Error(`[Seed] Reference client/pro invalide pour ${booking.id}`)
+    }
+
+    const bookingDate = addDaysUtc(now, booking.dayOffset, 12)
+    const completedAt =
+      booking.status === "COMPLETED" ? addDaysUtc(now, booking.dayOffset, 18) : null
+
+    await prisma.booking.upsert({
+      where: { id: booking.id },
+      update: {
+        serviceId: booking.serviceId,
+        clientId,
+        proId,
+        status: booking.status,
+        bookingDate,
+        timeSlot: booking.timeSlot,
+        clientNotes: booking.clientNotes,
+        indicativePrice: booking.indicativePrice,
+        clientName: clientMeta.name,
+        clientPhone: clientMeta.phoneNumber,
+        clientAddress: booking.clientAddress,
+        completedAt,
+      },
+      create: {
+        id: booking.id,
+        serviceId: booking.serviceId,
+        clientId,
+        proId,
+        status: booking.status,
+        bookingDate,
+        timeSlot: booking.timeSlot,
+        clientNotes: booking.clientNotes,
+        indicativePrice: booking.indicativePrice,
+        clientName: clientMeta.name,
+        clientPhone: clientMeta.phoneNumber,
+        clientAddress: booking.clientAddress,
+        completedAt,
+      },
+    })
+  }
+
+  for (const review of SEED_REVIEWS) {
+    const authorId = userIdByKey.get(review.authorKey)
+    const targetId = userIdByKey.get(review.targetKey)
+
+    if (!authorId || !targetId) {
+      throw new Error(`[Seed] Auteur/cible introuvable pour avis ${review.id}`)
+    }
+
+    await prisma.review.upsert({
+      where: {
+        bookingId_authorId: {
+          bookingId: review.bookingId,
+          authorId,
+        },
+      },
+      update: {
+        targetId,
+        authorType: review.authorType,
+        rating: review.rating,
+        comment: review.comment,
+        isModerated: review.isModerated,
+        isReported: review.isReported,
+      },
+      create: {
+        id: review.id,
+        bookingId: review.bookingId,
+        authorId,
+        targetId,
+        authorType: review.authorType,
+        rating: review.rating,
+        comment: review.comment,
+        isModerated: review.isModerated,
+        isReported: review.isReported,
+      },
+    })
+  }
+
+  console.log("[Seed] 7/8 Recalcul exact des notes, avis et missions terminees...")
+  for (const pro of SEED_PROS) {
+    const proUserId = userIdByKey.get(pro.user.id)
+    const proProfileId = proProfileIdByKey.get(pro.profile.id)
+    if (!proUserId || !proProfileId) continue
+
+    const [reviewAgg, completedCount] = await Promise.all([
+      prisma.review.aggregate({
+        where: {
+          targetId: proUserId,
+          authorType: "CLIENT_TO_PRO",
+          isModerated: false,
+        },
+        _avg: { rating: true },
+        _count: { id: true },
+      }),
+      prisma.booking.count({
+        where: {
+          proId: proUserId,
+          status: "COMPLETED",
+        },
+      }),
+    ])
+
+    const reviewsCount = reviewAgg._count.id
+    const rating =
+      reviewsCount > 0 && reviewAgg._avg.rating !== null
+        ? Math.round(reviewAgg._avg.rating * 10) / 10
+        : 5.0
+
+    await prisma.proProfile.update({
+      where: { id: proProfileId },
+      data: {
+        rating,
+        reviewsCount,
+        completedTasks: completedCount,
+      },
+    })
+  }
+
+  console.log("[Seed] 8/8 Invalidation du cache catalogue Upstash Redis...")
+  await invalidateCatalogCache()
+
+  const [
+    totalUsers,
+    totalClients,
+    totalPros,
+    totalProfiles,
+    totalServices,
+    totalSlots,
+    totalSubs,
+    totalBookings,
+    totalReviews,
+  ] = await Promise.all([
+    prisma.user.count(),
+    prisma.user.count({ where: { userType: "client" } }),
+    prisma.user.count({ where: { userType: "pro" } }),
+    prisma.proProfile.count(),
+    prisma.service.count(),
+    prisma.timeSlot.count(),
+    prisma.subscription.count(),
+    prisma.booking.count(),
+    prisma.review.count(),
+  ])
+
   console.log("[Seed] Base Supabase initialisee avec succes.")
+  console.log(
+    `[Seed Summary] Users=${totalUsers} (Admin=${totalUsers - totalClients - totalPros}, Clients=${totalClients}, Pros=${totalPros}) | Profiles=${totalProfiles} | Services=${totalServices} | TimeSlots=${totalSlots} | Subscriptions=${totalSubs} | Bookings=${totalBookings} | Reviews=${totalReviews}`
+  )
 }
 
 main()

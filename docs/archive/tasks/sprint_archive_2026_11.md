@@ -323,3 +323,31 @@
   - **Acceptance criteria:**
     - [x] `TASK-E2E-TESTS-01.01`: Install `@playwright/test`, configure `playwright.config.ts`, author `e2e/critical-flows.spec.ts`, and write `docs/DEPLOYMENT.md`.
     - [x] `TASK-E2E-TESTS-01.02`: Execute live production HTTP smoke verification (public 200, RBAC 307, webhooks/queues 401, 404) and pass `python evals/run_fullstack_eval.py` (100/100 PASS).
+
+- [x] **`TASK-UI-TOKENS-01` - [Scope: M] Tailwind v4 & Design Tokens Hardening (`globals.css`)**
+  - **Priority:** HIGH
+  - **Target files:** `src/app/globals.css`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-UI-TOKENS-01.01`: Fix `:root` WCAG AA contrast tokens, wrap all bare HSL triplets in `.luxury` inside `hsl(...)`, expose `--color-brand` in `@theme inline`.
+    - [x] `TASK-UI-TOKENS-01.02`: Add `overflow-x: clip` on `body` and `@media (prefers-reduced-motion: reduce)` safeguards.
+
+- [x] **`TASK-UI-SHADCN-01` - [Scope: L] Strict `shadcn/ui` Compliance & Primitive Cleanup**
+  - **Priority:** HIGH
+  - **Target files:** `src/components/ui/table.tsx`, `src/components/ui/responsive-table.tsx`, `src/components/marketing/**/*`, `src/components/skeleton-premium.tsx`, `src/components/city-combobox.tsx`, `src/components/pro-card.tsx`, `src/components/quick-search.tsx`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-UI-SHADCN-01.01`: Install shadcn `ui/table.tsx`, migrate `ResponsiveTable`, move marketing components out of `src/components/ui/`, delete unused `ui/icons.tsx`.
+    - [x] `TASK-UI-SHADCN-01.02`: Eliminate nested `<Link><Button>` and nested `<Button><div role="button">` across components (`asChild`, sibling controls, real category slugs in `QuickSearch`).
+
+- [x] **`TASK-UI-MOBILE-01` - [Scope: L] Mobile-First Layout Refactoring (320px-1440px)**
+  - **Priority:** HIGH
+  - **Target files:** `src/components/site-header.tsx`, `src/app/dashboard/layout.tsx`, `src/components/dashboard/dashboard-sidebar.tsx`, `src/app/dashboard/**/*`, `src/components/booking-stepper.tsx`, `src/app/page.tsx`, `src/app/about/page.tsx`, `src/app/professionals/**/*`, `src/app/services/**/*`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-UI-MOBILE-01.01`: Update `SiteHeader` (`lg:` breakpoint), add `min-w-0` to Dashboard `<main>`, fix `TabsList` multi-row wrapping, and fix stacked mobile borders/widths in Schedule, Bookings & Availability.
+    - [x] `TASK-UI-MOBILE-01.02`: Refactor `BookingStepper`, `HeroSection`, `page.tsx`, `professionals-browser.tsx`, `services-browser.tsx`, and `about/page.tsx` (RSC + mobile padding, zero blocking `opacity-0`).
+
+- [x] **`TASK-UI-A11Y-01` - [Scope: M] Multi-Viewport Responsive/A11y E2E Spec & Full Verification**
+  - **Priority:** MEDIUM
+  - **Target files:** `e2e/responsive-a11y.spec.ts`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-UI-A11Y-01.01`: Create `e2e/responsive-a11y.spec.ts` verifying 320px/375px/768px/1280px viewports (zero horizontal overflow, no nested interactive controls).
+    - [x] `TASK-UI-A11Y-01.02`: Pass `python evals/run_fullstack_eval.py` (`100/100 PASS`) and live production HTTP smoke verification.

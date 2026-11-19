@@ -13,10 +13,19 @@ import { createAuthClient } from "better-auth/react";
 import { inferAdditionalFields } from "better-auth/client/plugins";
 import type { auth } from "@/lib/auth";
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+/**
+ * Resout l'URL de base meme-origine cote navigateur pour eviter les conflits CSRF/CORS
+ * entre localhost, previews Vercel et production.
+ */
+function getAuthBaseUrl(): string {
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+  return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+}
 
 export const authClient = createAuthClient({
-  baseURL: BASE_URL,
+  baseURL: getAuthBaseUrl(),
   plugins: [inferAdditionalFields<typeof auth>()],
 
   fetchOptions: {
@@ -43,7 +52,7 @@ export async function forgetPassword(data: {
   email: string;
   redirectTo?: string;
 }): Promise<void> {
-  const response = await fetch(`${BASE_URL}/api/auth/request-password-reset`, {
+  const response = await fetch(`${getAuthBaseUrl()}/api/auth/request-password-reset`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -67,7 +76,7 @@ export async function resetPassword(data: {
   token: string;
   password: string;
 }): Promise<void> {
-  const response = await fetch(`${BASE_URL}/api/auth/reset-password`, {
+  const response = await fetch(`${getAuthBaseUrl()}/api/auth/reset-password`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

@@ -62,6 +62,66 @@ async function sendPasswordResetEmail(data: ResetPasswordEmailData): Promise<voi
   );
 }
 
+function normalizeOrigin(raw?: string | null): string | null {
+  if (!raw) return null;
+  const trimmed = raw.trim().replace(/\/+$/, "");
+  if (!trimmed) return null;
+  try {
+    return new URL(trimmed).origin;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Construit la liste des origines de confiance pour Better-Auth
+ * (production Vercel, URL runtime et loopback local hors production Vercel).
+ */
+function getTrustedOrigins(): string[] {
+  const candidates: Array<string | undefined> = [
+    process.env.BETTER_AUTH_URL,
+    process.env.NEXT_PUBLIC_APP_URL,
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
+  ];
+
+  if (process.env.BETTER_AUTH_TRUSTED_ORIGINS) {
+    candidates.push(
+      ...process.env.BETTER_AUTH_TRUSTED_ORIGINS.split(",").map((s) => s.trim())
+    );
+  }
+
+  if (process.env.VERCEL_ENV !== "production") {
+    candidates.push(
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+      "http://localhost:3099",
+      "http://127.0.0.1:3099"
+    );
+  }
+
+  const origins = new Set<string>();
+  for (const item of candidates) {
+    const normalized = normalizeOrigin(item);
+    if (normalized) {
+      origins.add(normalized);
+    }
+  }
+
+  return Array.from(origins);
+}
+
+const resolvedBaseUrl =
+  process.env.BETTER_AUTH_URL ||
+  process.env.NEXT_PUBLIC_APP_URL ||
+  "http://localhost:3000";
+
+const useSecureCookies =
+  process.env.VERCEL === "1" ||
+  (process.env.NODE_ENV === "production" &&
+    resolvedBaseUrl.startsWith("https://") &&
+    !resolvedBaseUrl.includes("localhost") &&
+    !resolvedBaseUrl.includes("127.0.0.1"));
+
 /**
  * Configuration Better-auth
  */
@@ -168,7 +228,12 @@ export const auth = betterAuth({
     },
   },
 
-  baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+  baseURL: resolvedBaseUrl,
+  trustedOrigins: getTrustedOrigins(),
+
+  advanced: {
+    useSecureCookies,
+  },
 
   rateLimit: {
     enabled: true,

@@ -10,9 +10,9 @@
 
 ```
 +-------------------------+  +-------------------------+  +-------------------------+
-| [>] IN PROGRESS (SP 07) |  |   [?] SPRINT 07 QUEUE   |  |       [X] ARCHIVES      |
+| [>] IN PROGRESS (SP 08) |  |   [?] SPRINT 08 QUEUE   |  |       [X] ARCHIVES      |
 +-------------------------+  +-------------------------+  +-------------------------+
-| (All Sprint 07 Done!)   |  | (All Sprints 02-07 Done)|  | Sprint 02 (11 tasks)    |
+| (All Sprint 08 Done!)   |  | (All Sprints 02-08 Done)|  | Sprint 02 (11 tasks)    |
 |                         |  |                         |  | Sprint 03 (4 tasks)     |
 |                         |  |                         |  | Sprint 04 (3 tasks)     |
 |                         |  |                         |  | Sprint 05 (4 tasks)     |
@@ -23,35 +23,21 @@
 
 ---
 
-## Active Sprint 07: Audit de Conformite shadcn/ui & Responsivite Mobile-First
+## Active Sprint 08: Jeu de Donnees de Test (Mock Seed DB) & Documentation des Comptes
 
-- [x] **`TASK-UI-TOKENS-01` - [Scope: M] Tailwind v4 & Design Tokens Hardening (`globals.css`)**
+- [x] **`TASK-SEED-DATA-01` - [Scope: L] Dataset Structure & Seed Prisma Idempotent (1 Admin, 5 Clients, 20 Pros)**
   - **Priority:** HIGH
-  - **Target files:** `src/app/globals.css`, `docs/TASKS.md`
+  - **Target files:** `prisma/load-env.ts`, `prisma/seed-data.ts`, `prisma/seed.ts`, `docs/TASKS.md`
   - **Acceptance criteria:**
-    - [x] `TASK-UI-TOKENS-01.01`: Fix `:root` WCAG AA contrast tokens, wrap all bare HSL triplets in `.luxury` inside `hsl(...)`, expose `--color-brand` in `@theme inline`.
-    - [x] `TASK-UI-TOKENS-01.02`: Add `overflow-x: clip` on `body` and `@media (prefers-reduced-motion: reduce)` safeguards.
+    - [x] `TASK-SEED-DATA-01.01`: Create `prisma/load-env.ts` and `prisma/seed-data.ts` with typed fixtures for 1 Admin, 5 Clients, 20 Professionals (2 per category across all 10 categories with verified `locationsData` city IDs), ~46 FCFA services, 4 unavailabilities, 22 subscriptions, 20 multi-status bookings, and 16 mutual reviews (including 2 reported).
+    - [x] `TASK-SEED-DATA-01.02`: Update `prisma/seed.ts` to upsert all 26 users and their Better-Auth `Account` (`providerId: "credential"`, `accountId: user.id`, password hashed via `hashPassword` from `better-auth/crypto`), bulk-seed weekly `TimeSlot`s, recalculate exact Pro ratings/counts from seeded rows, guard against production execution, and invalidate Upstash Redis catalog cache.
 
-- [x] **`TASK-UI-SHADCN-01` - [Scope: L] Strict `shadcn/ui` Compliance & Primitive Cleanup**
+- [x] **`TASK-SEED-DOCS-01` - [Scope: M] Documentation Comptes de Test, Injection Supabase & Verification Auth Live**
   - **Priority:** HIGH
-  - **Target files:** `src/components/ui/table.tsx`, `src/components/ui/responsive-table.tsx`, `src/components/marketing/**/*`, `src/components/skeleton-premium.tsx`, `src/components/city-combobox.tsx`, `src/components/pro-card.tsx`, `src/components/quick-search.tsx`, `docs/TASKS.md`
+  - **Target files:** `docs/TEST_ACCOUNTS.md`, `src/lib/auth.ts`, `src/lib/auth-client.ts`, `docs/TASKS.md`
   - **Acceptance criteria:**
-    - [x] `TASK-UI-SHADCN-01.01`: Install shadcn `ui/table.tsx`, migrate `ResponsiveTable`, move marketing components out of `src/components/ui/`, delete unused `ui/icons.tsx`.
-    - [x] `TASK-UI-SHADCN-01.02`: Eliminate nested `<Link><Button>` and nested `<Button><div role="button">` across components (`asChild`, sibling controls, real category slugs in `QuickSearch`).
-
-- [x] **`TASK-UI-MOBILE-01` - [Scope: L] Mobile-First Layout Refactoring (320px-1440px)**
-  - **Priority:** HIGH
-  - **Target files:** `src/components/site-header.tsx`, `src/app/dashboard/layout.tsx`, `src/components/dashboard/dashboard-sidebar.tsx`, `src/app/dashboard/**/*`, `src/components/booking-stepper.tsx`, `src/app/page.tsx`, `src/app/about/page.tsx`, `src/app/professionals/**/*`, `src/app/services/**/*`, `docs/TASKS.md`
-  - **Acceptance criteria:**
-    - [x] `TASK-UI-MOBILE-01.01`: Update `SiteHeader` (`lg:` breakpoint), add `min-w-0` to Dashboard `<main>`, fix `TabsList` multi-row wrapping, and fix stacked mobile borders/widths in Schedule, Bookings & Availability.
-    - [x] `TASK-UI-MOBILE-01.02`: Refactor `BookingStepper`, `HeroSection`, `page.tsx`, `professionals-browser.tsx`, `services-browser.tsx`, and `about/page.tsx` (RSC + mobile padding, zero blocking `opacity-0`).
-
-- [x] **`TASK-UI-A11Y-01` - [Scope: M] Multi-Viewport Responsive/A11y E2E Spec & Full Verification**
-  - **Priority:** MEDIUM
-  - **Target files:** `e2e/responsive-a11y.spec.ts`, `docs/TASKS.md`
-  - **Acceptance criteria:**
-    - [x] `TASK-UI-A11Y-01.01`: Create `e2e/responsive-a11y.spec.ts` verifying 320px/375px/768px/1280px viewports (zero horizontal overflow, no nested interactive controls).
-    - [x] `TASK-UI-A11Y-01.02`: Pass `python evals/run_fullstack_eval.py` (`100/100 PASS`) and live production HTTP smoke verification.
+    - [x] `TASK-SEED-DOCS-01.01`: Author `docs/TEST_ACCOUNTS.md` (zero emojis) documenting all 26 accounts (1 Admin, 5 Clients, 20 Pros) with login credentials, roles, specialties, zones, KYC/availability/subscription states, and guided end-to-end test scenarios.
+    - [x] `TASK-SEED-DOCS-01.02`: Execute `pnpm run db:seed` twice against live Supabase PostgreSQL to prove idempotency, pass `python evals/run_fullstack_eval.py` (`100/100 PASS`), and verify live HTTP `200` sign-in on `/api/auth/sign-in/email` for Admin, Client, and Pro accounts.
 
 ---
 
