@@ -107,3 +107,6 @@ backups/skills/
 .agents/telemetry/cognitive_state.json
 .agents/telemetry/sync_targets.json
 *.pyc
+
+# Test
+test-results/*
