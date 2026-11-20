@@ -44,6 +44,18 @@ function verifyJwtWithSigningKey(
   if (parts.length !== 3) return false
 
   const [headerB64, payloadB64, signatureB64] = parts
+
+  try {
+    const header = JSON.parse(base64UrlDecode(headerB64).toString("utf8")) as {
+      alg?: unknown
+    }
+    if (header.alg !== "HS256") {
+      return false
+    }
+  } catch {
+    return false
+  }
+
   const signedInput = `${headerB64}.${payloadB64}`
 
   const expectedSig = crypto
@@ -57,23 +69,48 @@ function verifyJwtWithSigningKey(
 
   try {
     const claims = JSON.parse(base64UrlDecode(payloadB64).toString("utf8")) as {
-      exp?: number
-      body?: string
+      exp?: unknown
+      nbf?: unknown
+      body?: unknown
     }
 
-    if (claims.exp && claims.exp * 1000 < Date.now()) {
+    if (typeof claims.exp !== "number" || claims.exp * 1000 <= Date.now()) {
       return false
     }
 
-    if (claims.body) {
-      const bodyHash = crypto
-        .createHash("sha256")
-        .update(rawBody, "utf8")
-        .digest("base64url")
-      if (claims.body !== bodyHash && claims.body !== rawBody) {
-        return false
-      }
+    if (typeof claims.nbf === "number" && claims.nbf * 1000 > Date.now() + 5000) {
+      return false
     }
+
+    if (typeof claims.body !== "string" || claims.body.length === 0) {
+      return false
+    }
+
+    const expectedBodyBase64 = crypto
+      .createHash("sha256")
+      .update(rawBody, "utf8")
+      .digest("base64")
+    const expectedBodyBase64Url = crypto
+      .createHash("sha256")
+      .update(rawBody, "utf8")
+      .digest("base64url")
+
+    const normalizedClaimBody = claims.body.replace(/=+$/, "")
+    const candidates = [
+      expectedBodyBase64.replace(/=+$/, ""),
+      expectedBodyBase64Url.replace(/=+$/, ""),
+    ]
+
+    const matchesBodyHash = candidates.some((candidate) => {
+      const a = Buffer.from(candidate, "utf8")
+      const b = Buffer.from(normalizedClaimBody, "utf8")
+      return a.length === b.length && crypto.timingSafeEqual(a, b)
+    })
+
+    if (!matchesBodyHash) {
+      return false
+    }
+
     return true
   } catch {
     return false

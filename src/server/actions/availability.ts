@@ -11,6 +11,8 @@ export interface ServerActionResponse<T> {
   error: string | null
 }
 
+const periodIdSchema = z.string().trim().min(1, "Identifiant de période invalide").max(120)
+
 const timeSlotItemSchema = z.object({
   dayOfWeek: z.number().int().min(0).max(6),
   startTime: z.string().regex(/^\d{2}:\d{2}$/, "Format heure invalide (HH:MM)"),
@@ -95,12 +97,10 @@ export async function saveProTimeSlotsAction(
       error: null,
     }
   } catch (err) {
+    console.error("[availability] saveProTimeSlots error:", err)
     return {
       data: null,
-      error:
-        err instanceof Error
-          ? err.message
-          : "Erreur lors de l'enregistrement des créneaux",
+      error: "Erreur lors de l'enregistrement des créneaux.",
     }
   }
 }
@@ -150,12 +150,10 @@ export async function addUnavailabilityPeriodAction(input: {
       error: null,
     }
   } catch (err) {
+    console.error("[availability] addUnavailabilityPeriod error:", err)
     return {
       data: null,
-      error:
-        err instanceof Error
-          ? err.message
-          : "Erreur lors de l'ajout de l'indisponibilité",
+      error: "Erreur lors de l'ajout de l'indisponibilité.",
     }
   }
 }
@@ -171,9 +169,14 @@ export async function deleteUnavailabilityPeriodAction(
     return { data: null, error: authRes.error }
   }
 
+  const parsedId = periodIdSchema.safeParse(periodId)
+  if (!parsedId.success) {
+    return { data: null, error: "Identifiant d'indisponibilité invalide." }
+  }
+
   try {
     const existing = await prisma.unavailabilityPeriod.findUnique({
-      where: { id: periodId },
+      where: { id: parsedId.data },
       select: { proProfileId: true },
     })
 
@@ -189,18 +192,16 @@ export async function deleteUnavailabilityPeriodAction(
     }
 
     await prisma.unavailabilityPeriod.delete({
-      where: { id: periodId },
+      where: { id: parsedId.data },
     })
 
     revalidatePath("/dashboard/pro/availability")
-    return { data: { id: periodId }, error: null }
+    return { data: { id: parsedId.data }, error: null }
   } catch (err) {
+    console.error("[availability] deleteUnavailabilityPeriod error:", err)
     return {
       data: null,
-      error:
-        err instanceof Error
-          ? err.message
-          : "Erreur lors de la suppression de l'indisponibilité",
+      error: "Erreur lors de la suppression de l'indisponibilité.",
     }
   }
 }

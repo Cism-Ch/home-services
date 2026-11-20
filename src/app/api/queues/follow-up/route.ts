@@ -6,12 +6,38 @@
 
 import crypto from "crypto"
 import { NextRequest, NextResponse } from "next/server"
-import { receiver, type QStashJobPayload } from "@/lib/qstash"
+import { z } from "zod"
+import { receiver } from "@/lib/qstash"
 import {
   sendFollowUpEmailViaResend,
   sendPasswordResetEmailViaResend,
 } from "@/lib/resend"
-import { deleteTigrisObject } from "@/lib/storage"
+import { deleteTigrisObject, isValidStorageObjectKey } from "@/lib/storage"
+
+const qstashPayloadSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("TASK_FOLLOW_UP_EMAIL"),
+    bookingId: z.string().min(1).max(120),
+    clientEmail: z.string().email().max(200),
+    clientName: z.string().min(1).max(120),
+    proName: z.string().min(1).max(120),
+    serviceTitle: z.string().min(1).max(160),
+    timeSlot: z.string().min(3).max(40),
+    indicativePriceFCFA: z.number().nonnegative(),
+  }),
+  z.object({
+    type: z.literal("STORAGE_CLEANUP"),
+    objectKey: z.string().min(1).max(260),
+    proId: z.string().min(1).max(120),
+    requestedAt: z.string().min(1).max(80),
+  }),
+  z.object({
+    type: z.literal("PASSWORD_RESET_EMAIL"),
+    toEmail: z.string().email().max(200),
+    userName: z.string().min(1).max(120),
+    resetUrl: z.string().url().max(1000),
+  }),
+])
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,7 +56,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const payload = JSON.parse(rawBody) as QStashJobPayload
+    let parsedJson: unknown
+    try {
+      parsedJson = JSON.parse(rawBody)
+    } catch {
+      return NextResponse.json(
+        { error: "Charge utile JSON QStash invalide" },
+        { status: 400 }
+      )
+    }
+
+    const validated = qstashPayloadSchema.safeParse(parsedJson)
+    if (!validated.success) {
+      return NextResponse.json(
+        { error: "Type ou structure de tache QStash invalide" },
+        { status: 400 }
+      )
+    }
+
+    const payload = validated.data
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
 
     if (payload.type === "TASK_FOLLOW_UP_EMAIL") {
@@ -57,6 +101,13 @@ export async function POST(request: NextRequest) {
     }
 
     if (payload.type === "STORAGE_CLEANUP") {
+      if (!isValidStorageObjectKey(payload.objectKey)) {
+        return NextResponse.json(
+          { error: "Cle objet S3 invalide pour nettoyage" },
+          { status: 400 }
+        )
+      }
+
       const cleanupResult = await deleteTigrisObject(payload.objectKey)
       return NextResponse.json({
         processed: true,
@@ -92,8 +143,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ processed: false, reason: "Unknown job type" })
   } catch (err) {
+    console.error("[qstash-worker] Erreur worker QStash:", err)
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erreur worker QStash" },
+      { error: "Erreur de traitement worker QStash" },
       { status: 500 }
     )
   }

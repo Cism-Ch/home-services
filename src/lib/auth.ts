@@ -13,6 +13,7 @@
 
 import crypto from "crypto";
 import { betterAuth } from "better-auth";
+import { APIError } from "better-auth/api";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "@/lib/prisma";
 import { enqueueFollowUpNotification } from "@/lib/qstash";
@@ -184,6 +185,43 @@ export const auth = betterAuth({
               },
             });
           }
+        },
+      },
+      update: {
+        before: async (user, ctx) => {
+          // Empeche toute escalation de role ou usurpation de verification email via /api/auth/update-user
+          if ("userType" in user && user.userType !== undefined) {
+            throw new APIError("FORBIDDEN", {
+              message: "La modification du rôle utilisateur est interdite.",
+            });
+          }
+
+          if (
+            ctx?.path === "/update-user" &&
+            "emailVerified" in user &&
+            user.emailVerified !== undefined
+          ) {
+            throw new APIError("FORBIDDEN", {
+              message:
+                "La modification directe du statut de vérification email est interdite.",
+            });
+          }
+
+          const sanitized = { ...user };
+          if (typeof sanitized.image === "string") {
+            const trimmedImg = sanitized.image.trim();
+            if (
+              trimmedImg !== "" &&
+              !trimmedImg.startsWith("https://") &&
+              !trimmedImg.startsWith("/")
+            ) {
+              throw new APIError("BAD_REQUEST", {
+                message: "URL d'avatar non autorisée.",
+              });
+            }
+          }
+
+          return { data: sanitized };
         },
       },
     },

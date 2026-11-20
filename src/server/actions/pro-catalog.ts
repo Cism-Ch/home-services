@@ -1,18 +1,32 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { enforceRateLimit, invalidateCatalogCache } from "@/lib/redis"
 import { createServiceSchema, type CreateServiceInput } from "@/lib/validations/service"
 import { proProfileSchema, type ProProfileInput } from "@/lib/validations/pro-profile"
 import {
+  buildTigrisPublicUrl,
   extractTigrisObjectKey,
   generateTigrisPresignedUrl,
+  isValidOwnedObjectKey,
   scheduleTigrisFileCleanup,
   type StorageFolder,
   type PresignedUrlResult,
 } from "@/lib/storage"
 import { requireProProfile } from "@/server/auth-guard"
+
+const serviceIdSchema = z
+  .string()
+  .trim()
+  .min(1, "Identifiant de service requis")
+  .max(120, "Identifiant de service invalide")
+
+const proProfileExtrasSchema = z.object({
+  languages: z.array(z.string().trim().min(1).max(40)).max(10).optional(),
+  name: z.string().trim().min(2).max(100).optional(),
+})
 
 export interface ServerActionResponse<T> {
   data: T | null
@@ -77,9 +91,10 @@ export async function createProServiceAction(
       error: null,
     }
   } catch (err) {
+    console.error("[pro-catalog] createProService error:", err)
     return {
       data: null,
-      error: err instanceof Error ? err.message : "Erreur lors de la création du service",
+      error: "Erreur lors de la création du service.",
     }
   }
 }
@@ -95,9 +110,17 @@ export async function deleteProServiceAction(
     return { data: null, error: authRes.error }
   }
 
+  const parsedId = serviceIdSchema.safeParse(serviceId)
+  if (!parsedId.success) {
+    return {
+      data: null,
+      error: parsedId.error.issues[0]?.message || "Identifiant de service invalide.",
+    }
+  }
+
   try {
     const existing = await prisma.service.findUnique({
-      where: { id: serviceId },
+      where: { id: parsedId.data },
       select: { proProfileId: true },
     })
 
@@ -113,7 +136,7 @@ export async function deleteProServiceAction(
     }
 
     await prisma.service.delete({
-      where: { id: serviceId },
+      where: { id: parsedId.data },
     })
 
     await invalidateCatalogCache()
@@ -121,11 +144,12 @@ export async function deleteProServiceAction(
     revalidatePath("/services")
     revalidatePath(`/professionals/pros/${authRes.proProfile.id}`)
 
-    return { data: { deletedId: serviceId }, error: null }
+    return { data: { deletedId: parsedId.data }, error: null }
   } catch (err) {
+    console.error("[pro-catalog] deleteProService error:", err)
     return {
       data: null,
-      error: err instanceof Error ? err.message : "Erreur lors de la suppression du service",
+      error: "Erreur lors de la suppression du service.",
     }
   }
 }
@@ -149,6 +173,17 @@ export async function updateProProfileAction(
     return { data: null, error: firstIssue }
   }
 
+  const parsedExtras = proProfileExtrasSchema.safeParse({
+    languages: input.languages,
+    name: input.name,
+  })
+  if (!parsedExtras.success) {
+    return {
+      data: null,
+      error: parsedExtras.error.issues[0]?.message || "Paramètres complémentaires invalides.",
+    }
+  }
+
   try {
     await prisma.$transaction(async (tx) => {
       await tx.proProfile.update({
@@ -163,17 +198,17 @@ export async function updateProProfileAction(
           commune: parsed.data.commune,
           address: parsed.data.address,
           availabilityStatus: parsed.data.availabilityStatus,
-          ...(Array.isArray(input.languages) && input.languages.length > 0
-            ? { languages: input.languages }
+          ...(parsedExtras.data.languages && parsedExtras.data.languages.length > 0
+            ? { languages: parsedExtras.data.languages }
             : {}),
         },
       })
 
-      if (input.name && input.name.trim().length >= 2) {
+      if (parsedExtras.data.name) {
         await tx.user.update({
           where: { id: authRes.user.id },
           data: {
-            name: input.name.trim(),
+            name: parsedExtras.data.name,
             phoneNumber: parsed.data.phoneNumber,
           },
         })
@@ -191,9 +226,10 @@ export async function updateProProfileAction(
       error: null,
     }
   } catch (err) {
+    console.error("[pro-catalog] updateProProfile error:", err)
     return {
       data: null,
-      error: err instanceof Error ? err.message : "Erreur lors de la sauvegarde du profil",
+      error: "Erreur lors de la sauvegarde du profil.",
     }
   }
 }
@@ -234,9 +270,10 @@ export async function requestPresignedUploadAction(
 
     return { data: presigned, error: null }
   } catch (err) {
+    console.error("[pro-catalog] requestPresignedUpload error:", err)
     return {
       data: null,
-      error: err instanceof Error ? err.message : "Erreur de génération de l'URL signée Tigris",
+      error: "Erreur de génération de l'URL signée Tigris.",
     }
   }
 }
@@ -248,15 +285,17 @@ export async function confirmPortfolioUploadAction(
   publicUrl: string,
   objectKey: string
 ): Promise<ServerActionResponse<{ portfolioImages: string[] }>> {
+  void publicUrl
   const authRes = await requireProProfile()
   if (authRes.error !== null) {
     return { data: null, error: authRes.error }
   }
 
-  const expectedPrefix = `portfolio/${authRes.proProfile.id}/`
-  if (!objectKey.startsWith(expectedPrefix) || !publicUrl.startsWith("http")) {
+  if (!isValidOwnedObjectKey("portfolio", authRes.proProfile.id, objectKey)) {
     return { data: null, error: "Chemin de fichier portfolio invalide." }
   }
+
+  const canonicalUrl = buildTigrisPublicUrl(objectKey)
 
   try {
     const current = await prisma.proProfile.findUnique({
@@ -265,16 +304,16 @@ export async function confirmPortfolioUploadAction(
     })
 
     const existingImages = current?.portfolioImages || []
-    if (!existingImages.includes(publicUrl) && existingImages.length >= 12) {
+    if (!existingImages.includes(canonicalUrl) && existingImages.length >= 12) {
       return {
         data: null,
         error: "Vous avez atteint la limite maximale de 12 photos de portfolio.",
       }
     }
 
-    const updatedImages = existingImages.includes(publicUrl)
+    const updatedImages = existingImages.includes(canonicalUrl)
       ? existingImages
-      : [...existingImages, publicUrl]
+      : [...existingImages, canonicalUrl]
 
     await prisma.proProfile.update({
       where: { id: authRes.proProfile.id },
@@ -288,9 +327,10 @@ export async function confirmPortfolioUploadAction(
 
     return { data: { portfolioImages: updatedImages }, error: null }
   } catch (err) {
+    console.error("[pro-catalog] confirmPortfolioUpload error:", err)
     return {
       data: null,
-      error: err instanceof Error ? err.message : "Erreur lors de l'enregistrement du portfolio",
+      error: "Erreur lors de l'enregistrement du portfolio.",
     }
   }
 }
@@ -302,20 +342,22 @@ export async function confirmAvatarUploadAction(
   publicUrl: string,
   objectKey: string
 ): Promise<ServerActionResponse<{ imageUrl: string }>> {
+  void publicUrl
   const authRes = await requireProProfile()
   if (authRes.error !== null) {
     return { data: null, error: authRes.error }
   }
 
-  const expectedPrefix = `avatars/${authRes.proProfile.id}/`
-  if (!objectKey.startsWith(expectedPrefix) || !publicUrl.startsWith("http")) {
+  if (!isValidOwnedObjectKey("avatars", authRes.proProfile.id, objectKey)) {
     return { data: null, error: "Chemin de fichier avatar invalide." }
   }
+
+  const canonicalUrl = buildTigrisPublicUrl(objectKey)
 
   try {
     await prisma.user.update({
       where: { id: authRes.user.id },
-      data: { image: publicUrl },
+      data: { image: canonicalUrl },
     })
 
     await invalidateCatalogCache()
@@ -323,11 +365,12 @@ export async function confirmAvatarUploadAction(
     revalidatePath("/professionals")
     revalidatePath(`/professionals/pros/${authRes.proProfile.id}`)
 
-    return { data: { imageUrl: publicUrl }, error: null }
+    return { data: { imageUrl: canonicalUrl }, error: null }
   } catch (err) {
+    console.error("[pro-catalog] confirmAvatarUpload error:", err)
     return {
       data: null,
-      error: err instanceof Error ? err.message : "Erreur lors de la mise à jour de l'avatar",
+      error: "Erreur lors de la mise à jour de l'avatar.",
     }
   }
 }
@@ -343,8 +386,7 @@ export async function confirmKycUploadAction(
     return { data: null, error: authRes.error }
   }
 
-  const expectedPrefix = `kyc/${authRes.proProfile.id}/`
-  if (!objectKey.startsWith(expectedPrefix)) {
+  if (!isValidOwnedObjectKey("kyc", authRes.proProfile.id, objectKey)) {
     return { data: null, error: "Chemin de justificatif KYC invalide." }
   }
 
@@ -367,9 +409,10 @@ export async function confirmKycUploadAction(
       error: null,
     }
   } catch (err) {
+    console.error("[pro-catalog] confirmKycUpload error:", err)
     return {
       data: null,
-      error: err instanceof Error ? err.message : "Erreur lors de la soumission KYC",
+      error: "Erreur lors de la soumission KYC.",
     }
   }
 }
@@ -389,20 +432,17 @@ export async function removeStoredAssetAction(
   }
 
   const proId = authRes.proProfile.id
-  const ownedPrefixes = [
-    `portfolio/${proId}/`,
-    `kyc/${proId}/`,
-    `avatars/${proId}/`,
-  ]
-  const extractedKey =
-    (objectKey && ownedPrefixes.some((p) => objectKey.startsWith(p))
-      ? objectKey
-      : null) || extractTigrisObjectKey(imageUrl || "")
-  const isOwnedS3Key =
-    typeof extractedKey === "string" &&
-    ownedPrefixes.some((prefix) => extractedKey.startsWith(prefix))
+  const folders: readonly StorageFolder[] = ["portfolio", "kyc", "avatars"]
+  const isOwnedForPro = (candidate: string | null | undefined): candidate is string =>
+    typeof candidate === "string" &&
+    folders.some((folder) => isValidOwnedObjectKey(folder, proId, candidate))
 
-  if (objectKey && !objectKey.startsWith("legacy:") && !isOwnedS3Key && !imageUrl) {
+  const extractedFromKey = isOwnedForPro(objectKey) ? objectKey : null
+  const extractedFromUrl = extractTigrisObjectKey(imageUrl || "")
+  const safeExtractedKey =
+    extractedFromKey || (isOwnedForPro(extractedFromUrl) ? extractedFromUrl : null)
+
+  if (objectKey && !objectKey.startsWith("legacy:") && !safeExtractedKey && !imageUrl) {
     return { data: null, error: "Accès non autorisé sur ce fichier S3." }
   }
 
@@ -424,8 +464,8 @@ export async function removeStoredAssetAction(
     }
 
     let jobId: string | null = null
-    if (isOwnedS3Key && extractedKey) {
-      const cleanupRes = await scheduleTigrisFileCleanup(extractedKey, proId)
+    if (safeExtractedKey) {
+      const cleanupRes = await scheduleTigrisFileCleanup(safeExtractedKey, proId)
       jobId = cleanupRes.jobId
     }
 
@@ -436,9 +476,10 @@ export async function removeStoredAssetAction(
 
     return { data: { jobId }, error: null }
   } catch (err) {
+    console.error("[pro-catalog] removeStoredAsset error:", err)
     return {
       data: null,
-      error: err instanceof Error ? err.message : "Erreur lors de la suppression du fichier",
+      error: "Erreur lors de la suppression du fichier.",
     }
   }
 }

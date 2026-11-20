@@ -12,6 +12,10 @@ export interface ServerActionResponse<T> {
   error: string | null
 }
 
+const entityIdSchema = z.string().trim().min(1, "Identifiant requis").max(120)
+const kycDecisionSchema = z.enum(["APPROVE", "REJECT"])
+const reviewDecisionSchema = z.enum(["APPROVE", "REMOVE"])
+
 const slugSchema = z
   .string()
   .trim()
@@ -54,12 +58,18 @@ export async function verifyProKycAction(
     return { data: null, error: authRes.error }
   }
 
-  const isVerified = decision === "APPROVE"
+  const parsedId = entityIdSchema.safeParse(proProfileId)
+  const parsedDecision = kycDecisionSchema.safeParse(decision)
+  if (!parsedId.success || !parsedDecision.success) {
+    return { data: null, error: "Paramètres de validation KYC invalides." }
+  }
+
+  const isVerified = parsedDecision.data === "APPROVE"
   const kycStatus = isVerified ? "APPROVED" : "REJECTED"
 
   try {
     await prisma.proProfile.update({
-      where: { id: proProfileId },
+      where: { id: parsedId.data },
       data: {
         isVerified,
         kycStatus,
@@ -69,16 +79,17 @@ export async function verifyProKycAction(
     await invalidateCatalogCache()
     revalidatePath("/dashboard/admin")
     revalidatePath("/professionals")
-    revalidatePath(`/professionals/pros/${proProfileId}`)
+    revalidatePath(`/professionals/pros/${parsedId.data}`)
 
     return {
-      data: { proProfileId, isVerified, kycStatus },
+      data: { proProfileId: parsedId.data, isVerified, kycStatus },
       error: null,
     }
   } catch (err) {
+    console.error("[admin] verifyProKyc error:", err)
     return {
       data: null,
-      error: err instanceof Error ? err.message : "Erreur lors de la validation KYC",
+      error: "Erreur lors de la validation du dossier KYC.",
     }
   }
 }
@@ -94,9 +105,14 @@ export async function getKycSignedDocumentUrlAction(
     return { data: null, error: authRes.error }
   }
 
+  const parsedId = entityIdSchema.safeParse(proProfileId)
+  if (!parsedId.success) {
+    return { data: null, error: "Identifiant de profil invalide." }
+  }
+
   try {
     const profile = await prisma.proProfile.findUnique({
-      where: { id: proProfileId },
+      where: { id: parsedId.data },
       select: { kycDocumentUrl: true },
     })
 
@@ -125,12 +141,10 @@ export async function getKycSignedDocumentUrlAction(
       error: null,
     }
   } catch (err) {
+    console.error("[admin] getKycSignedDocumentUrl error:", err)
     return {
       data: null,
-      error:
-        err instanceof Error
-          ? err.message
-          : "Impossible de générer l'accès sécurisé au document KYC",
+      error: "Impossible de générer l'accès sécurisé au document KYC.",
     }
   }
 }
@@ -147,10 +161,16 @@ export async function moderateReviewAction(
     return { data: null, error: authRes.error }
   }
 
+  const parsedReviewId = entityIdSchema.safeParse(reviewId)
+  const parsedDecision = reviewDecisionSchema.safeParse(decision)
+  if (!parsedReviewId.success || !parsedDecision.success) {
+    return { data: null, error: "Paramètres de modération d'avis invalides." }
+  }
+
   try {
     const result = await prisma.$transaction(async (tx) => {
       const targetReview = await tx.review.findUnique({
-        where: { id: reviewId },
+        where: { id: parsedReviewId.data },
         select: { id: true, targetId: true, authorType: true },
       })
 
@@ -158,13 +178,13 @@ export async function moderateReviewAction(
         return { error: "Avis introuvable." as const, proProfileId: null }
       }
 
-      if (decision === "REMOVE") {
+      if (parsedDecision.data === "REMOVE") {
         await tx.review.delete({
-          where: { id: reviewId },
+          where: { id: parsedReviewId.data },
         })
       } else {
         await tx.review.update({
-          where: { id: reviewId },
+          where: { id: parsedReviewId.data },
           data: { isModerated: true, isReported: false },
         })
       }
@@ -221,15 +241,16 @@ export async function moderateReviewAction(
 
     return {
       data: {
-        reviewId,
-        status: decision === "APPROVE" ? "PUBLISHED" : "REMOVED",
+        reviewId: parsedReviewId.data,
+        status: parsedDecision.data === "APPROVE" ? "PUBLISHED" : "REMOVED",
       },
       error: null,
     }
   } catch (err) {
+    console.error("[admin] moderateReview error:", err)
     return {
       data: null,
-      error: err instanceof Error ? err.message : "Erreur de modération d'avis",
+      error: "Erreur lors de la modération de l'avis.",
     }
   }
 }
@@ -284,9 +305,10 @@ export async function createCategoryAction(
       error: null,
     }
   } catch (err) {
+    console.error("[admin] createCategory error:", err)
     return {
       data: null,
-      error: err instanceof Error ? err.message : "Erreur lors de la création de catégorie",
+      error: "Erreur lors de la création de catégorie.",
     }
   }
 }
@@ -302,9 +324,14 @@ export async function deleteCategoryAction(
     return { data: null, error: authRes.error }
   }
 
+  const parsedId = entityIdSchema.safeParse(categoryId)
+  if (!parsedId.success) {
+    return { data: null, error: "Identifiant de catégorie invalide." }
+  }
+
   try {
     const target = await prisma.category.findUnique({
-      where: { id: categoryId },
+      where: { id: parsedId.data },
       include: { _count: { select: { services: true } } },
     })
 
@@ -319,18 +346,19 @@ export async function deleteCategoryAction(
       }
     }
 
-    await prisma.category.delete({ where: { id: categoryId } })
+    await prisma.category.delete({ where: { id: parsedId.data } })
 
     await invalidateCatalogCache()
     revalidatePath("/dashboard/admin")
     revalidatePath("/")
     revalidatePath("/services")
 
-    return { data: { deletedId: categoryId }, error: null }
+    return { data: { deletedId: parsedId.data }, error: null }
   } catch (err) {
+    console.error("[admin] deleteCategory error:", err)
     return {
       data: null,
-      error: err instanceof Error ? err.message : "Erreur lors de la suppression de catégorie",
+      error: "Erreur lors de la suppression de catégorie.",
     }
   }
 }
@@ -385,9 +413,10 @@ export async function createCityAction(
       error: null,
     }
   } catch (err) {
+    console.error("[admin] createCity error:", err)
     return {
       data: null,
-      error: err instanceof Error ? err.message : "Erreur lors de l'ajout de la zone GEO",
+      error: "Erreur lors de l'ajout de la zone GEO.",
     }
   }
 }
@@ -403,19 +432,25 @@ export async function deleteCityAction(
     return { data: null, error: authRes.error }
   }
 
+  const parsedId = entityIdSchema.safeParse(cityId)
+  if (!parsedId.success) {
+    return { data: null, error: "Identifiant de zone GEO invalide." }
+  }
+
   try {
-    await prisma.city.delete({ where: { id: cityId } })
+    await prisma.city.delete({ where: { id: parsedId.data } })
 
     await invalidateCatalogCache()
     revalidatePath("/dashboard/admin")
     revalidatePath("/professionals")
     revalidatePath("/services")
 
-    return { data: { deletedId: cityId }, error: null }
+    return { data: { deletedId: parsedId.data }, error: null }
   } catch (err) {
+    console.error("[admin] deleteCity error:", err)
     return {
       data: null,
-      error: err instanceof Error ? err.message : "Erreur lors de la suppression de la zone GEO",
+      error: "Erreur lors de la suppression de la zone GEO.",
     }
   }
 }

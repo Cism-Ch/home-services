@@ -351,3 +351,17 @@
   - **Acceptance criteria:**
     - [x] `TASK-UI-A11Y-01.01`: Create `e2e/responsive-a11y.spec.ts` verifying 320px/375px/768px/1280px viewports (zero horizontal overflow, no nested interactive controls).
     - [x] `TASK-UI-A11Y-01.02`: Pass `python evals/run_fullstack_eval.py` (`100/100 PASS`) and live production HTTP smoke verification.
+
+- [x] **`TASK-SEED-DATA-01` - [Scope: L] Dataset Structure & Seed Prisma Idempotent (1 Admin, 5 Clients, 20 Pros)**
+  - **Priority:** HIGH
+  - **Target files:** `prisma/load-env.ts`, `prisma/seed-data.ts`, `prisma/seed.ts`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-SEED-DATA-01.01`: Create `prisma/load-env.ts` and `prisma/seed-data.ts` with typed fixtures for 1 Admin, 5 Clients, 20 Professionals (2 per category across all 10 categories with verified `locationsData` city IDs), ~46 FCFA services, 4 unavailabilities, 22 subscriptions, 20 multi-status bookings, and 16 mutual reviews (including 2 reported).
+    - [x] `TASK-SEED-DATA-01.02`: Update `prisma/seed.ts` to upsert all 26 users and their Better-Auth `Account` (`providerId: "credential"`, `accountId: user.id`, password hashed via `hashPassword` from `better-auth/crypto`), bulk-seed weekly `TimeSlot`s, recalculate exact Pro ratings/counts from seeded rows, guard against production execution, and invalidate Upstash Redis catalog cache.
+
+- [x] **`TASK-SEED-DOCS-01` - [Scope: M] Documentation Comptes de Test, Injection Supabase & Verification Auth Live**
+  - **Priority:** HIGH
+  - **Target files:** `docs/TEST_ACCOUNTS.md`, `src/lib/auth.ts`, `src/lib/auth-client.ts`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-SEED-DOCS-01.01`: Author `docs/TEST_ACCOUNTS.md` (zero emojis) documenting all 26 accounts (1 Admin, 5 Clients, 20 Pros) with login credentials, roles, specialties, zones, KYC/availability/subscription states, and guided end-to-end test scenarios.
+    - [x] `TASK-SEED-DOCS-01.02`: Execute `pnpm run db:seed` twice against live Supabase PostgreSQL to prove idempotency, pass `python evals/run_fullstack_eval.py` (`100/100 PASS`), and verify live HTTP `200` sign-in on `/api/auth/sign-in/email` for Admin, Client, and Pro accounts.

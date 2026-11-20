@@ -20,10 +20,26 @@ interface SocialAuthButtonsProps {
   className?: string;
 }
 
+function sanitizeOAuthCallbackUrl(rawUrl?: string): string {
+  if (!rawUrl) return "/dashboard";
+  const trimmed = rawUrl.trim();
+  if (
+    trimmed &&
+    !/[\u0000-\u001f\u007f]/.test(trimmed) &&
+    trimmed.startsWith("/") &&
+    !trimmed.startsWith("//") &&
+    !trimmed.includes("\\")
+  ) {
+    return trimmed;
+  }
+  return "/dashboard";
+}
+
 export function SocialAuthButtons({
   callbackURL = "/dashboard",
   className,
 }: SocialAuthButtonsProps) {
+  const safeCallbackURL = sanitizeOAuthCallbackUrl(callbackURL);
   const [isGoogleLoading, setIsGoogleLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -34,7 +50,7 @@ export function SocialAuthButtons({
       
       await signIn.social({
         provider: "google",
-        callbackURL,
+        callbackURL: safeCallbackURL,
       });
     } catch (err) {
       console.error("Erreur connexion Google:", err);

@@ -8,9 +8,16 @@ import {
   type UpdateBookingStatusInput,
 } from "@/lib/validations/booking"
 import { prisma } from "@/lib/prisma"
-import { enforceRateLimit } from "@/lib/redis"
+import { enforceRateLimit, invalidateCatalogCache } from "@/lib/redis"
 import { broadcastBookingStatusEvent } from "@/lib/supabase-server"
 import { requireActionSession } from "@/server/auth-guard"
+
+const ALLOWED_BOOKING_TRANSITIONS: Record<string, readonly string[]> = {
+  NEGOTIATING: ["IN_PROGRESS", "CANCELLED"],
+  IN_PROGRESS: ["COMPLETED", "CANCELLED"],
+  COMPLETED: [],
+  CANCELLED: [],
+}
 
 export interface ServerActionResponse<T> {
   data: T | null
@@ -72,6 +79,13 @@ export async function createSlotBooking(
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
 
+    if (dayStart.getTime() < todayStart.getTime()) {
+      return {
+        data: null,
+        error: "Impossible de réserver un créneau sur une date passée.",
+      }
+    }
+
     const txResult = await prisma.$transaction(async (tx) => {
       const service = await tx.service.findUnique({
         where: { id: data.serviceId },
@@ -80,6 +94,13 @@ export async function createSlotBooking(
 
       if (!service || !service.isActive) {
         return { error: "Ce service n'est plus disponible." as const, record: null }
+      }
+
+      if (service.proProfile.userId === authRes.user.id) {
+        return {
+          error: "Vous ne pouvez pas réserver votre propre prestation." as const,
+          record: null,
+        }
       }
 
       const matchesPro =
@@ -104,6 +125,22 @@ export async function createSlotBooking(
         return {
           error:
             "Ce prestataire est déjà occupé aujourd'hui sur une offre en traitement." as const,
+          record: null,
+        }
+      }
+
+      const unavailability = await tx.unavailabilityPeriod.findFirst({
+        where: {
+          proProfileId: service.proProfile.id,
+          startDate: { lte: dayEnd },
+          endDate: { gte: dayStart },
+        },
+        select: { id: true },
+      })
+
+      if (unavailability) {
+        return {
+          error: "Ce prestataire est indisponible à la date sélectionnée." as const,
           record: null,
         }
       }
@@ -181,9 +218,11 @@ export async function createSlotBooking(
       error: null,
     }
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Erreur inattendue lors de la réservation"
-    return { data: null, error: message }
+    console.error("[booking] createSlotBooking error:", err)
+    return {
+      data: null,
+      error: "Erreur inattendue lors de la création de la réservation.",
+    }
   }
 }
 
@@ -216,7 +255,18 @@ export async function updateBookingStatusAction(
 
     const existing = await prisma.booking.findUnique({
       where: { id: bookingId },
-      select: { id: true, clientId: true, proId: true },
+      select: {
+        id: true,
+        status: true,
+        completedAt: true,
+        clientId: true,
+        proId: true,
+        pro: {
+          select: {
+            proProfile: { select: { id: true } },
+          },
+        },
+      },
     })
 
     if (!existing) {
@@ -231,13 +281,57 @@ export async function updateBookingStatusAction(
       return { data: null, error: "Accès refusé pour cette réservation." }
     }
 
-    await prisma.booking.update({
-      where: { id: bookingId },
-      data: {
-        status,
-        completedAt: status === "COMPLETED" ? new Date() : undefined,
-      },
+    if (existing.status === status) {
+      return { data: { id: bookingId, status }, error: null }
+    }
+
+    const allowedNext = ALLOWED_BOOKING_TRANSITIONS[existing.status] ?? []
+    if (
+      authRes.user.userType !== "admin" &&
+      !allowedNext.includes(status)
+    ) {
+      return {
+        data: null,
+        error: "Transition de statut non autorisée pour cette réservation.",
+      }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      const wasAlreadyCompleted = existing.status === "COMPLETED"
+
+      await tx.booking.update({
+        where: { id: bookingId },
+        data: {
+          status,
+          completedAt:
+            status === "COMPLETED"
+              ? existing.completedAt || new Date()
+              : undefined,
+        },
+      })
+
+      if (status === "COMPLETED" && existing.pro.proProfile) {
+        const otherActive = await tx.booking.count({
+          where: {
+            proId: existing.proId,
+            status: "IN_PROGRESS",
+            id: { not: bookingId },
+          },
+        })
+
+        await tx.proProfile.update({
+          where: { id: existing.pro.proProfile.id },
+          data: {
+            ...(wasAlreadyCompleted ? {} : { completedTasks: { increment: 1 } }),
+            ...(otherActive === 0 ? { availabilityStatus: "AVAILABLE" } : {}),
+          },
+        })
+      }
     })
+
+    if (status === "COMPLETED") {
+      await invalidateCatalogCache()
+    }
 
     await broadcastBookingStatusEvent([existing.clientId, existing.proId], {
       bookingId,
@@ -249,14 +343,17 @@ export async function updateBookingStatusAction(
     revalidatePath("/dashboard/client/bookings")
     revalidatePath("/dashboard/pro")
     revalidatePath("/dashboard/pro/schedule")
+    revalidatePath("/professionals")
 
     return {
       data: { id: bookingId, status },
       error: null,
     }
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Erreur de mise à jour du statut"
-    return { data: null, error: message }
+    console.error("[booking] updateBookingStatus error:", err)
+    return {
+      data: null,
+      error: "Erreur lors de la mise à jour du statut de la réservation.",
+    }
   }
 }

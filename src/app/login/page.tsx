@@ -24,8 +24,16 @@ import { SocialAuthButtons } from "@/components/auth/social-auth-buttons";
 
 function sanitizeCallbackUrl(rawUrl: string | null): string | null {
   if (!rawUrl) return null;
-  if (rawUrl.startsWith("/") && !rawUrl.startsWith("//") && !rawUrl.includes("\\")) {
-    return rawUrl;
+  const trimmed = rawUrl.trim();
+  if (!trimmed || /[\u0000-\u001f\u007f]/.test(trimmed)) {
+    return null;
+  }
+  if (
+    trimmed.startsWith("/") &&
+    !trimmed.startsWith("//") &&
+    !trimmed.includes("\\")
+  ) {
+    return trimmed;
   }
   return null;
 }

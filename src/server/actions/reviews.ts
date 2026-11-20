@@ -160,10 +160,10 @@ export async function submitMutualReviewAction(
       error: null,
     }
   } catch (err) {
+    console.error("[reviews] submitMutualReview error:", err)
     return {
       data: null,
-      error:
-        err instanceof Error ? err.message : "Erreur lors de l'enregistrement de l'avis",
+      error: "Erreur lors de l'enregistrement de l'avis.",
     }
   }
 }

@@ -82,6 +82,53 @@ export function getS3Client(): S3Client | null {
   return cachedS3Client
 }
 
+const STORAGE_OBJECT_KEY_REGEX =
+  /^(portfolio|avatars|kyc)\/[a-zA-Z0-9_-]{1,100}\/[a-zA-Z0-9._-]{1,140}$/
+
+/**
+ * Valide strictement qu'une cle objet Tigris S3 respecte les dossiers autorises
+ * sans traversal (`..`), backslash ou caractere de controle.
+ */
+export function isValidStorageObjectKey(objectKey: string): boolean {
+  const trimmed = objectKey.trim()
+  if (
+    !trimmed ||
+    trimmed.includes("..") ||
+    trimmed.includes("\\") ||
+    trimmed.includes("\0") ||
+    /\s/.test(trimmed)
+  ) {
+    return false
+  }
+  return STORAGE_OBJECT_KEY_REGEX.test(trimmed)
+}
+
+/**
+ * Verifie qu'une cle objet S3 appartient exclusivement au dossier et au proId donnes.
+ */
+export function isValidOwnedObjectKey(
+  folder: StorageFolder,
+  proId: string,
+  objectKey: string
+): boolean {
+  if (!isValidStorageObjectKey(objectKey)) {
+    return false
+  }
+  if (!proId || proId.includes("/") || proId.includes("..")) {
+    return false
+  }
+  const parts = objectKey.split("/")
+  return parts.length === 3 && parts[0] === folder && parts[1] === proId
+}
+
+/**
+ * Construit l'URL publique canonique Tigris cote serveur a partir d'une cle objet verifiee.
+ */
+export function buildTigrisPublicUrl(objectKey: string): string {
+  const cfg = getStorageConfig()
+  return `${cfg.endpoint}/${cfg.bucket}/${objectKey}`
+}
+
 /**
  * Verifie le type MIME autorise et la taille maximale (5 Mo) avant toute signature S3.
  */
@@ -163,6 +210,7 @@ export async function generateTigrisPresignedUrl(
   }
 
   const sanitizedName = options.fileName
+    .replace(/\.{2,}/g, "_")
     .replace(/[^a-zA-Z0-9._-]/g, "_")
     .slice(0, 80)
   const timestamp = Date.now()
@@ -188,6 +236,9 @@ export async function generateTigrisPresignedUrl(
     Bucket: cfg.bucket,
     Key: objectKey,
     ContentType: options.contentType,
+    ...(typeof options.fileSizeBytes === "number"
+      ? { ContentLength: options.fileSizeBytes }
+      : {}),
   })
 
   const uploadUrl = await getSignedUrl(s3, command, { expiresIn: expires })

@@ -4,3 +4,6 @@ allowBuilds:
   msw: false
   prisma: false
   sharp: false
+
+overrides:
+  effect: '^3.22.1'

@@ -1,11 +1,24 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { enqueueFollowUpNotification } from "@/lib/qstash"
-import { invalidateCatalogCache } from "@/lib/redis"
+import { enforceRateLimit, invalidateCatalogCache } from "@/lib/redis"
 import { broadcastBookingStatusEvent } from "@/lib/supabase-server"
 import { requireActionSession } from "@/server/auth-guard"
+
+const entityIdSchema = z.string().trim().min(1, "Identifiant requis").max(120)
+
+const setProAvailabilitySchema = z.object({
+  proId: entityIdSchema,
+  status: z.enum(["AVAILABLE", "BUSY_TODAY", "OFFLINE"]),
+})
+
+const followUpInputSchema = z.object({
+  bookingId: entityIdSchema,
+  answer: z.enum(["YES", "IN_PROGRESS", "NO"]),
+})
 
 export interface ServerActionResponse<T> {
   data: T | null
@@ -32,8 +45,16 @@ export async function setProAvailabilityAction(
       return { data: null, error: authRes.error }
     }
 
+    const parsed = setProAvailabilitySchema.safeParse({ proId, status })
+    if (!parsed.success) {
+      return {
+        data: null,
+        error: parsed.error.issues[0]?.message || "Paramètres de disponibilité invalides.",
+      }
+    }
+
     const existingPro = await prisma.proProfile.findUnique({
-      where: { id: proId },
+      where: { id: parsed.data.proId },
       select: { id: true, userId: true },
     })
 
@@ -50,7 +71,7 @@ export async function setProAvailabilityAction(
 
     await prisma.proProfile.update({
       where: { id: existingPro.id },
-      data: { availabilityStatus: status },
+      data: { availabilityStatus: parsed.data.status },
     })
 
     await invalidateCatalogCache()
@@ -61,13 +82,15 @@ export async function setProAvailabilityAction(
     revalidatePath(`/professionals/pros/${existingPro.id}`)
 
     return {
-      data: { proId: existingPro.id, status },
+      data: { proId: existingPro.id, status: parsed.data.status },
       error: null,
     }
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Erreur de mise à jour de disponibilité"
-    return { data: null, error: message }
+    console.error("[booking-status] setProAvailability error:", err)
+    return {
+      data: null,
+      error: "Erreur lors de la mise à jour de disponibilité.",
+    }
   }
 }
 
@@ -90,8 +113,18 @@ export async function validateOfferAction(
       return { data: null, error: authRes.error }
     }
 
+    const rateLimit = await enforceRateLimit("booking", authRes.user.id)
+    if (!rateLimit.allowed) {
+      return { data: null, error: rateLimit.error || "Trop de requêtes effectuées." }
+    }
+
+    const parsedId = entityIdSchema.safeParse(bookingId)
+    if (!parsedId.success) {
+      return { data: null, error: "Identifiant de réservation invalide." }
+    }
+
     const booking = await prisma.booking.findUnique({
-      where: { id: bookingId },
+      where: { id: parsedId.data },
       include: {
         client: { select: { email: true, name: true } },
         pro: { select: { name: true, proProfile: true } },
@@ -109,6 +142,13 @@ export async function validateOfferAction(
       authRes.user.userType !== "admin"
     ) {
       return { data: null, error: "Accès refusé pour valider cette offre." }
+    }
+
+    if (booking.status !== "NEGOTIATING") {
+      return {
+        data: null,
+        error: "Seule une demande en négociation peut être validée.",
+      }
     }
 
     await prisma.$transaction(async (tx) => {
@@ -153,9 +193,11 @@ export async function validateOfferAction(
       error: null,
     }
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Erreur lors de la validation de l'offre"
-    return { data: null, error: message }
+    console.error("[booking-status] validateOffer error:", err)
+    return {
+      data: null,
+      error: "Erreur lors de la validation de l'offre.",
+    }
   }
 }
 
@@ -180,8 +222,18 @@ export async function answerTaskFollowUpAction(
       return { data: null, error: authRes.error }
     }
 
+    const rateLimit = await enforceRateLimit("booking", authRes.user.id)
+    if (!rateLimit.allowed) {
+      return { data: null, error: rateLimit.error || "Trop de requêtes effectuées." }
+    }
+
+    const parsed = followUpInputSchema.safeParse({ bookingId, answer })
+    if (!parsed.success) {
+      return { data: null, error: "Paramètres de suivi invalides." }
+    }
+
     const booking = await prisma.booking.findUnique({
-      where: { id: bookingId },
+      where: { id: parsed.data.bookingId },
       include: {
         client: { select: { email: true, name: true } },
         pro: { select: { name: true, proProfile: true } },
@@ -201,6 +253,24 @@ export async function answerTaskFollowUpAction(
       return {
         data: null,
         error: "Vous n'êtes pas autorisé à actualiser cette mission.",
+      }
+    }
+
+    if (booking.status === "COMPLETED" && parsed.data.answer === "YES") {
+      return {
+        data: {
+          bookingId: booking.id,
+          bookingStatus: "COMPLETED",
+          proStatus: "AVAILABLE",
+        },
+        error: null,
+      }
+    }
+
+    if (booking.status !== "IN_PROGRESS") {
+      return {
+        data: null,
+        error: "Cette mission n'est pas en cours de traitement.",
       }
     }
 
@@ -289,8 +359,10 @@ export async function answerTaskFollowUpAction(
       error: null,
     }
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Erreur lors du suivi de fin de tâche"
-    return { data: null, error: message }
+    console.error("[booking-status] answerTaskFollowUp error:", err)
+    return {
+      data: null,
+      error: "Erreur lors du suivi de fin de tâche.",
+    }
   }
 }

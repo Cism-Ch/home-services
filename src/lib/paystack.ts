@@ -128,6 +128,36 @@ export interface VerifyPaystackResult {
 }
 
 /**
+ * Sanitise l'URL de retour Paystack pour eviter les Open Redirects post-paiement.
+ */
+export function sanitizePaystackCallbackUrl(
+  rawUrl: string | undefined,
+  appUrl: string,
+  fallbackPath: string
+): string {
+  const cleanAppUrl = appUrl.replace(/\/$/, "")
+  const fallback = `${cleanAppUrl}${fallbackPath}`
+  if (!rawUrl) return fallback
+
+  const trimmed = rawUrl.trim()
+  if (!trimmed || /[\u0000-\u001f\u007f]/.test(trimmed)) {
+    return fallback
+  }
+
+  if (trimmed.startsWith("/") && !trimmed.startsWith("//") && !trimmed.includes("\\")) {
+    return `${cleanAppUrl}${trimmed}`
+  }
+
+  try {
+    const parsed = new URL(trimmed)
+    const allowedOrigin = new URL(cleanAppUrl).origin
+    return parsed.origin === allowedOrigin ? parsed.toString() : fallback
+  } catch {
+    return fallback
+  }
+}
+
+/**
  * Initialise une transaction ou un abonnement Paystack en XOF (FCFA)
  */
 export async function initializePaystackSubscription(
@@ -147,7 +177,11 @@ export async function initializePaystackSubscription(
     params.plan === "CLIENT_GOLD"
       ? "/dashboard/client/settings"
       : "/dashboard/pro/settings"
-  const callback = params.callbackUrl || `${appUrl}${defaultPath}`
+  const callback = sanitizePaystackCallbackUrl(
+    params.callbackUrl,
+    appUrl,
+    defaultPath
+  )
 
   if (secretKey) {
     const envPlanCode = getPaystackPlanCodeFromEnv(params.plan)
@@ -233,7 +267,7 @@ export async function verifyPaystackTransaction(
 
   const secretKey = process.env.PAYSTACK_SECRET_KEY?.trim()
   if (!secretKey) {
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV === "production" || process.env.VERCEL === "1") {
       return {
         verified: false,
         simulated: false,
@@ -337,7 +371,8 @@ export function verifyPaystackWebhookSignature(
   signatureHeader: string | null
 ): boolean {
   const secret = process.env.PAYSTACK_SECRET_KEY?.trim() || ""
-  if (!secret || !signatureHeader) {
+  const normalizedSignature = signatureHeader?.trim().toLowerCase() || ""
+  if (!secret || !normalizedSignature) {
     return false
   }
 
@@ -347,7 +382,7 @@ export function verifyPaystackWebhookSignature(
     .digest("hex")
 
   const expectedBuf = Buffer.from(expectedHash, "utf8")
-  const receivedBuf = Buffer.from(signatureHeader, "utf8")
+  const receivedBuf = Buffer.from(normalizedSignature, "utf8")
 
   if (expectedBuf.length !== receivedBuf.length) {
     return false

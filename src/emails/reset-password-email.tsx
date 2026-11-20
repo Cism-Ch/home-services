@@ -9,10 +9,34 @@ export interface ResetPasswordEmailProps {
   resetUrl: string
 }
 
+/**
+ * Echappe les caracteres HTML speciaux pour prevenir toute injection XSS dans les emails.
+ */
+export function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+}
+
+/**
+ * N'autorise que les liens http:// et https:// dans les balises href des emails.
+ */
+export function sanitizeHttpUrl(rawUrl: string): string {
+  const trimmed = rawUrl.trim()
+  if (trimmed.startsWith("https://") || trimmed.startsWith("http://")) {
+    return trimmed
+  }
+  return "#"
+}
+
 export function ResetPasswordEmailTemplate({
   userName,
   resetUrl,
 }: ResetPasswordEmailProps) {
+  const safeResetUrl = sanitizeHttpUrl(resetUrl)
   return (
     <div
       style={{
@@ -34,7 +58,7 @@ export function ResetPasswordEmailTemplate({
       </p>
       <div style={{ margin: "24px 0" }}>
         <a
-          href={resetUrl}
+          href={safeResetUrl}
           style={{
             backgroundColor: "#111827",
             color: "#ffffff",
@@ -61,18 +85,21 @@ export function ResetPasswordEmailTemplate({
  * Genere le HTML complet a partir des proprietes typees pour l'API Resend
  */
 export function renderResetPasswordEmailHtml(props: ResetPasswordEmailProps): string {
+  const safeUserName = escapeHtml(props.userName)
+  const safeResetUrl = escapeHtml(sanitizeHttpUrl(props.resetUrl))
+
   return `<!DOCTYPE html>
 <html lang="fr">
 <head><meta charset="utf-8" /><title>Réinitialisation de votre mot de passe</title></head>
 <body style="font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; padding: 24px;">
   <div style="max-width: 600px; margin: 0 auto; padding: 24px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px;">
-    <h2 style="color: #111827; margin-bottom: 8px;">Bonjour ${props.userName},</h2>
+    <h2 style="color: #111827; margin-bottom: 8px;">Bonjour ${safeUserName},</h2>
     <p style="color: #4b5563; font-size: 14px; line-height: 1.6;">
       Vous avez demandé la réinitialisation de votre mot de passe sur <strong>HomeServices</strong>.
       Ce lien sécurisé expire dans 15 minutes.
     </p>
     <p style="margin: 24px 0;">
-      <a href="${props.resetUrl}" style="background-color: #111827; color: #ffffff; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600; display: inline-block;">
+      <a href="${safeResetUrl}" style="background-color: #111827; color: #ffffff; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600; display: inline-block;">
         Réinitialiser mon mot de passe
       </a>
     </p>

@@ -1,6 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import {
   subscriptionCheckoutSchema,
@@ -23,6 +24,22 @@ import { requireActionSession, requireProProfile } from "@/server/auth-guard"
 export interface ServerActionResponse<T> {
   data: T | null
   error: string | null
+}
+
+const paystackReferenceSchema = z
+  .string()
+  .trim()
+  .min(4, "Référence Paystack invalide")
+  .max(120, "Référence Paystack trop longue")
+
+function isPlanAllowedForRole(
+  plan: SubscriptionPlanCode,
+  userType: "client" | "pro" | "admin"
+): boolean {
+  if (plan === "CLIENT_GOLD") {
+    return true
+  }
+  return userType === "pro" || userType === "admin"
 }
 
 /**
@@ -51,6 +68,13 @@ export async function startSubscriptionCheckoutAction(
     return { data: null, error: firstIssue }
   }
 
+  if (!isPlanAllowedForRole(parsed.data.plan, authRes.user.userType)) {
+    return {
+      data: null,
+      error: "Les formules Prestataire sont réservées aux comptes professionnels.",
+    }
+  }
+
   try {
     const result = await initializePaystackSubscription({
       userId: authRes.user.id,
@@ -64,9 +88,10 @@ export async function startSubscriptionCheckoutAction(
       error: null,
     }
   } catch (err) {
+    console.error("[subscription] startCheckout error:", err)
     return {
       data: null,
-      error: err instanceof Error ? err.message : "Erreur d'initialisation Paystack",
+      error: "Impossible d'initialiser le paiement Paystack pour le moment.",
     }
   }
 }
@@ -90,8 +115,21 @@ export async function verifyAndSyncSubscriptionAction(
     return { data: null, error: authRes.error }
   }
 
+  const rateLimit = await enforceRateLimit("checkout", authRes.user.id)
+  if (!rateLimit.allowed) {
+    return { data: null, error: rateLimit.error }
+  }
+
+  const parsedRef = paystackReferenceSchema.safeParse(reference)
+  if (!parsedRef.success) {
+    return {
+      data: null,
+      error: parsedRef.error.issues[0]?.message || "Référence Paystack invalide.",
+    }
+  }
+
   try {
-    const verification = await verifyPaystackTransaction(reference)
+    const verification = await verifyPaystackTransaction(parsedRef.data)
     if (!verification.verified) {
       return {
         data: null,
@@ -99,7 +137,21 @@ export async function verifyAndSyncSubscriptionAction(
       }
     }
 
-    if (
+    if (!verification.simulated) {
+      const matchesUserId =
+        verification.metadata?.userId &&
+        verification.metadata.userId === authRes.user.id
+      const matchesEmail =
+        verification.customerEmail &&
+        verification.customerEmail.toLowerCase() === authRes.user.email.toLowerCase()
+
+      if (!matchesUserId && !matchesEmail) {
+        return {
+          data: null,
+          error: "Cette transaction Paystack n'est pas associée à votre compte.",
+        }
+      }
+    } else if (
       verification.metadata?.userId &&
       verification.metadata.userId !== authRes.user.id
     ) {
@@ -109,15 +161,35 @@ export async function verifyAndSyncSubscriptionAction(
       }
     }
 
-    const resolvedPlan = verification.metadata?.plan || expectedPlan
+    const resolvedPlan = verification.simulated
+      ? verification.metadata?.plan || expectedPlan
+      : verification.metadata?.plan
+
     if (!resolvedPlan || !(resolvedPlan in PAYSTACK_PLANS)) {
       return {
         data: null,
-        error: "Impossible d'identifier la formule d'abonnement Paystack.",
+        error: "Impossible d'identifier de manière fiable la formule Paystack.",
+      }
+    }
+
+    if (!isPlanAllowedForRole(resolvedPlan, authRes.user.userType)) {
+      return {
+        data: null,
+        error: "Cette formule d'abonnement n'est pas autorisée pour votre rôle.",
       }
     }
 
     const planDef = PAYSTACK_PLANS[resolvedPlan]
+    if (
+      typeof verification.amountFCFA !== "number" ||
+      verification.amountFCFA < planDef.amountFCFA
+    ) {
+      return {
+        data: null,
+        error: "Le montant Paystack vérifié est insuffisant pour activer cette formule.",
+      }
+    }
+
     const now = new Date()
     const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
     const trialEnd =
@@ -197,12 +269,10 @@ export async function verifyAndSyncSubscriptionAction(
       error: null,
     }
   } catch (err) {
+    console.error("[subscription] verifyAndSync error:", err)
     return {
       data: null,
-      error:
-        err instanceof Error
-          ? err.message
-          : "Erreur de synchronisation de l'abonnement Paystack",
+      error: "Erreur de synchronisation de l'abonnement Paystack.",
     }
   }
 }
@@ -244,9 +314,10 @@ export async function updateClientSettingsAction(
       error: null,
     }
   } catch (err) {
+    console.error("[subscription] updateClientSettings error:", err)
     return {
       data: null,
-      error: err instanceof Error ? err.message : "Erreur de mise à jour du profil client",
+      error: "Erreur lors de la mise à jour du profil client.",
     }
   }
 }
@@ -302,12 +373,10 @@ export async function updateProBusinessAction(
       error: null,
     }
   } catch (err) {
+    console.error("[subscription] updateProBusiness error:", err)
     return {
       data: null,
-      error:
-        err instanceof Error
-          ? err.message
-          : "Erreur lors de l'enregistrement des paramètres prestataire",
+      error: "Erreur lors de l'enregistrement des paramètres prestataire.",
     }
   }
 }

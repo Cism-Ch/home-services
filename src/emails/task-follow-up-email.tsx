@@ -4,6 +4,7 @@
  */
 
 import * as React from "react"
+import { escapeHtml, sanitizeHttpUrl } from "@/emails/reset-password-email"
 
 export interface TaskFollowUpEmailProps {
   clientName: string
@@ -24,6 +25,8 @@ export function TaskFollowUpEmailTemplate({
   indicativePriceFCFA,
   dashboardUrl,
 }: TaskFollowUpEmailProps) {
+  const safeBaseUrl = sanitizeHttpUrl(dashboardUrl)
+  const encodedBookingId = encodeURIComponent(bookingId)
   return (
     <div
       style={{
@@ -66,7 +69,7 @@ export function TaskFollowUpEmailTemplate({
         </p>
         <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
           <a
-            href={`${dashboardUrl}?booking=${bookingId}&answer=YES`}
+            href={`${safeBaseUrl}?booking=${encodedBookingId}&answer=YES`}
             style={{
               backgroundColor: "#059669",
               color: "#ffffff",
@@ -80,7 +83,7 @@ export function TaskFollowUpEmailTemplate({
             Oui, c&apos;est finalisé
           </a>
           <a
-            href={`${dashboardUrl}?booking=${bookingId}&answer=IN_PROGRESS`}
+            href={`${safeBaseUrl}?booking=${encodedBookingId}&answer=IN_PROGRESS`}
             style={{
               backgroundColor: "#2563eb",
               color: "#ffffff",
@@ -94,7 +97,7 @@ export function TaskFollowUpEmailTemplate({
             Toujours en cours
           </a>
           <a
-            href={`${dashboardUrl}?booking=${bookingId}&answer=NO`}
+            href={`${safeBaseUrl}?booking=${encodedBookingId}&answer=NO`}
             style={{
               backgroundColor: "#f3f4f6",
               color: "#374151",
@@ -121,29 +124,37 @@ export function TaskFollowUpEmailTemplate({
  * Genere le HTML complet a partir des proprietes typees pour l'API Resend
  */
 export function renderTaskFollowUpEmailHtml(props: TaskFollowUpEmailProps): string {
+  const safeClientName = escapeHtml(props.clientName)
+  const safeServiceTitle = escapeHtml(props.serviceTitle)
+  const safeProName = escapeHtml(props.proName)
+  const safeTimeSlot = escapeHtml(props.timeSlot)
+  const safeBookingId = escapeHtml(props.bookingId)
+  const safeDashboardUrl = escapeHtml(sanitizeHttpUrl(props.dashboardUrl))
+  const encodedBookingId = encodeURIComponent(props.bookingId)
   const formattedPrice = `${props.indicativePriceFCFA.toLocaleString("fr-FR")} FCFA`
+
   return `<!DOCTYPE html>
 <html lang="fr">
 <head><meta charset="utf-8" /><title>Suivi de votre intervention</title></head>
 <body style="font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; padding: 24px;">
   <div style="max-width: 600px; margin: 0 auto; padding: 24px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px;">
-    <h2 style="color: #111827; margin-bottom: 8px;">Bonjour ${props.clientName},</h2>
+    <h2 style="color: #111827; margin-bottom: 8px;">Bonjour ${safeClientName},</h2>
     <p style="color: #4b5563; font-size: 14px; line-height: 1.6;">
-      Votre intervention <strong>${props.serviceTitle}</strong> avec l'artisan <strong>${props.proName}</strong>
-      (créneau ${props.timeSlot}, tarif indicatif ${formattedPrice}) est enregistrée en cours de traitement.
+      Votre intervention <strong>${safeServiceTitle}</strong> avec l'artisan <strong>${safeProName}</strong>
+      (créneau ${safeTimeSlot}, tarif indicatif ${formattedPrice}) est enregistrée en cours de traitement.
     </p>
     <div style="background-color: #f9fafb; padding: 16px; border-radius: 8px; margin: 20px 0; border: 1px solid #e5e7eb;">
       <p style="font-weight: 700; color: #111827; margin-bottom: 12px; font-size: 15px;">
         Vos tâches ont-elles été finalisées ?
       </p>
       <p style="margin: 0;">
-        <a href="${props.dashboardUrl}?booking=${props.bookingId}&answer=YES" style="background-color: #059669; color: #ffffff; padding: 10px 14px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600; margin-right: 8px;">Oui, c'est finalisé</a>
-        <a href="${props.dashboardUrl}?booking=${props.bookingId}&answer=IN_PROGRESS" style="background-color: #2563eb; color: #ffffff; padding: 10px 14px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600; margin-right: 8px;">Toujours en cours</a>
-        <a href="${props.dashboardUrl}?booking=${props.bookingId}&answer=NO" style="background-color: #e5e7eb; color: #374151; padding: 10px 14px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600;">Non, problème</a>
+        <a href="${safeDashboardUrl}?booking=${encodedBookingId}&answer=YES" style="background-color: #059669; color: #ffffff; padding: 10px 14px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600; margin-right: 8px;">Oui, c'est finalisé</a>
+        <a href="${safeDashboardUrl}?booking=${encodedBookingId}&answer=IN_PROGRESS" style="background-color: #2563eb; color: #ffffff; padding: 10px 14px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600; margin-right: 8px;">Toujours en cours</a>
+        <a href="${safeDashboardUrl}?booking=${encodedBookingId}&answer=NO" style="background-color: #e5e7eb; color: #374151; padding: 10px 14px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600;">Non, problème</a>
       </p>
     </div>
     <p style="color: #6b7280; font-size: 12px;">
-      Référence de suivi : #${props.bookingId} — HomeServices Afrique
+      Référence de suivi : #${safeBookingId} — HomeServices Afrique
     </p>
   </div>
 </body>

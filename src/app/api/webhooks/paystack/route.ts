@@ -6,6 +6,7 @@
 
 import { revalidatePath } from "next/cache"
 import { NextRequest, NextResponse } from "next/server"
+import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { invalidateCatalogCache } from "@/lib/redis"
 import {
@@ -15,27 +16,45 @@ import {
   type SubscriptionPlanCode,
 } from "@/lib/paystack"
 
-interface PaystackWebhookEvent {
-  event: string
-  data: {
-    reference?: string
-    amount?: number
-    currency?: string
-    customer?: {
-      customer_code?: string
-      email?: string
-    }
-    subscription_code?: string
-    plan?: {
-      plan_code?: string
-    } | string
-    metadata?: {
-      userId?: string
-      plan?: SubscriptionPlanCode
-      trialDays?: number
-    }
-  }
-}
+const paystackPlanEnum = z.enum([
+  "PRO_STANDARD",
+  "PRO_PREMIUM",
+  "PRO_ENTERPRISE",
+  "CLIENT_GOLD",
+])
+
+const paystackWebhookSchema = z.object({
+  event: z.string().min(1),
+  data: z.object({
+    reference: z.string().optional(),
+    amount: z.number().nonnegative().optional(),
+    currency: z.string().optional(),
+    customer: z
+      .object({
+        customer_code: z.string().optional(),
+        email: z.string().optional(),
+      })
+      .optional(),
+    subscription_code: z.string().optional(),
+    plan: z
+      .union([
+        z.string(),
+        z.object({
+          plan_code: z.string().optional(),
+        }),
+      ])
+      .optional(),
+    metadata: z
+      .object({
+        userId: z.string().optional(),
+        plan: paystackPlanEnum.optional(),
+        trialDays: z.number().int().nonnegative().optional(),
+      })
+      .optional(),
+  }),
+})
+
+type PaystackWebhookEvent = z.infer<typeof paystackWebhookSchema>
 
 function extractPlanCodeString(
   planField: PaystackWebhookEvent["data"]["plan"]
@@ -100,17 +119,39 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const payload = JSON.parse(rawBody) as PaystackWebhookEvent
-    const { event, data } = payload
+    let parsedJson: unknown
+    try {
+      parsedJson = JSON.parse(rawBody)
+    } catch {
+      return NextResponse.json(
+        { error: "Charge utile JSON webhook invalide" },
+        { status: 400 }
+      )
+    }
+
+    const validatedPayload = paystackWebhookSchema.safeParse(parsedJson)
+    if (!validatedPayload.success) {
+      return NextResponse.json(
+        { error: "Structure d'événement Paystack invalide" },
+        { status: 400 }
+      )
+    }
+
+    const { event, data } = validatedPayload.data
     const userId = await resolveUserIdFromWebhook(data)
     const planCode = resolvePlanFromWebhook(data)
     const paystackPlanCode = extractPlanCodeString(data.plan)
 
-    if (
-      event === "charge.success" ||
-      event === "subscription.create" ||
-      event === "invoice.create"
-    ) {
+    // L'emission d'une facture (invoice.create) ne vaut pas encaissement effectif
+    if (event === "invoice.create") {
+      return NextResponse.json({
+        received: true,
+        event,
+        skipped: "En attente de règlement confirmé (charge.success)",
+      })
+    }
+
+    if (event === "charge.success" || event === "subscription.create") {
       if (!userId || !planCode || !(planCode in PAYSTACK_PLANS)) {
         return NextResponse.json({
           received: true,
@@ -118,7 +159,51 @@ export async function POST(request: NextRequest) {
         })
       }
 
+      const dbUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, userType: true },
+      })
+
+      if (!dbUser) {
+        return NextResponse.json({
+          received: true,
+          skipped: "Utilisateur introuvable en base",
+        })
+      }
+
+      if (
+        planCode !== "CLIENT_GOLD" &&
+        dbUser.userType !== "pro" &&
+        dbUser.userType !== "admin"
+      ) {
+        return NextResponse.json({
+          received: true,
+          skipped: "Rôle utilisateur incompatible avec cette formule",
+        })
+      }
+
       const planDef = PAYSTACK_PLANS[planCode]
+
+      if (event === "charge.success") {
+        const expectedMinorAmount = planDef.amountFCFA * 100
+        if (typeof data.amount !== "number" || data.amount < expectedMinorAmount) {
+          return NextResponse.json({
+            received: true,
+            skipped: "Montant Paystack inférieur au tarif de la formule",
+          })
+        }
+
+        if (
+          data.currency &&
+          !["XOF", "XAF"].includes(data.currency.toUpperCase())
+        ) {
+          return NextResponse.json({
+            received: true,
+            skipped: "Devise non supportée pour cette formule",
+          })
+        }
+      }
+
       const now = new Date()
       const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
       const trialEnd =
@@ -131,7 +216,7 @@ export async function POST(request: NextRequest) {
         if (planCode !== "CLIENT_GOLD") {
           await tx.subscription.updateMany({
             where: {
-              userId,
+              userId: dbUser.id,
               plan: { in: ["PRO_STANDARD", "PRO_PREMIUM", "PRO_ENTERPRISE"], not: planCode },
               status: { in: ["ACTIVE", "TRIALING", "PAST_DUE"] },
             },
@@ -140,17 +225,13 @@ export async function POST(request: NextRequest) {
         }
 
         const existingSub = await tx.subscription.findFirst({
-          where: { userId, plan: planCode },
+          where: { userId: dbUser.id, plan: planCode },
           orderBy: { createdAt: "desc" },
         })
 
         if (existingSub) {
-          const stillInTrial =
-            existingSub.trialEndDate && existingSub.trialEndDate.getTime() > now.getTime()
           const nextStatus =
-            event === "invoice.create" && stillInTrial
-              ? "TRIALING"
-              : event === "charge.success" && existingSub.status === "PAST_DUE"
+            event === "charge.success" && existingSub.status === "PAST_DUE"
               ? "ACTIVE"
               : planDef.trialDays > 0 && !existingSub.trialEndDate
               ? "TRIALING"
@@ -172,7 +253,7 @@ export async function POST(request: NextRequest) {
         } else {
           await tx.subscription.create({
             data: {
-              userId,
+              userId: dbUser.id,
               plan: planCode,
               amount: planDef.amountFCFA,
               currency: "XOF",
@@ -245,13 +326,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ received: true, event })
   } catch (err) {
+    console.error("[paystack-webhook] Erreur de traitement:", err)
     return NextResponse.json(
-      {
-        error:
-          err instanceof Error
-            ? err.message
-            : "Erreur de traitement webhook Paystack",
-      },
+      { error: "Erreur de traitement webhook Paystack" },
       { status: 500 }
     )
   }

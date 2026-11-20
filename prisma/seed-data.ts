@@ -1695,7 +1695,7 @@ export const SEED_BOOKINGS: SeedBookingFixture[] = [
 ]
 
 export const SEED_REVIEWS: SeedReviewFixture[] = [
-  // 11 avis CLIENT_TO_PRO (notes 4 et 5 + 1 avis controverse signale)
+  // 11 avis CLIENT_TO_PRO (notes 4 et 5 publies + 1 avis controverse signale)
   {
     id: "seed-review-01",
     bookingId: "seed-booking-01",
@@ -1705,7 +1705,7 @@ export const SEED_REVIEWS: SeedReviewFixture[] = [
     rating: 5,
     comment:
       "Intervention ponctuelle à 8h précises. Fuite réparée proprement en moins d'une heure.",
-    isModerated: false,
+    isModerated: true,
     isReported: false,
   },
   {
@@ -1717,7 +1717,7 @@ export const SEED_REVIEWS: SeedReviewFixture[] = [
     rating: 5,
     comment:
       "Très professionnel, bâche de protection utilisée pendant le nettoyage du split.",
-    isModerated: false,
+    isModerated: true,
     isReported: false,
   },
   {
@@ -1729,7 +1729,7 @@ export const SEED_REVIEWS: SeedReviewFixture[] = [
     rating: 5,
     comment:
       "Diagnostic précis du tableau électrique et équilibrage des phases impeccable.",
-    isModerated: false,
+    isModerated: true,
     isReported: false,
   },
   {
@@ -1741,7 +1741,7 @@ export const SEED_REVIEWS: SeedReviewFixture[] = [
     rating: 5,
     comment:
       "Climatisation remise à neuf, le souffle froid est revenu immédiatement.",
-    isModerated: false,
+    isModerated: true,
     isReported: false,
   },
   {
@@ -1753,7 +1753,7 @@ export const SEED_REVIEWS: SeedReviewFixture[] = [
     rating: 5,
     comment:
       "Équipe discrète, rapide et très minutieuse sur la cuisine et les baies vitrées.",
-    isModerated: false,
+    isModerated: true,
     isReported: false,
   },
   {
@@ -1765,7 +1765,7 @@ export const SEED_REVIEWS: SeedReviewFixture[] = [
     rating: 4,
     comment:
       "Panne résolue efficacement, léger retard de 15 minutes dû au trafic mais prévenu sur WhatsApp.",
-    isModerated: false,
+    isModerated: true,
     isReported: false,
   },
   {
@@ -1777,7 +1777,7 @@ export const SEED_REVIEWS: SeedReviewFixture[] = [
     rating: 5,
     comment:
       "Finition parfaite sans aucune trace au sol, rendu satiné exactement conforme au nuancier.",
-    isModerated: false,
+    isModerated: true,
     isReported: false,
   },
   {
@@ -1789,7 +1789,7 @@ export const SEED_REVIEWS: SeedReviewFixture[] = [
     rating: 5,
     comment:
       "Armoire protégée sous couvertures et livrée sans la moindre rayure.",
-    isModerated: false,
+    isModerated: true,
     isReported: false,
   },
   {
@@ -1801,7 +1801,7 @@ export const SEED_REVIEWS: SeedReviewFixture[] = [
     rating: 5,
     comment:
       "Travail très sérieux sur la serrure multipoints, explications claires sur l'entretien.",
-    isModerated: false,
+    isModerated: true,
     isReported: false,
   },
   {
@@ -1825,7 +1825,7 @@ export const SEED_REVIEWS: SeedReviewFixture[] = [
     rating: 5,
     comment:
       "Jardin métamorphosé en une matinée, déchets verts entièrement évacués.",
-    isModerated: false,
+    isModerated: true,
     isReported: false,
   },
   // 5 avis PRO_TO_CLIENT (incluant 1 avis signale pour moderation Admin)
@@ -1838,7 +1838,7 @@ export const SEED_REVIEWS: SeedReviewFixture[] = [
     rating: 5,
     comment:
       "Client très accueillant, accès facile et règlement immédiat sur place.",
-    isModerated: false,
+    isModerated: true,
     isReported: false,
   },
   {
@@ -1849,7 +1849,7 @@ export const SEED_REVIEWS: SeedReviewFixture[] = [
     authorType: "PRO_TO_CLIENT",
     rating: 5,
     comment: "Disponibilité exacte au créneau réservé, excellente communication.",
-    isModerated: false,
+    isModerated: true,
     isReported: false,
   },
   {
@@ -1860,7 +1860,7 @@ export const SEED_REVIEWS: SeedReviewFixture[] = [
     authorType: "PRO_TO_CLIENT",
     rating: 5,
     comment: "Description claire de la panne avant notre arrivée.",
-    isModerated: false,
+    isModerated: true,
     isReported: false,
   },
   {
@@ -1871,7 +1871,7 @@ export const SEED_REVIEWS: SeedReviewFixture[] = [
     authorType: "PRO_TO_CLIENT",
     rating: 5,
     comment: "Très bonne organisation et consignes précises.",
-    isModerated: false,
+    isModerated: true,
     isReported: false,
   },
   {

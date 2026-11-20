@@ -445,7 +445,8 @@ async function main() {
         where: {
           targetId: proUserId,
           authorType: "CLIENT_TO_PRO",
-          isModerated: false,
+          isModerated: true,
+          isReported: false,
         },
         _avg: { rating: true },
         _count: { id: true },

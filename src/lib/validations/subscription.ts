@@ -1,11 +1,37 @@
 import { z } from "zod"
 import { africanPhoneRegex } from "./booking"
 
+function isAllowedCallbackUrl(rawUrl: string): boolean {
+  const trimmed = rawUrl.trim()
+  if (!trimmed || /[\u0000-\u001f\u007f]/.test(trimmed)) {
+    return false
+  }
+  if (trimmed.startsWith("/") && !trimmed.startsWith("//") && !trimmed.includes("\\")) {
+    return true
+  }
+  try {
+    const parsed = new URL(trimmed)
+    const appOrigin = new URL(
+      process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+    ).origin
+    return parsed.origin === appOrigin
+  } catch {
+    return false
+  }
+}
+
 export const subscriptionCheckoutSchema = z.object({
   plan: z.enum(["PRO_STANDARD", "PRO_PREMIUM", "PRO_ENTERPRISE", "CLIENT_GOLD"], {
     message: "Formule d'abonnement Paystack invalide",
   }),
-  callbackUrl: z.string().url("URL de retour invalide").optional(),
+  callbackUrl: z
+    .string()
+    .trim()
+    .max(500, "URL de retour trop longue")
+    .refine(isAllowedCallbackUrl, {
+      message: "URL de retour non autorisée (domaine interne requis)",
+    })
+    .optional(),
 })
 
 export const clientSettingsSchema = z.object({
