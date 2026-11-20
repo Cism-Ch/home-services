@@ -9,8 +9,18 @@ import {
 } from "@/lib/validations/booking"
 import { prisma } from "@/lib/prisma"
 import { enforceRateLimit, invalidateCatalogCache } from "@/lib/redis"
+import {
+  computeAvailablePlaces,
+  computeBookingEndDate,
+  normalizeDurationUnit,
+  normalizeMaxConcurrent,
+  normalizeOrganizationType,
+  toIsoDayKey,
+  type DurationUnit,
+} from "@/lib/scheduling"
 import { broadcastBookingStatusEvent } from "@/lib/supabase-server"
 import { requireActionSession } from "@/server/auth-guard"
+import { syncProAvailabilityFromCapacity } from "@/server/helpers/availability-sync"
 
 const ALLOWED_BOOKING_TRANSITIONS: Record<string, readonly string[]> = {
   NEGOTIATING: ["IN_PROGRESS", "CANCELLED"],
@@ -29,6 +39,9 @@ export interface BookingResult {
   proId: string
   serviceId: string
   bookingDate: string
+  endDate: string
+  durationUnit: DurationUnit
+  durationValue: number
   timeSlot: string
   clientName: string
   clientPhone: string
@@ -71,20 +84,18 @@ export async function createSlotBooking(
       return { data: null, error: "Date de réservation invalide." }
     }
 
-    const dayStart = new Date(requestedDate)
-    dayStart.setHours(0, 0, 0, 0)
-    const dayEnd = new Date(requestedDate)
-    dayEnd.setHours(23, 59, 59, 999)
+    const startDayKey = toIsoDayKey(requestedDate)
+    const todayKey = toIsoDayKey(new Date())
 
-    const todayStart = new Date()
-    todayStart.setHours(0, 0, 0, 0)
-
-    if (dayStart.getTime() < todayStart.getTime()) {
+    if (startDayKey < todayKey) {
       return {
         data: null,
         error: "Impossible de réserver un créneau sur une date passée.",
       }
     }
+
+    const bookingDateUtc = new Date(`${startDayKey}T12:00:00.000Z`)
+    const dayStart = new Date(`${startDayKey}T00:00:00.000Z`)
 
     const txResult = await prisma.$transaction(async (tx) => {
       const service = await tx.service.findUnique({
@@ -120,19 +131,32 @@ export async function createSlotBooking(
         }
       }
 
-      const isToday = dayStart.getTime() === todayStart.getTime()
+      const isToday = startDayKey === todayKey
       if (isToday && service.proProfile.availabilityStatus === "BUSY_TODAY") {
         return {
           error:
-            "Ce prestataire est déjà occupé aujourd'hui sur une offre en traitement." as const,
+            "Ce prestataire est déjà complet aujourd'hui sur ses chantiers en cours." as const,
           record: null,
         }
       }
 
+      const effectiveUnit = normalizeDurationUnit(
+        data.durationUnit || service.durationUnit
+      )
+      const effectiveValue = Math.max(
+        1,
+        data.durationValue ?? service.durationValue ?? service.duration ?? 60
+      )
+      const rangeEnd = computeBookingEndDate(
+        startDayKey,
+        effectiveValue,
+        effectiveUnit
+      )
+
       const unavailability = await tx.unavailabilityPeriod.findFirst({
         where: {
           proProfileId: service.proProfile.id,
-          startDate: { lte: dayEnd },
+          startDate: { lte: rangeEnd },
           endDate: { gte: dayStart },
         },
         select: { id: true },
@@ -140,25 +164,54 @@ export async function createSlotBooking(
 
       if (unavailability) {
         return {
-          error: "Ce prestataire est indisponible à la date sélectionnée." as const,
+          error:
+            "La période sélectionnée chevauche une indisponibilité du prestataire." as const,
           record: null,
         }
       }
 
-      const overlappingBooking = await tx.booking.findFirst({
+      const maxPlaces = normalizeMaxConcurrent(
+        normalizeOrganizationType(service.proProfile.organizationType),
+        service.proProfile.maxConcurrentProjects
+      )
+
+      const overlappingBookings = await tx.booking.findMany({
         where: {
           proId: service.proProfile.userId,
-          bookingDate: { gte: dayStart, lte: dayEnd },
-          timeSlot: data.timeSlot,
           status: { in: ["NEGOTIATING", "IN_PROGRESS"] },
+          bookingDate: { lte: rangeEnd },
+          endDate: { gte: dayStart },
         },
-        select: { id: true },
+        select: {
+          id: true,
+          bookingDate: true,
+          endDate: true,
+          timeSlot: true,
+          durationUnit: true,
+          durationValue: true,
+        },
       })
 
-      if (overlappingBooking) {
+      const placeAvailability = computeAvailablePlaces({
+        maxConcurrentProjects: maxPlaces,
+        startDate: startDayKey,
+        endDate: rangeEnd,
+        timeSlot: data.timeSlot,
+        durationUnit: effectiveUnit,
+        durationValue: effectiveValue,
+        activeBookings: overlappingBookings.map((b) => ({
+          id: b.id,
+          startDate: b.bookingDate.toISOString(),
+          endDate: b.endDate.toISOString(),
+          timeSlot: b.timeSlot,
+          durationUnit: normalizeDurationUnit(b.durationUnit),
+          durationValue: b.durationValue,
+        })),
+      })
+
+      if (placeAvailability.isFull) {
         return {
-          error:
-            "Ce créneau horaire vient d'être réservé. Veuillez en choisir un autre." as const,
+          error: `Aucune place restante (0/${maxPlaces}) sur cette période ou ce créneau. Veuillez choisir d'autres dates.` as const,
           record: null,
         }
       }
@@ -172,7 +225,10 @@ export async function createSlotBooking(
           clientPhone: data.clientPhone,
           clientAddress: data.clientAddress,
           clientNotes: data.clientNotes || "",
-          bookingDate: requestedDate,
+          bookingDate: bookingDateUtc,
+          endDate: rangeEnd,
+          durationUnit: effectiveUnit,
+          durationValue: effectiveValue,
           timeSlot: data.timeSlot,
           status: "NEGOTIATING",
           indicativePrice: service.price,
@@ -206,6 +262,9 @@ export async function createSlotBooking(
         proId: dbBooking.proId,
         serviceId: dbBooking.serviceId,
         bookingDate: dbBooking.bookingDate.toISOString(),
+        endDate: dbBooking.endDate.toISOString(),
+        durationUnit: normalizeDurationUnit(dbBooking.durationUnit),
+        durationValue: dbBooking.durationValue,
         timeSlot: dbBooking.timeSlot,
         clientName: dbBooking.clientName,
         clientPhone: dbBooking.clientPhone,
@@ -263,7 +322,14 @@ export async function updateBookingStatusAction(
         proId: true,
         pro: {
           select: {
-            proProfile: { select: { id: true } },
+            proProfile: {
+              select: {
+                id: true,
+                availabilityStatus: true,
+                organizationType: true,
+                maxConcurrentProjects: true,
+              },
+            },
           },
         },
       },
@@ -310,21 +376,24 @@ export async function updateBookingStatusAction(
         },
       })
 
-      if (status === "COMPLETED" && existing.pro.proProfile) {
-        const otherActive = await tx.booking.count({
-          where: {
-            proId: existing.proId,
-            status: "IN_PROGRESS",
-            id: { not: bookingId },
-          },
-        })
+      if (
+        (status === "COMPLETED" || status === "CANCELLED") &&
+        existing.pro.proProfile
+      ) {
+        if (status === "COMPLETED" && !wasAlreadyCompleted) {
+          await tx.proProfile.update({
+            where: { id: existing.pro.proProfile.id },
+            data: { completedTasks: { increment: 1 } },
+          })
+        }
 
-        await tx.proProfile.update({
-          where: { id: existing.pro.proProfile.id },
-          data: {
-            ...(wasAlreadyCompleted ? {} : { completedTasks: { increment: 1 } }),
-            ...(otherActive === 0 ? { availabilityStatus: "AVAILABLE" } : {}),
-          },
+        await syncProAvailabilityFromCapacity(tx, {
+          proUserId: existing.proId,
+          proProfileId: existing.pro.proProfile.id,
+          currentAvailabilityStatus: existing.pro.proProfile.availabilityStatus,
+          organizationType: existing.pro.proProfile.organizationType,
+          maxConcurrentProjects: existing.pro.proProfile.maxConcurrentProjects,
+          excludeBookingId: bookingId,
         })
       }
     })

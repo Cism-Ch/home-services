@@ -1,20 +1,26 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Calendar, Trash2, AlertCircle } from "lucide-react"
+import { Calendar, Trash2, AlertCircle, Users } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { ProLiveStatusBanner } from "@/components/dashboard/pro-live-status-banner"
 import {
   saveProTimeSlotsAction,
   addUnavailabilityPeriodAction,
   deleteUnavailabilityPeriodAction,
+  updateProCapacityAction,
 } from "@/server/actions/availability"
+import {
+  ORGANIZATION_TYPE_LABELS,
+  type OrganizationType,
+} from "@/lib/scheduling"
 import type {
   AvailabilityStatusType,
   CatalogTimeSlot,
@@ -47,6 +53,9 @@ interface DayScheduleState {
 interface AvailabilityClientProps {
   proProfileId: string
   initialStatus: AvailabilityStatusType
+  initialOrganizationType: OrganizationType
+  initialMaxConcurrentProjects: number
+  activeProjectsToday: number
   initialSlots: CatalogTimeSlot[]
   initialUnavailabilities: CatalogUnavailability[]
 }
@@ -75,9 +84,20 @@ function buildInitialSchedule(slots: CatalogTimeSlot[]): DayScheduleState[] {
 export function AvailabilityClient({
   proProfileId,
   initialStatus,
+  initialOrganizationType,
+  initialMaxConcurrentProjects,
+  activeProjectsToday,
   initialSlots,
   initialUnavailabilities,
 }: AvailabilityClientProps) {
+  const router = useRouter()
+  const [organizationType, setOrganizationType] = useState<OrganizationType>(
+    initialOrganizationType
+  )
+  const [maxConcurrentProjects, setMaxConcurrentProjects] = useState<number>(
+    initialMaxConcurrentProjects
+  )
+  const [isSavingCapacity, setIsSavingCapacity] = useState(false)
   const [unavailabilityPeriods, setUnavailabilityPeriods] = useState<CatalogUnavailability[]>(
     initialUnavailabilities
   )
@@ -90,6 +110,41 @@ export function AvailabilityClient({
   const [customReason, setCustomReason] = useState("")
   const [isSavingPeriod, setIsSavingPeriod] = useState(false)
   const [isSavingSchedule, setIsSavingSchedule] = useState(false)
+
+  const handleOrganizationChange = (nextOrg: OrganizationType) => {
+    setOrganizationType(nextOrg)
+    if (nextOrg === "INDIVIDUAL") {
+      setMaxConcurrentProjects(1)
+    } else if (maxConcurrentProjects < 2) {
+      setMaxConcurrentProjects(nextOrg === "PME" ? 4 : 2)
+    }
+  }
+
+  const handleSaveCapacity = async () => {
+    setIsSavingCapacity(true)
+    try {
+      const normalizedMax =
+        organizationType === "INDIVIDUAL"
+          ? 1
+          : Math.max(2, Math.min(50, maxConcurrentProjects || 2))
+      const res = await updateProCapacityAction({
+        organizationType,
+        maxConcurrentProjects: normalizedMax,
+      })
+      if (res.error || !res.data) {
+        toast.error(res.error || "Impossible de mettre à jour la capacité.")
+        return
+      }
+      setOrganizationType(res.data.organizationType)
+      setMaxConcurrentProjects(res.data.maxConcurrentProjects)
+      toast.success(
+        `Capacité enregistrée : ${res.data.maxConcurrentProjects} place(s) simultanée(s).`
+      )
+      router.refresh()
+    } finally {
+      setIsSavingCapacity(false)
+    }
+  }
 
   const handleQuickAdd = (type: "vacation" | "sick" | "other") => {
     setSelectedType(type)
@@ -226,7 +281,88 @@ export function AvailabilityClient({
         </p>
       </div>
 
-      <ProLiveStatusBanner proId={proProfileId} initialStatus={initialStatus} />
+      <ProLiveStatusBanner
+        proId={proProfileId}
+        initialStatus={initialStatus}
+        activeProjectsToday={activeProjectsToday}
+        maxConcurrentProjects={maxConcurrentProjects}
+      />
+
+      {/* Concurrent Project Capacity & Organization Structure */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              Capacité simultanée &amp; Structure d&apos;équipe
+            </CardTitle>
+            <Badge variant={activeProjectsToday >= maxConcurrentProjects ? "warning" : "success"}>
+              {activeProjectsToday} / {maxConcurrentProjects} place(s) active(s) aujourd&apos;hui
+            </Badge>
+          </div>
+          <CardDescription>
+            Définissez si vous travaillez seul (1 chantier/mission sur une même période) ou en équipe / PME capable de gérer 2 à N projets en parallèle.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="org-type">Type de structure</Label>
+            <Select
+              value={organizationType}
+              onValueChange={(val) => handleOrganizationChange(val as OrganizationType)}
+            >
+              <SelectTrigger id="org-type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="INDIVIDUAL">
+                  {ORGANIZATION_TYPE_LABELS.INDIVIDUAL}
+                </SelectItem>
+                <SelectItem value="TEAM">
+                  {ORGANIZATION_TYPE_LABELS.TEAM}
+                </SelectItem>
+                <SelectItem value="PME">
+                  {ORGANIZATION_TYPE_LABELS.PME}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="max-concurrent">
+              Nombre de places / chantiers simultanés
+            </Label>
+            <Input
+              id="max-concurrent"
+              type="number"
+              min={organizationType === "INDIVIDUAL" ? 1 : 2}
+              max={50}
+              disabled={organizationType === "INDIVIDUAL"}
+              value={organizationType === "INDIVIDUAL" ? 1 : maxConcurrentProjects}
+              onChange={(e) => {
+                const parsed = parseInt(e.target.value, 10)
+                if (!Number.isNaN(parsed)) {
+                  setMaxConcurrentProjects(Math.max(1, Math.min(50, parsed)))
+                }
+              }}
+            />
+            <p className="text-xs text-muted-foreground">
+              {organizationType === "INDIVIDUAL"
+                ? "Un artisan indépendant ne peut suivre qu'1 chantier à la fois sur un créneau ou une période."
+                : `Vos clients peuvent réserver jusqu'à ${maxConcurrentProjects} projets qui se chevauchent (jours, semaines ou mois).`}
+            </p>
+          </div>
+        </CardContent>
+        <CardFooter className="border-t justify-end">
+          <Button
+            type="button"
+            onClick={handleSaveCapacity}
+            disabled={isSavingCapacity}
+          >
+            {isSavingCapacity ? "Enregistrement..." : "Enregistrer la capacité"}
+          </Button>
+        </CardFooter>
+      </Card>
 
       {/* Unavailability Periods Section */}
       <Card>

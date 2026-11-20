@@ -16,6 +16,8 @@ interface ProLiveStatusBannerProps {
   proId: string
   initialStatus?: ProAvailabilityType
   hasActiveMission?: boolean
+  activeProjectsToday?: number
+  maxConcurrentProjects?: number
   className?: string
 }
 
@@ -26,6 +28,8 @@ export function ProLiveStatusBanner({
   proId,
   initialStatus = "AVAILABLE",
   hasActiveMission = false,
+  activeProjectsToday = hasActiveMission ? 1 : 0,
+  maxConcurrentProjects = 1,
   className = "",
 }: ProLiveStatusBannerProps) {
   const { status: currentStatus, setStatus: setCurrentStatus } =
@@ -96,8 +100,13 @@ export function ProLiveStatusBanner({
             </div>
 
             <p className="text-xs text-muted-foreground">
-              {hasActiveMission
-                ? "Vous avez une mission validée en cours de traitement. Vos créneaux restants du jour sont réservés."
+              {maxConcurrentProjects > 1
+                ? `${activeProjectsToday} / ${maxConcurrentProjects} place(s) active(s) aujourd'hui (${Math.max(
+                    0,
+                    maxConcurrentProjects - activeProjectsToday
+                  )} libre(s)).`
+                : hasActiveMission
+                ? "Vous avez une mission validée en cours de traitement. Votre créneau est réservé."
                 : "Indiquez aux clients si vous pouvez accepter des interventions d'urgence aujourd'hui."}
             </p>
           </div>

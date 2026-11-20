@@ -275,8 +275,21 @@ export const auth = betterAuth({
 
   rateLimit: {
     enabled: true,
-    window: 60,
-    max: 10,
+    window: 10,
+    max: 100,
+    customRules: {
+      // Lecture de session (navigation, HMR, cookieCache) : exemptee de la limite brute-force
+      "/get-session": (request) =>
+        request.method === "GET" ? false : { window: 60, max: 30 },
+      // Protection stricte anti-brute-force sur les endpoints de mutation sensibles
+      "/sign-in/*": { window: 60, max: 10 },
+      "/sign-up/*": { window: 60, max: 10 },
+      "/request-password-reset": { window: 60, max: 5 },
+      "/forget-password*": { window: 60, max: 5 },
+      "/reset-password": { window: 60, max: 5 },
+      "/change-password": { window: 60, max: 5 },
+      "/change-email": { window: 60, max: 5 },
+    },
   },
 });
 

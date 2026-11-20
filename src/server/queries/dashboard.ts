@@ -4,6 +4,12 @@
 
 import { prisma } from "@/lib/prisma"
 import { PAYSTACK_PLANS, type SubscriptionPlanCode } from "@/lib/paystack"
+import {
+  normalizeDurationUnit,
+  normalizeMaxConcurrent,
+  normalizeOrganizationType,
+  toIsoDayKey,
+} from "@/lib/scheduling"
 import { getServiceFallbackImage } from "@/server/queries/catalog"
 import type {
   AvailabilityStatusType,
@@ -70,6 +76,9 @@ export async function getClientDashboardData(userId: string) {
       "Abidjan - Côte d'Ivoire",
     status: normalizeBookingStatus(b.status),
     bookingDate: b.bookingDate.toISOString(),
+    endDate: b.endDate.toISOString(),
+    durationUnit: normalizeDurationUnit(b.durationUnit),
+    durationValue: b.durationValue,
     timeSlot: b.timeSlot,
     indicativePrice: b.indicativePrice,
     createdAt: b.createdAt.toISOString(),
@@ -144,6 +153,8 @@ export async function getProDashboardData(userId: string) {
     categoryName: s.category.name,
     price: s.price,
     duration: s.duration,
+    durationUnit: normalizeDurationUnit(s.durationUnit),
+    durationValue: s.durationValue,
     rating: proProfile.rating,
     reviewsCount: proProfile.reviewsCount,
     providerName: proProfile.user.name,
@@ -173,6 +184,9 @@ export async function getProDashboardData(userId: string) {
     proLocation: location,
     status: normalizeBookingStatus(b.status),
     bookingDate: b.bookingDate.toISOString(),
+    endDate: b.endDate.toISOString(),
+    durationUnit: normalizeDurationUnit(b.durationUnit),
+    durationValue: b.durationValue,
     timeSlot: b.timeSlot,
     indicativePrice: b.indicativePrice,
     createdAt: b.createdAt.toISOString(),
@@ -196,6 +210,19 @@ export async function getProDashboardData(userId: string) {
     icon: c.icon,
   }))
 
+  const orgType = normalizeOrganizationType(proProfile.organizationType)
+  const maxConcurrent = normalizeMaxConcurrent(
+    orgType,
+    proProfile.maxConcurrentProjects
+  )
+  const todayKey = toIsoDayKey(new Date())
+  const activeProjectsToday = activeBookings.filter((b) => {
+    const startKey = toIsoDayKey(b.bookingDate)
+    const endKey = toIsoDayKey(b.endDate)
+    return startKey <= todayKey && endKey >= todayKey
+  }).length
+  const availablePlacesToday = Math.max(0, maxConcurrent - activeProjectsToday)
+
   return {
     proProfile: {
       id: proProfile.id,
@@ -211,6 +238,10 @@ export async function getProDashboardData(userId: string) {
       commune: proProfile.commune || "",
       address: proProfile.address || "",
       availabilityStatus: normalizeAvailability(proProfile.availabilityStatus),
+      organizationType: orgType,
+      maxConcurrentProjects: maxConcurrent,
+      activeProjectsToday,
+      availablePlacesToday,
       isVerified: proProfile.isVerified,
       kycStatus: proProfile.kycStatus,
       kycDocumentUrl: proProfile.kycDocumentUrl,

@@ -30,6 +30,7 @@ import {
   deleteProServiceAction,
 } from "@/server/actions/pro-catalog"
 import { formatFCFA } from "@/lib/formatters"
+import { formatDurationLabel, type DurationUnit } from "@/lib/scheduling"
 import type { CatalogCategory, CatalogService } from "@/lib/types/catalog"
 import { toast } from "sonner"
 
@@ -57,6 +58,8 @@ export function ProServicesView({
     category: string
     price: number
     duration: number
+    durationUnit: DurationUnit
+    durationValue: number
   }) => {
     const res = await createProServiceAction(proProfileId, {
       title: newService.title,
@@ -64,6 +67,8 @@ export function ProServicesView({
       categoryId: newService.category,
       price: newService.price,
       duration: newService.duration,
+      durationUnit: newService.durationUnit,
+      durationValue: newService.durationValue,
       isActive: true,
     })
 
@@ -82,7 +87,9 @@ export function ProServicesView({
       categoryId: newService.category,
       categoryName: catObj?.name || newService.category,
       price: newService.price,
-      duration: newService.duration,
+      duration: res.data.duration,
+      durationUnit: res.data.durationUnit,
+      durationValue: res.data.durationValue,
       rating: 5.0,
       reviewsCount: 0,
       providerName,
@@ -150,7 +157,7 @@ export function ProServicesView({
               <div className="flex items-center justify-between gap-2 text-sm">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Clock className="h-4 w-4 shrink-0" />
-                  <span>{service.duration} min</span>
+                  <span>{formatDurationLabel(service.durationValue, service.durationUnit)}</span>
                 </div>
                 <div className="font-bold text-lg text-primary">
                   {formatFCFA(service.price)}

@@ -113,10 +113,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     window.location.reload();
   }, []);
 
-  // Log des erreurs de session
+  // Log discret des erreurs de session hors 401 (evite l'overlay Next.js sur erreur transitoire)
   React.useEffect(() => {
-    if (error) {
-      console.error("Erreur de session:", error);
+    if (!error) return;
+    const status = (error as { status?: number } | null)?.status;
+    if (status === 401) return;
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[Auth] Erreur de session:", error);
     }
   }, [error]);
 

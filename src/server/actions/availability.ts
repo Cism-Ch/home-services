@@ -3,7 +3,18 @@
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
+import { invalidateCatalogCache } from "@/lib/redis"
+import {
+  normalizeMaxConcurrent,
+  normalizeOrganizationType,
+  type OrganizationType,
+} from "@/lib/scheduling"
+import {
+  updateProCapacitySchema,
+  type UpdateProCapacityInput,
+} from "@/lib/validations/pro-profile"
 import { requireProProfile } from "@/server/auth-guard"
+import { syncProAvailabilityFromCapacity } from "@/server/helpers/availability-sync"
 import type { CatalogTimeSlot, CatalogUnavailability } from "@/lib/types/catalog"
 
 export interface ServerActionResponse<T> {
@@ -138,7 +149,9 @@ export async function addUnavailabilityPeriodAction(input: {
       },
     })
 
+    await invalidateCatalogCache()
     revalidatePath("/dashboard/pro/availability")
+    revalidatePath(`/professionals/pros/${authRes.proProfile.id}`)
     return {
       data: {
         id: created.id,
@@ -195,13 +208,96 @@ export async function deleteUnavailabilityPeriodAction(
       where: { id: parsedId.data },
     })
 
+    await invalidateCatalogCache()
     revalidatePath("/dashboard/pro/availability")
+    revalidatePath(`/professionals/pros/${authRes.proProfile.id}`)
     return { data: { id: parsedId.data }, error: null }
   } catch (err) {
     console.error("[availability] deleteUnavailabilityPeriod error:", err)
     return {
       data: null,
       error: "Erreur lors de la suppression de l'indisponibilité.",
+    }
+  }
+}
+
+/**
+ * Configure le type d'organisation (Artisan solo / Equipe / PME) et la capacite simultanee (1..N places)
+ */
+export async function updateProCapacityAction(
+  input: UpdateProCapacityInput
+): Promise<
+  ServerActionResponse<{
+    organizationType: OrganizationType
+    maxConcurrentProjects: number
+  }>
+> {
+  const authRes = await requireProProfile()
+  if (authRes.error !== null) {
+    return { data: null, error: authRes.error }
+  }
+
+  const parsed = updateProCapacitySchema.safeParse(input)
+  if (!parsed.success) {
+    return {
+      data: null,
+      error:
+        parsed.error.issues[0]?.message ||
+        "Paramètres de capacité simultanée invalides.",
+    }
+  }
+
+  try {
+    const orgType = normalizeOrganizationType(parsed.data.organizationType)
+    const maxPlaces = normalizeMaxConcurrent(
+      orgType,
+      parsed.data.maxConcurrentProjects
+    )
+
+    await prisma.$transaction(async (tx) => {
+      const updated = await tx.proProfile.update({
+        where: { id: authRes.proProfile.id },
+        data: {
+          organizationType: orgType,
+          maxConcurrentProjects: maxPlaces,
+        },
+        select: {
+          id: true,
+          userId: true,
+          availabilityStatus: true,
+          organizationType: true,
+          maxConcurrentProjects: true,
+        },
+      })
+
+      await syncProAvailabilityFromCapacity(tx, {
+        proUserId: updated.userId,
+        proProfileId: updated.id,
+        currentAvailabilityStatus: updated.availabilityStatus,
+        organizationType: updated.organizationType,
+        maxConcurrentProjects: updated.maxConcurrentProjects,
+      })
+    })
+
+    await invalidateCatalogCache()
+    revalidatePath("/dashboard/pro")
+    revalidatePath("/dashboard/pro/availability")
+    revalidatePath("/dashboard/pro/schedule")
+    revalidatePath("/professionals")
+    revalidatePath(`/professionals/pros/${authRes.proProfile.id}`)
+
+    return {
+      data: {
+        organizationType: orgType,
+        maxConcurrentProjects: maxPlaces,
+      },
+      error: null,
+    }
+  } catch (err) {
+    console.error("[availability] updateProCapacity error:", err)
+    return {
+      data: null,
+      error: "Erreur lors de la mise à jour de la capacité simultanée.",
     }
   }
 }

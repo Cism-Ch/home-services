@@ -26,7 +26,7 @@ export default async function ProfessionalProfilePage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen">
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 pt-6">
         <PageBreadcrumb
           className="mb-3"
           items={[
@@ -38,7 +38,10 @@ export default async function ProfessionalProfilePage({ params }: PageProps) {
       </div>
       <ProHeader professional={professional} />
 
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+      <div
+        data-layout-container="pro-page"
+        className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 py-8 sm:py-10"
+      >
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8 min-w-0">
@@ -117,6 +120,13 @@ export default async function ProfessionalProfilePage({ params }: PageProps) {
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Missions réalisées</span>
                   <span className="font-bold text-lg">{professional.completedTasks}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Places disponibles (aujourd&apos;hui)</span>
+                  <span className="font-bold text-base text-primary">
+                    {professional.availablePlacesToday ?? professional.maxConcurrentProjects} /{" "}
+                    {professional.maxConcurrentProjects}
+                  </span>
                 </div>
               </div>
             </div>

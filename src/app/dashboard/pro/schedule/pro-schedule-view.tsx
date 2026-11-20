@@ -38,6 +38,7 @@ import {
 } from "@/server/actions/booking-status"
 import { updateBookingStatusAction } from "@/server/actions/booking"
 import { formatFCFA } from "@/lib/formatters"
+import { formatBookingPeriodLabel, formatDurationLabel } from "@/lib/scheduling"
 import type {
   AvailabilityStatusType,
   DashboardBookingItem,
@@ -48,6 +49,8 @@ interface ProScheduleViewProps {
   userId: string
   proProfileId: string
   initialStatus: AvailabilityStatusType
+  maxConcurrentProjects?: number
+  activeProjectsToday?: number
   initialBookings: DashboardBookingItem[]
 }
 
@@ -55,6 +58,8 @@ export function ProScheduleView({
   userId,
   proProfileId,
   initialStatus,
+  maxConcurrentProjects = 1,
+  activeProjectsToday = 0,
   initialBookings,
 }: ProScheduleViewProps) {
   const router = useRouter()
@@ -92,7 +97,9 @@ export function ProScheduleView({
       }))
     }
     toast.success(
-      "Offre validée ! Vous êtes maintenant noté 'Occupé aujourd'hui' pour traiter cette tâche."
+      res.data?.proStatus === "BUSY_TODAY"
+        ? "Offre validée ! Capacité atteinte aujourd'hui : votre statut passe en 'Occupé'."
+        : "Offre validée ! Vous conservez des places libres pour vos autres chantiers."
     )
     router.refresh()
   }
@@ -160,6 +167,8 @@ export function ProScheduleView({
         proId={proProfileId}
         initialStatus={initialStatus}
         hasActiveMission={proBookings.some((b) => b.status === "IN_PROGRESS")}
+        activeProjectsToday={activeProjectsToday}
+        maxConcurrentProjects={maxConcurrentProjects}
       />
 
       <div className="grid grid-cols-1 xl:grid-cols-[310px_minmax(0,1fr)] gap-6 lg:gap-8">
@@ -233,15 +242,12 @@ export function ProScheduleView({
                   >
                     <CardContent className="p-4 sm:p-6">
                       <div className="flex flex-col md:flex-row gap-6">
-                        <div className="shrink-0 flex flex-row md:flex-col items-center justify-between md:justify-center border-b pb-3 md:border-b-0 md:border-r md:pb-0 md:pr-6 md:min-w-[110px]">
-                          <span className="text-lg font-bold text-primary">
+                        <div className="shrink-0 flex flex-row md:flex-col items-center justify-between md:justify-center border-b pb-3 md:border-b-0 md:border-r md:pb-0 md:pr-6 md:min-w-[140px]">
+                          <span className="text-base sm:text-lg font-bold text-primary">
                             {booking.timeSlot}
                           </span>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(booking.bookingDate).toLocaleDateString("fr-FR", {
-                              day: "numeric",
-                              month: "short",
-                            })}
+                          <span className="text-xs text-muted-foreground text-right md:text-center">
+                            {formatDurationLabel(booking.durationValue, booking.durationUnit)}
                           </span>
                         </div>
 
@@ -251,6 +257,15 @@ export function ProScheduleView({
                               <h3 className="text-lg font-semibold break-words">
                                 {booking.serviceTitle}
                               </h3>
+                              <p className="text-xs text-primary font-medium mt-0.5">
+                                {formatBookingPeriodLabel(
+                                  booking.bookingDate,
+                                  booking.endDate,
+                                  booking.timeSlot,
+                                  booking.durationUnit,
+                                  booking.durationValue
+                                )}
+                              </p>
                               <div className="flex items-center gap-2 text-muted-foreground mt-1">
                                 <User className="h-4 w-4 shrink-0" />
                                 <span className="truncate">

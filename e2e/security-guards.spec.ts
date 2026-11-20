@@ -125,4 +125,13 @@ test.describe("HomeServices - Controles Defensifs & Securite Applicative", () =>
     await expect(page.locator("form")).toBeVisible()
     await expect(page).toHaveURL(/\/login/)
   })
+
+  test("7. Absence de faux positif 429 sur les lectures repetees GET /api/auth/get-session", async ({
+    request,
+  }) => {
+    for (let i = 0; i < 15; i += 1) {
+      const res = await request.get("/api/auth/get-session")
+      expect(res.status()).toBe(200)
+    }
+  })
 })

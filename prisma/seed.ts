@@ -13,6 +13,14 @@ import { locationsData } from "../src/lib/cities-data"
 import { prisma } from "../src/lib/prisma"
 import { invalidateCatalogCache } from "../src/lib/redis"
 import {
+  computeBookingEndDate,
+  durationToApproxMinutes,
+  normalizeDurationUnit,
+  normalizeMaxConcurrent,
+  normalizeOrganizationType,
+  type DurationUnit,
+} from "../src/lib/scheduling"
+import {
   SEED_ADMIN,
   SEED_BOOKINGS,
   SEED_CATEGORIES,
@@ -147,6 +155,10 @@ async function main() {
   const now = new Date()
   const userIdByKey = new Map<string, string>()
   const proProfileIdByKey = new Map<string, string>()
+  const serviceMetaById = new Map<
+    string,
+    { durationUnit: DurationUnit; durationValue: number }
+  >()
   const clientByKey = new Map(SEED_CLIENTS.map((c) => [c.id, c]))
 
   console.log("[Seed] 1/8 Synchronisation des 10 categories...")
@@ -226,6 +238,12 @@ async function main() {
     )
     userIdByKey.set(pro.user.id, proUser.id)
 
+    const orgType = normalizeOrganizationType(pro.profile.organizationType)
+    const maxConcurrent = normalizeMaxConcurrent(
+      orgType,
+      pro.profile.maxConcurrentProjects
+    )
+
     const profile = await prisma.proProfile.upsert({
       where: { userId: proUser.id },
       update: {
@@ -238,6 +256,8 @@ async function main() {
         commune: pro.profile.commune,
         address: pro.profile.address,
         availabilityStatus: pro.profile.availabilityStatus,
+        organizationType: orgType,
+        maxConcurrentProjects: maxConcurrent,
         isVerified: pro.profile.isVerified,
         kycStatus: pro.profile.kycStatus,
         kycDocumentUrl: null,
@@ -256,6 +276,8 @@ async function main() {
         commune: pro.profile.commune,
         address: pro.profile.address,
         availabilityStatus: pro.profile.availabilityStatus,
+        organizationType: orgType,
+        maxConcurrentProjects: maxConcurrent,
         isVerified: pro.profile.isVerified,
         kycStatus: pro.profile.kycStatus,
         kycDocumentUrl: null,
@@ -266,6 +288,23 @@ async function main() {
     proProfileIdByKey.set(pro.profile.id, profile.id)
 
     for (const svc of pro.services) {
+      const unit: DurationUnit = svc.durationUnit
+        ? normalizeDurationUnit(svc.durationUnit)
+        : svc.duration >= 120 && svc.duration % 60 === 0
+        ? "HOURS"
+        : "MINUTES"
+      const value =
+        svc.durationValue ??
+        (unit === "HOURS" ? Math.round(svc.duration / 60) : svc.duration)
+      const normalizedMinutes = svc.durationUnit
+        ? durationToApproxMinutes(value, unit)
+        : svc.duration
+
+      serviceMetaById.set(svc.id, {
+        durationUnit: unit,
+        durationValue: value,
+      })
+
       await prisma.service.upsert({
         where: { id: svc.id },
         update: {
@@ -274,7 +313,9 @@ async function main() {
           title: svc.title,
           description: svc.description,
           price: svc.price,
-          duration: svc.duration,
+          duration: normalizedMinutes,
+          durationUnit: unit,
+          durationValue: value,
           isActive: true,
         },
         create: {
@@ -284,7 +325,9 @@ async function main() {
           title: svc.title,
           description: svc.description,
           price: svc.price,
-          duration: svc.duration,
+          duration: normalizedMinutes,
+          durationUnit: unit,
+          durationValue: value,
           isActive: true,
         },
       })
@@ -360,6 +403,12 @@ async function main() {
     }
 
     const bookingDate = addDaysUtc(now, booking.dayOffset, 12)
+    const svcMeta = serviceMetaById.get(booking.serviceId)
+    const durationUnit: DurationUnit = booking.durationUnit
+      ? normalizeDurationUnit(booking.durationUnit)
+      : svcMeta?.durationUnit || "MINUTES"
+    const durationValue = booking.durationValue ?? svcMeta?.durationValue ?? 60
+    const endDate = computeBookingEndDate(bookingDate, durationValue, durationUnit)
     const completedAt =
       booking.status === "COMPLETED" ? addDaysUtc(now, booking.dayOffset, 18) : null
 
@@ -371,6 +420,9 @@ async function main() {
         proId,
         status: booking.status,
         bookingDate,
+        endDate,
+        durationUnit,
+        durationValue,
         timeSlot: booking.timeSlot,
         clientNotes: booking.clientNotes,
         indicativePrice: booking.indicativePrice,
@@ -386,6 +438,9 @@ async function main() {
         proId,
         status: booking.status,
         bookingDate,
+        endDate,
+        durationUnit,
+        durationValue,
         timeSlot: booking.timeSlot,
         clientNotes: booking.clientNotes,
         indicativePrice: booking.indicativePrice,

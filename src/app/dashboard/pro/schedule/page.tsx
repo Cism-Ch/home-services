@@ -18,6 +18,8 @@ export default async function ProSchedulePage() {
       userId={user.id}
       proProfileId={data.proProfile.id}
       initialStatus={data.proProfile.availabilityStatus}
+      maxConcurrentProjects={data.proProfile.maxConcurrentProjects}
+      activeProjectsToday={data.proProfile.activeProjectsToday}
       initialBookings={data.bookings}
     />
   )

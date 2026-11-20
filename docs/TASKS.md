@@ -10,38 +10,39 @@
 
 ```
 +-------------------------+  +-------------------------+  +-------------------------+
-| [>] IN PROGRESS (SP 11) |  |   [?] SPRINT 11 QUEUE   |  |       [X] ARCHIVES      |
+| [>] IN PROGRESS (SP 13) |  |   [?] SPRINT 13 QUEUE   |  |       [X] ARCHIVES      |
 +-------------------------+  +-------------------------+  +-------------------------+
-| [x] Sprint 11 COMPLETE   |  | (All SP11 Tasks Done!)   |  | Sprint 02 (11 tasks)    |
-|     (60 E2E Geo Checks) |  |                         |  | Sprint 03-04 (7 tasks)  |
-|                         |  |                         |  | Sprint 05-06 (7 tasks)  |
-|                         |  |                         |  | Sprint 07-09 (10 tasks) |
-|                         |  |                         |  | Sprint 10 + UI (5 tasks)|
+| [x] Sprint 13 COMPLETE   |  | (All SP13 Tasks Done!)   |  | Sprint 02-11 (34 tasks) |
+|     (Ready -> Commit)   |  |                         |  | Sprint 12 (6 tasks)     |
+|                         |  | [x] TASK-HERO-COVER-01  |  | (Full Archive Logged)   |
+|                         |  | [x] TASK-MOTION-PERF-01 |  |                         |
+|                         |  |                         |  |                         |
 +-------------------------+  +-------------------------+  +-------------------------+
 ```
 
 ---
 
-## Active Sprint 11: Audit Global Responsivite, Full-Width, Alignement & Regles Agents
+## Active Sprint 13: Hero Cover Zero-CLS, Framer Motion GPU-Only, Transitions & Perf 60fps
 
-### [x] `TASK-LAYOUT-CONTAINER-01` — Normalisation Full-Width, Conteneurs Canoniques & Header/Auth
-- [x] Standardiser les conteneurs principaux sur `w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8` avec sections externes `w-full`.
-- [x] Corriger les 4 pages auth (`container` sans `mx-auto px-4` / grille asymétrique), le bleed `About`, `HeroSection` (`fade-bottom` / `pb-0`), `ProHeader` (`relative -top-*` -> `-mt-*`) et les marges du drawer `SiteHeader`.
-- [x] Localiser `ModeToggle` en français (`Clair`, `Sombre`, `Système`, `Luxe`).
+### [x] `TASK-HERO-COVER-01` — Hero Plein Ecran Cover & Slogan Dynamique Zero-CLS
+- [x] Passer `HeroSection` (`src/components/marketing/hero-section.tsx`) en RSC plein ecran (`min-h-[calc(100svh-4rem)]`) avec ancre `#quick-search` et lueur radiale continue dans `src/components/marketing/glow.tsx`.
+- [x] Verrouiller la hauteur de `HeroSloganRotator` (`src/components/hero-slogan-rotator.tsx`) via une grille ghost-stack CSS sans `filter: blur`, pause si onglet masque / `prefers-reduced-motion`, et delta de page `0px`.
 
-### [x] `TASK-LAYOUT-CARDS-01` — Harmonisation `Card` v4, `<Card><form>`, Grilles Iso-Hauteur & `<h1>`
-- [x] Ajouter `flex flex-col gap-6` aux 7 blocs `<Card><form>` sans espacement vertical.
-- [x] Corriger les barres blanches / doubles paddings sur `ServiceListingCard`, `ProServicesView`, `ProServicesList`, `ClientBookingsView`, `HowItWorks`, `BookingSummary`, `About`, tableaux de bord Client/Pro.
-- [x] Aligner les hauteurs de grilles (`h-full` + `mt-auto`), retirer la classe morte `xs:grid-cols-2` dans `page.tsx`, et uniformiser les `<h1>` Dashboard (`text-2xl sm:text-3xl`).
+### [x] `TASK-MOTION-CORE-01` — Socle Framer Motion (`LazyMotion`, `MotionConfig`, Presets GPU)
+- [x] Creer `src/lib/motion.ts` (variantes GPU `transform`/`opacity` uniquement), `src/components/motion/motion-provider.tsx` (`<LazyMotion features={domMax}>` + `<MotionConfig reducedMotion="user">`), `src/components/motion/reveal.tsx` (`RevealOnScroll`, `StaggerGrid`, `StaggerItem`), et `src/components/motion/scroll-progress.tsx`.
+- [x] Integrer `MotionProvider` et `ScrollProgress` dans `src/app/layout.tsx`.
 
-### [x] `TASK-LAYOUT-OVERLAYS-01` — Correction Overflow Calendrier, Créneaux, Contact & Modales
-- [x] Passer `ProScheduleView` en `xl:grid-cols-[310px_minmax(0,1fr)]` pour éviter le débordement du `Calendar` sur tablette.
-- [x] Sécuriser `DateTimePicker` (slots `(Réservé)` multi-lignes + scroll calendrier), `ProContactActions` (`min-w-0 w-full sm:w-auto sm:flex-1`), `DashboardSidebar` (marge mobile + scroll drawer) et toutes les `DialogContent` (`sm:max-w-*`, `p-4 sm:p-6`, `max-h-[90vh] overflow-y-auto`).
+### [x] `TASK-MOTION-SCROLL-01` — Defilement Fluide & Suppression des Goulets GPU (`blur-3xl` / `spin`)
+- [x] Remplacer les 12 calques `blur-3xl` / `blur-xl` et `animate-[spin]` (`how-it-works.tsx`, `page.tsx`, `quick-search.tsx`, `services-browser.tsx`, `professionals-browser.tsx`, `about/page.tsx`, `site-footer.tsx`) par des radial-gradients legers.
+- [x] Remplacer `.animate-appear` / `animate-slide-down` par `RevealOnScroll`/`StaggerGrid` hors-viewport, garder le Hero above-the-fold immediat, et cibler les proprietes `transition-*` sur les cartes.
 
-### [x] `TASK-LAYOUT-RULES-E2E-01` — Règles Agents UI, Suite Géométrique Playwright & Rapport
-- [x] Enrichir `.agents/rules/modules/ui_frontend.md` (< 80 lignes, ASCII pur, 13 règles durables `[R-UI-01]`..`[R-UI-13]`).
-- [x] Créer `e2e/responsive-layout.spec.ts` et vérifier 20 routes live en Chrome headless à `375px`, `768px`, `1440px` (`60/60` contrôles, `4 passed`).
-- [x] Rédiger `docs/UI_RESPONSIVE_AUDIT_REPORT.md` (zéro emoji) et valider à `100/100 PASS` (`python evals/run_fullstack_eval.py`).
+### [x] `TASK-MOTION-NAV-01` — Transitions Routes, `layoutId` & Parcours Reservation
+- [x] Creer `src/app/template.tsx` (micro-transition d'entree GPU compatible `sticky`), ajouter indicateurs glissants `layoutId` dans `MainNav` et `DashboardSidebar`, et progression animee dans `BookingStepper`.
+- [x] Animer les transitions directionnelles d'etapes dans `BookingClient` et l'apparition des creneaux horaires dans `DateTimePicker`.
+
+### [x] `TASK-MOTION-PERF-01` — Verification Multi-Viewports Zero-CLS, Regles UI Motion & Juge `100/100`
+- [x] Ajouter le test Sprint 13 dans `e2e/responsive-layout.spec.ts` (Cover hero, delta `<= 0.5px` lors de la rotation du slogan, zero `.blur-3xl`/`animate-[spin`, navigation routes, booking transitions, `reducedMotion`).
+- [x] Consigner `[R-UI-14]` et `[R-UI-15]` dans `.agents/rules/modules/ui_frontend.md` et valider avec `python evals/run_fullstack_eval.py` (`100/100 PASS`).
 
 ---
 
@@ -49,6 +50,7 @@
 
 | Date | Task ID | Title & Description | Created / Modified Files |
 | :--- | :--- | :--- | :--- |
+| 2026-11-20 | SPRINT-12 | Full-Width `1920px+`, Lueur Hero, Capacite `1..N` Multi-Jours & Hotfix Auth `429`/Proxy | `src/lib/scheduling.ts`, `src/proxy.ts`, `src/lib/auth.ts`, `prisma/schema.prisma`, `src/app/**/*`, `e2e/**/*` |
 | 2026-11-03 | TASK-GIT-01 | Git Initialization & Security Audits | `.gitignore`, `evals/security_audit.py`, `evals/run_fullstack_eval.py`, `docs/TASKS.md` |
 | 2026-11-03 | TASK-I18N-01 | Complete Repository Internationalization (EN) | `README.md`, `AGENTS.md`, `CHANGELOG.md`, `docs/TASKS.md`, `.agents/**/*`, `evals/**/*`, `.gitignore` |
 | 2026-11-03 | TASK-SCRIPTS-01 | Clean Emojis & Pure ASCII Output in Scripts | `evals/memory_engine.py`, `evals/rsi_orchestrator.py`, `evals/security_audit.py`, `evals/stack_inspector.py`, `evals/version_manager.py`, `docs/TASKS.md` |

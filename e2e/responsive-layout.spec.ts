@@ -80,46 +80,108 @@ test.describe("HomeServices - Audit Geometrique Multi-Viewports", () => {
     console.log(`[GEO-T1] Verified ${checkedCount} public/auth route-viewport checks without horizontal overflow`)
   })
 
-  test("2. Alignement Header / Footer & Grilles iso-hauteur en Desktop (1440px)", async ({
+  test("2. Alignement Full-Width (1440px & 1920px), Lueur Hero & Grilles iso-hauteur", async ({
     page,
   }) => {
     await page.emulateMedia({ reducedMotion: "reduce" })
-    await page.setViewportSize({ width: 1440, height: 900 })
-    await page.goto("/", { waitUntil: "load" })
 
-    const alignment = await page.evaluate(() => {
-      const headerBox = document
-        .querySelector("header > div.max-w-7xl")
-        ?.getBoundingClientRect()
-      const footerBox = document
-        .querySelector("footer > div.max-w-7xl")
-        ?.getBoundingClientRect()
+    for (const width of [1440, 1920] as const) {
+      await page.setViewportSize({ width, height: 900 })
+      await page.goto("/", { waitUntil: "load" })
 
-      const categoryCards = Array.from(
-        document.querySelectorAll('[class*="xl:grid-cols-6"] [data-slot="card"]')
+      const alignment = await page.evaluate((vw) => {
+        const innerEdges = (el: Element | null) => {
+          if (!el) return { left: -1, right: -1, outerWidth: 0 }
+          const r = el.getBoundingClientRect()
+          const cs = window.getComputedStyle(el)
+          return {
+            left: Math.round((r.left + parseFloat(cs.paddingLeft || "0")) * 100) / 100,
+            right: Math.round((r.right - parseFloat(cs.paddingRight || "0")) * 100) / 100,
+            outerWidth: Math.round(r.width),
+          }
+        }
+        const headerEdges = innerEdges(
+          document.querySelector('header [data-layout-container="page"]')
+        )
+        const footerEdges = innerEdges(
+          document.querySelector('footer [data-layout-container="page"]')
+        )
+
+        const heroSection = document.querySelector("section")?.getBoundingClientRect()
+        const glowEl = document
+          .querySelector('[data-hero-glow="true"]')
+          ?.getBoundingClientRect()
+
+        const categoryCards = Array.from(
+          document.querySelectorAll('[class*="xl:grid-cols-6"] [data-slot="card"]')
+        )
+        const categoryBottoms = categoryCards.map((c) => c.getBoundingClientRect().bottom)
+        const categoryDelta =
+          categoryBottoms.length >= 2
+            ? Math.max(...categoryBottoms) - Math.min(...categoryBottoms)
+            : -1
+
+        return {
+          vw,
+          headerOuterWidth: headerEdges.outerWidth,
+          headerLeft: headerEdges.left,
+          headerRight: headerEdges.right,
+          footerLeft: footerEdges.left,
+          footerRight: footerEdges.right,
+          glowContained: Boolean(
+            glowEl &&
+              heroSection &&
+              glowEl.top >= heroSection.top - 1 &&
+              glowEl.bottom <= heroSection.bottom + 1
+          ),
+          categoryCount: categoryCards.length,
+          categoryDelta: Math.round(categoryDelta * 100) / 100,
+        }
+      }, width)
+
+      console.log(`[GEO-T2] Desktop ${width}px alignment=${JSON.stringify(alignment)}`)
+      expect(alignment.headerOuterWidth).toBe(width)
+      expect(alignment.headerLeft).toBeGreaterThanOrEqual(16)
+      expect(alignment.headerLeft).toBeLessThanOrEqual(64)
+      expect(width - alignment.headerRight).toBeLessThanOrEqual(64)
+      expect(Math.abs(alignment.headerLeft - alignment.footerLeft)).toBeLessThanOrEqual(2)
+      expect(Math.abs(alignment.headerRight - alignment.footerRight)).toBeLessThanOrEqual(2)
+      expect(alignment.glowContained).toBe(true)
+      expect(alignment.categoryCount).toBeGreaterThanOrEqual(2)
+      expect(alignment.categoryDelta).toBeLessThanOrEqual(2)
+    }
+
+    await page.setViewportSize({ width: 1920, height: 1080 })
+    await page.goto("/professionals/pros/seed-pro-profile-7", { waitUntil: "load" })
+    await page.locator('[data-layout-container="pro-page"]').waitFor({ state: "visible" })
+    const proPageAlignment = await page.evaluate(() => {
+      const innerEdges = (el: Element | null) => {
+        if (!el) return { left: -1, right: -1 }
+        const r = el.getBoundingClientRect()
+        const cs = window.getComputedStyle(el)
+        return {
+          left: Math.round((r.left + parseFloat(cs.paddingLeft || "0")) * 100) / 100,
+          right: Math.round((r.right - parseFloat(cs.paddingRight || "0")) * 100) / 100,
+        }
+      }
+      const headerEdges = innerEdges(
+        document.querySelector('header [data-layout-container="page"]')
       )
-      const categoryBottoms = categoryCards.map((c) => c.getBoundingClientRect().bottom)
-      const categoryDelta =
-        categoryBottoms.length >= 2
-          ? Math.max(...categoryBottoms) - Math.min(...categoryBottoms)
-          : -1
-
+      const proEdges = innerEdges(
+        document.querySelector('[data-layout-container="pro-page"]')
+      )
       return {
-        headerLeft: Math.round((headerBox?.left ?? -1) * 100) / 100,
-        headerRight: Math.round((headerBox?.right ?? -1) * 100) / 100,
-        footerLeft: Math.round((footerBox?.left ?? -1) * 100) / 100,
-        footerRight: Math.round((footerBox?.right ?? -1) * 100) / 100,
-        categoryCount: categoryCards.length,
-        categoryDelta: Math.round(categoryDelta * 100) / 100,
+        headerLeft: headerEdges.left,
+        headerRight: headerEdges.right,
+        proLeft: proEdges.left,
+        proRight: proEdges.right,
       }
     })
-
-    console.log(`[GEO-T2] Desktop 1440px alignment=${JSON.stringify(alignment)}`)
-    expect(alignment.headerLeft).toBeGreaterThanOrEqual(16)
-    expect(Math.abs(alignment.headerLeft - alignment.footerLeft)).toBeLessThanOrEqual(2)
-    expect(Math.abs(alignment.headerRight - alignment.footerRight)).toBeLessThanOrEqual(2)
-    expect(alignment.categoryCount).toBeGreaterThanOrEqual(2)
-    expect(alignment.categoryDelta).toBeLessThanOrEqual(2)
+    console.log(`[GEO-T2-PRO-1920] ${JSON.stringify(proPageAlignment)}`)
+    expect(proPageAlignment.proLeft).toBeGreaterThanOrEqual(16)
+    expect(proPageAlignment.proLeft).toBeLessThanOrEqual(64)
+    expect(Math.abs(proPageAlignment.headerLeft - proPageAlignment.proLeft)).toBeLessThanOrEqual(2)
+    expect(Math.abs(proPageAlignment.headerRight - proPageAlignment.proRight)).toBeLessThanOrEqual(2)
   })
 
   test("3. Marges Auth Card & Padding Drawer Menu sur Mobile (375px)", async ({
@@ -212,6 +274,12 @@ test.describe("HomeServices - Audit Geometrique Multi-Viewports", () => {
         await assertNoHorizontalOverflow(page, `pro ${vp.name} ${route}`)
         checkedCount += 1
 
+        if (route === "/dashboard/pro/availability" && vp.name === "desktop") {
+          await expect(
+            page.getByText("Capacité simultanée", { exact: false })
+          ).toBeVisible()
+        }
+
         if (route === "/dashboard/pro/schedule") {
           await page.locator('[data-slot="calendar"]').first().waitFor({ state: "visible" })
           const calCheck = await page.evaluate(() => {
@@ -243,6 +311,118 @@ test.describe("HomeServices - Audit Geometrique Multi-Viewports", () => {
       }
     }
 
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto("/book/seed-pro-profile-7/seed-service-pro7-2", {
+      waitUntil: "load",
+    })
+    await expect(
+      page.getByText("PME • 4 places simultanées", { exact: false }).first()
+    ).toBeVisible()
+    await page.getByRole("button", { name: /Continuer/i }).click()
+    await expect(page.getByText("Durée du projet", { exact: false })).toBeVisible()
+
     console.log(`[GEO-T4] Verified ${checkedCount} dashboard route-viewport checks without horizontal overflow`)
+  })
+
+  test("5. Hero Cover, Zero-CLS Slogan Rotator, Zero blur-3xl & Transitions Sprint 13", async ({
+    page,
+  }) => {
+    test.setTimeout(90000)
+
+    for (const vp of [
+      { width: 1440, height: 900 },
+      { width: 375, height: 812 },
+    ] as const) {
+      await page.setViewportSize({ width: vp.width, height: vp.height })
+      await page.goto("/", { waitUntil: "load" })
+      await expect
+        .poll(
+          () =>
+            page.evaluate(() => {
+              const el = document.querySelector('[data-route-transition="true"]')
+              return el ? window.getComputedStyle(el).transform : "none"
+            }),
+          { timeout: 3000 }
+        )
+        .toBe("none")
+
+      const measureLayout = async () =>
+        page.evaluate(() => {
+          const hero = document.querySelector('[data-hero-cover="true"]')
+          const box = document.querySelector('[data-hero-slogan-box="true"]')
+          const heading = document.querySelector("[data-slogan-index]")
+          const quickSearch = document.getElementById("quick-search")
+          return {
+            heroHeight: hero ? hero.getBoundingClientRect().height : -1,
+            boxHeight: box ? box.getBoundingClientRect().height : -1,
+            sloganIndex: heading?.getAttribute("data-slogan-index") ?? null,
+            quickSearchY: quickSearch
+              ? quickSearch.getBoundingClientRect().top + window.scrollY
+              : -1,
+            blur3xlCount: document.querySelectorAll(".blur-3xl").length,
+            spinOrbCount: document.querySelectorAll('[class*="animate-[spin"]').length,
+          }
+        })
+
+      const before = await measureLayout()
+      expect(before.heroHeight).toBeGreaterThanOrEqual(vp.height - 64 - 2)
+      expect(before.sloganIndex).toBe("0")
+      expect(before.blur3xlCount).toBe(0)
+      expect(before.spinOrbCount).toBe(0)
+
+      await expect(page.locator("[data-slogan-index]")).not.toHaveAttribute(
+        "data-slogan-index",
+        "0",
+        { timeout: 7000 }
+      )
+      await page.waitForTimeout(450)
+
+      const after = await measureLayout()
+      const boxDelta = Math.abs(after.boxHeight - before.boxHeight)
+      const yDelta = Math.abs(after.quickSearchY - before.quickSearchY)
+      console.log(
+        `[MOTION-T5] ${vp.width}px hero=${Math.round(before.heroHeight)}px, box=${Math.round(before.boxHeight)}px, boxDelta=${boxDelta}px, quickSearchDelta=${yDelta}px`
+      )
+      expect(boxDelta).toBeLessThanOrEqual(0.5)
+      expect(yDelta).toBeLessThanOrEqual(0.5)
+    }
+
+    await page.setViewportSize({ width: 1440, height: 900 })
+    for (const route of ["/", "/services", "/professionals"] as const) {
+      await page.goto(route, { waitUntil: "load" })
+      await page.waitForTimeout(300)
+      await assertNoHorizontalOverflow(page, `transition ${route}`)
+      const routeTransform = await page.evaluate(() => {
+        const el = document.querySelector('[data-route-transition="true"]')
+        return el ? window.getComputedStyle(el).transform : "none"
+      })
+      expect(routeTransform).toBe("none")
+    }
+
+    await page.goto("/book/seed-pro-profile-7/seed-service-pro7-2", {
+      waitUntil: "load",
+    })
+    await page.getByRole("button", { name: /Continuer/i }).click()
+    await expect(page.getByText("Durée du projet", { exact: false })).toBeVisible()
+    await page.waitForTimeout(250)
+    await assertNoHorizontalOverflow(page, "booking-step-2")
+    await page.getByRole("button", { name: /Retour/i }).click()
+    await expect(
+      page.getByText("Détails de la prestation", { exact: false })
+    ).toBeVisible()
+    await page.waitForTimeout(250)
+    await assertNoHorizontalOverflow(page, "booking-step-1")
+
+    await page.emulateMedia({ reducedMotion: "reduce" })
+    await page.goto("/", { waitUntil: "load" })
+    const reducedState = await page.evaluate(() => {
+      const heading = document.querySelector("[data-slogan-index]")
+      return {
+        opacity: heading ? window.getComputedStyle(heading).opacity : "0",
+        progressCount: document.querySelectorAll('[data-scroll-progress="true"]').length,
+      }
+    })
+    expect(reducedState.opacity).toBe("1")
+    expect(reducedState.progressCount).toBe(0)
   })
 })

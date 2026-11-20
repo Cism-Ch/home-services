@@ -426,3 +426,27 @@
   - **Target files:** `src/app/layout.tsx`, `docs/TASKS.md`
   - **Acceptance criteria:**
     - [x] `TASK-UI-SCROLL-01.01`: Add `data-scroll-behavior="smooth"` on root `<html>` in `src/app/layout.tsx` and validate `100/100 PASS`.
+
+- [x] **`TASK-LAYOUT-CONTAINER-01` - [Scope: L] Normalisation Full-Width, Conteneurs Canoniques & Header/Auth**
+  - **Priority:** HIGH
+  - **Target files:** `src/components/*`, `src/app/**/page.tsx`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] Standardize containers to `w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8` with outer `w-full` sections, fix auth wrappers, `About`, `HeroSection`, `ProHeader` (`-mt-*`), `SiteHeader` drawer padding and `ModeToggle` FR.
+
+- [x] **`TASK-LAYOUT-CARDS-01` - [Scope: L] Harmonisation `Card` v4, `<Card><form>`, Grilles Iso-Hauteur & `<h1>`**
+  - **Priority:** HIGH
+  - **Target files:** `src/components/**/*`, `src/app/**/*`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] Fix `<Card><form>` spacing (`flex flex-col gap-6`), eliminate double paddings / top white bars, enforce `h-full` + `mt-auto` equal heights, remove `xs:grid-cols-2`, and unify dashboard `<h1>`.
+
+- [x] **`TASK-LAYOUT-OVERLAYS-01` - [Scope: M] Correction Overflow Calendrier, Creneaux, Contact & Modales**
+  - **Priority:** HIGH
+  - **Target files:** `src/app/dashboard/pro/schedule/pro-schedule-view.tsx`, `src/components/date-time-picker.tsx`, `src/components/pro-contact-actions.tsx`, `src/components/dashboard/dashboard-sidebar.tsx`, `src/components/ui/dialog.tsx`
+  - **Acceptance criteria:**
+    - [x] Apply `xl:grid-cols-[310px_minmax(0,1fr)]`, multiline slot buttons, fluid contact actions, padded mobile sidebar drawer, and responsive `DialogContent`.
+
+- [x] **`TASK-LAYOUT-RULES-E2E-01` - [Scope: M] Regles Agents UI, Suite Geometrique Playwright & Rapport**
+  - **Priority:** HIGH
+  - **Target files:** `.agents/rules/modules/ui_frontend.md`, `e2e/responsive-layout.spec.ts`, `docs/UI_RESPONSIVE_AUDIT_REPORT.md`, `playwright.config.ts`
+  - **Acceptance criteria:**
+    - [x] Codify `[R-UI-01]`..`[R-UI-13]` (< 80 lines, ASCII), catch & fix live bugs (`Separator`, `FileUploadButton`, `ResponsiveTable`), pass `4 passed` (`60` route-viewport checks), and validate `100/100 PASS`.

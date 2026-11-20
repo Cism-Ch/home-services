@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/auth-context";
+import { MotionProvider } from "@/components/motion/motion-provider";
+import { ScrollProgress } from "@/components/motion/scroll-progress";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -57,14 +59,17 @@ export default function RootLayout({
           themes={["light", "dark", "luxury", "system"]}
         >
           <AuthProvider>
-            <TooltipProvider>
-              <div className="relative flex min-h-screen flex-col">
-                <SiteHeader />
-                <div className="flex-1">{children}</div>
-                <SiteFooter />
-              </div>
-              <Toaster position="top-right" richColors />
-            </TooltipProvider>
+            <MotionProvider>
+              <TooltipProvider>
+                <div className="relative flex min-h-screen flex-col">
+                  <SiteHeader />
+                  <ScrollProgress />
+                  <div className="flex-1">{children}</div>
+                  <SiteFooter />
+                </div>
+                <Toaster position="top-right" richColors />
+              </TooltipProvider>
+            </MotionProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

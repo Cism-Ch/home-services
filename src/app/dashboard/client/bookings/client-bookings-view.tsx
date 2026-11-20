@@ -28,6 +28,7 @@ import { AddReviewForm } from "@/components/add-review-form"
 import { useBookingStatusRealtime } from "@/hooks/use-realtime-status"
 import { updateBookingStatusAction } from "@/server/actions/booking"
 import { formatFCFA } from "@/lib/formatters"
+import { formatBookingPeriodLabel, formatDurationLabel } from "@/lib/scheduling"
 import type { DashboardBookingItem } from "@/lib/types/catalog"
 import { Calendar, Clock, MapPin, User, MoreVertical, Star } from "lucide-react"
 import { toast } from "sonner"
@@ -119,19 +120,22 @@ function BookingList({
                     <span className="font-medium text-foreground">{booking.proName}</span>
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="h-4 w-4 text-primary" />
-                    <span className="capitalize">
-                      {new Date(booking.bookingDate).toLocaleDateString("fr-FR", {
-                        weekday: "long",
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}
+                    <Calendar className="h-4 w-4 text-primary shrink-0" />
+                    <span>
+                      {formatBookingPeriodLabel(
+                        booking.bookingDate,
+                        booking.endDate,
+                        booking.timeSlot,
+                        booking.durationUnit,
+                        booking.durationValue
+                      )}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <Clock className="h-4 w-4 text-primary" />
-                    <span>{booking.timeSlot}</span>
+                    <Clock className="h-4 w-4 text-primary shrink-0" />
+                    <span>
+                      {booking.timeSlot} ({formatDurationLabel(booking.durationValue, booking.durationUnit)})
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <MapPin className="h-4 w-4 text-primary" />
@@ -279,6 +283,9 @@ export function ClientBookingsView({
       professionalPhone: booking.proPhone,
       professionalWhatsapp: booking.proWhatsapp,
       date: booking.bookingDate,
+      endDate: booking.endDate,
+      durationUnit: booking.durationUnit,
+      durationValue: booking.durationValue,
       status: mapTicketStatus(booking.status),
       price: booking.indicativePrice,
       address: booking.clientAddress,

@@ -6,6 +6,11 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Calendar, Clock, MapPin, User, Printer, ShieldCheck } from "lucide-react"
 import { formatFCFA } from "@/lib/formatters"
+import {
+  formatBookingPeriodLabel,
+  formatDurationLabel,
+  type DurationUnit,
+} from "@/lib/scheduling"
 import { ProContactActions } from "@/components/pro-contact-actions"
 
 export type BookingStatusType = "negotiating" | "in_progress" | "upcoming" | "completed" | "cancelled"
@@ -19,6 +24,9 @@ export interface BookingTicketData {
   professionalPhone?: string
   professionalWhatsapp?: string
   date: Date | string
+  endDate?: Date | string
+  durationUnit?: DurationUnit
+  durationValue?: number
   status: BookingStatusType
   price: number
   address: string
@@ -62,6 +70,20 @@ export function BookingTicket({ booking, open, onOpenChange }: BookingTicketProp
   }
 
   const parsedDate = typeof booking.date === "string" ? new Date(booking.date) : booking.date
+  const parsedEndIso = booking.endDate
+    ? typeof booking.endDate === "string"
+      ? booking.endDate
+      : booking.endDate.toISOString()
+    : parsedDate.toISOString()
+  const durationUnit: DurationUnit = booking.durationUnit || "MINUTES"
+  const durationValue = booking.durationValue ?? booking.duration ?? 60
+  const periodSummary = formatBookingPeriodLabel(
+    parsedDate.toISOString(),
+    parsedEndIso,
+    booking.time,
+    durationUnit,
+    durationValue
+  )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -114,22 +136,17 @@ export function BookingTicket({ booking, open, onOpenChange }: BookingTicketProp
                 <div className="flex items-start gap-3">
                   <Calendar className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                   <div>
-                    <p className="text-xs text-muted-foreground">Date convenue</p>
-                    <p className="font-semibold text-sm capitalize">
-                      {parsedDate.toLocaleDateString("fr-FR", {
-                        weekday: "long",
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </p>
+                    <p className="text-xs text-muted-foreground">Période &amp; date convenue</p>
+                    <p className="font-semibold text-sm">{periodSummary}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <Clock className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                   <div>
-                    <p className="text-xs text-muted-foreground">Créneau horaire</p>
-                    <p className="font-semibold text-sm">{booking.time}</p>
+                    <p className="text-xs text-muted-foreground">Créneau &amp; durée</p>
+                    <p className="font-semibold text-sm">
+                      {booking.time} ({formatDurationLabel(durationValue, durationUnit)})
+                    </p>
                   </div>
                 </div>
               </div>

@@ -107,6 +107,8 @@ model ProProfile {
   commune             String?    // Ex: Cocody, Yopougon, Almadies, Akwa, etc.
   address             String?
   availabilityStatus  String     @default("AVAILABLE") // "AVAILABLE" | "BUSY_TODAY" | "OFFLINE"
+  organizationType    String     @default("INDIVIDUAL") // "INDIVIDUAL" | "TEAM" | "PME"
+  maxConcurrentProjects Int      @default(1) // Nombre de chantiers / projets gerables simultanement (1..N)
   isVerified          Boolean    @default(false)
   kycStatus           String     @default("NOT_SUBMITTED") // "NOT_SUBMITTED" | "PENDING" | "APPROVED" | "REJECTED"
   kycDocumentUrl      String?
@@ -175,7 +177,9 @@ model Service {
   title        String
   description  String     @db.Text
   price        Int        // Tarif indicatif en FCFA (XOF)
-  duration     Int        // Durée estimée en minutes
+  duration     Int        // Durée estimée normalisée en minutes (compatibilité & tri)
+  durationUnit String     @default("MINUTES") // "MINUTES" | "HOURS" | "DAYS" | "WEEKS" | "MONTHS"
+  durationValue Int       @default(60)
   isActive     Boolean    @default(true)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
@@ -215,6 +219,9 @@ model Booking {
   pro             User      @relation("ProBookings", fields: [proId], references: [id], onDelete: Cascade)
   status          String    @default("NEGOTIATING") // "NEGOTIATING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED"
   bookingDate     DateTime
+  endDate         DateTime  @default(now())
+  durationUnit    String    @default("MINUTES") // "MINUTES" | "HOURS" | "DAYS" | "WEEKS" | "MONTHS"
+  durationValue   Int       @default(60)
   timeSlot        String    // Ex: "09:00 - 11:00"
   clientNotes     String?   @db.Text
   indicativePrice Int       // En FCFA (XOF)
@@ -231,6 +238,7 @@ model Booking {
   @@index([clientId, status])
   @@index([proId, status])
   @@index([bookingDate])
+  @@index([proId, status, bookingDate, endDate])
   @@map("bookings")
 }
 

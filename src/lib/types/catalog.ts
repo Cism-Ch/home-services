@@ -2,6 +2,8 @@
  * Types DTO serialisables partages entre les requetes Prisma serveur (RSC) et les composants clients
  */
 
+import type { DurationUnit, OrganizationType } from "@/lib/scheduling"
+
 export type AvailabilityStatusType = "AVAILABLE" | "BUSY_TODAY" | "OFFLINE"
 
 export interface CatalogCategory {
@@ -21,6 +23,8 @@ export interface CatalogService {
   categoryName: string
   price: number
   duration: number
+  durationUnit: DurationUnit
+  durationValue: number
   rating: number
   reviewsCount: number
   providerName: string
@@ -73,6 +77,10 @@ export interface CatalogProfessional {
   phoneNumber: string
   whatsappNumber: string
   availabilityStatus: AvailabilityStatusType
+  organizationType: OrganizationType
+  maxConcurrentProjects: number
+  activeProjectsToday?: number
+  availablePlacesToday?: number
   isVerified: boolean
   bio: string
   languages: string[]
@@ -102,6 +110,9 @@ export interface DashboardBookingItem {
   proLocation: string
   status: "NEGOTIATING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED"
   bookingDate: string
+  endDate: string
+  durationUnit: DurationUnit
+  durationValue: number
   timeSlot: string
   indicativePrice: number
   createdAt: string

@@ -1,5 +1,6 @@
 import Link from "next/link"
-import { CheckCircle2, Star } from "lucide-react"
+import { CheckCircle2, Star, Users } from "lucide-react"
+import { formatOrganizationBadge } from "@/lib/scheduling"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
@@ -11,13 +12,13 @@ interface ProCardProps {
 
 export function ProCard({ pro }: ProCardProps) {
   return (
-    <Card className="flex flex-col h-full group relative overflow-hidden transition-all duration-300 shadow-md hover:shadow-2xl hover:-translate-y-1 bg-card/80 backdrop-blur-sm border-border/50 hover:border-[hsl(var(--brand))]/40 animate-appear">
+    <Card className="flex flex-col h-full group relative overflow-hidden transition-[transform,box-shadow,border-color] duration-300 shadow-md hover:shadow-2xl hover:-translate-y-1 bg-card/80 backdrop-blur-sm border-border/50 hover:border-[hsl(var(--brand))]/40">
       <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--brand))]/5 via-transparent to-[hsl(var(--brand-foreground))]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 glow-brand pointer-events-none" />
 
       <CardHeader className="relative flex flex-row items-center gap-4">
         <div className="relative shrink-0">
-          <Avatar className="h-14 w-14 sm:h-16 sm:w-16 ring-2 ring-background group-hover:ring-[hsl(var(--brand))]/30 transition-all duration-500 shadow-md">
+          <Avatar className="h-14 w-14 sm:h-16 sm:w-16 ring-2 ring-background group-hover:ring-[hsl(var(--brand))]/30 transition-[box-shadow,border-color] duration-500 shadow-md">
             <AvatarImage src={pro.avatar || undefined} alt={pro.name} className="object-cover" />
             <AvatarFallback className="bg-[hsl(var(--brand))]/10 text-[hsl(var(--brand))] font-semibold text-lg">
               {pro.name.substring(0, 2).toUpperCase()}
@@ -43,7 +44,7 @@ export function ProCard({ pro }: ProCardProps) {
       </CardHeader>
 
       <CardContent className="relative flex-1">
-        <div className="flex items-center justify-between py-3 px-4 rounded-lg bg-muted/30 group-hover:bg-[hsl(var(--brand))]/10 transition-all duration-500 border border-transparent group-hover:border-[hsl(var(--brand))]/20">
+        <div className="flex items-center justify-between py-3 px-4 rounded-lg bg-muted/30 group-hover:bg-[hsl(var(--brand))]/10 transition-[background-color,border-color] duration-500 border border-transparent group-hover:border-[hsl(var(--brand))]/20">
           <div className="flex items-center gap-1.5">
             <Star className="h-5 w-5 fill-amber-500 text-amber-500 drop-shadow-sm" />
             <span className="font-bold text-lg text-foreground">{pro.rating}</span>
@@ -52,12 +53,23 @@ export function ProCard({ pro }: ProCardProps) {
             <span className="text-foreground font-semibold">{pro.reviewsCount}</span> avis
           </span>
         </div>
+        <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground mt-3">
+          <span className="inline-flex items-center gap-1.5">
+            <Users className="h-3.5 w-3.5 text-primary shrink-0" />
+            {formatOrganizationBadge(pro.organizationType, pro.maxConcurrentProjects)}
+          </span>
+          {pro.availablePlacesToday !== undefined && (
+            <span className="font-semibold text-foreground shrink-0">
+              {pro.availablePlacesToday}/{pro.maxConcurrentProjects} dispo
+            </span>
+          )}
+        </div>
       </CardContent>
 
       <CardFooter className="relative mt-auto">
         <Button
           asChild
-          className="w-full group-hover:shadow-lg transition-all duration-300 font-semibold"
+          className="w-full group-hover:shadow-lg transition-[transform,box-shadow,background-color] duration-300 font-semibold"
         >
           <Link href={`/professionals/pros/${pro.id}`}>
             Voir le profil

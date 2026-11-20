@@ -24,6 +24,12 @@ import {
 } from "@/components/ui/select"
 import { serviceTemplates, serviceCategories } from "@/lib/service-templates"
 import { formatFCFA } from "@/lib/formatters"
+import {
+  DURATION_UNIT_LABELS,
+  DURATION_UNIT_LIMITS,
+  durationToApproxMinutes,
+  type DurationUnit,
+} from "@/lib/scheduling"
 import type { CatalogCategory } from "@/lib/types/catalog"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
@@ -38,6 +44,8 @@ interface CreateServiceDialogProps {
     category: string
     price: number
     duration: number
+    durationUnit: DurationUnit
+    durationValue: number
   }) => void
 }
 
@@ -60,7 +68,8 @@ export function CreateServiceDialog({
   const [description, setDescription] = useState("")
   const [category, setCategory] = useState("")
   const [price, setPrice] = useState("")
-  const [duration, setDuration] = useState("")
+  const [durationUnit, setDurationUnit] = useState<DurationUnit>("MINUTES")
+  const [durationValue, setDurationValue] = useState("60")
 
   const handleTemplateSelect = (templateId: string) => {
     const template = serviceTemplates.find((t) => t.id === templateId)
@@ -72,25 +81,41 @@ export function CreateServiceDialog({
       const matchedDbCat = categories?.find((c) => c.id === slug)
       setCategory(matchedDbCat ? matchedDbCat.id : categories ? categories[0]?.id || slug : template.category)
       setPrice(template.typicalPrice.toString())
-      setDuration(template.duration.toString())
+      if (template.duration >= 120 && template.duration % 60 === 0) {
+        setDurationUnit("HOURS")
+        setDurationValue(String(Math.round(template.duration / 60)))
+      } else {
+        setDurationUnit("MINUTES")
+        setDurationValue(template.duration.toString())
+      }
     }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    const limits = DURATION_UNIT_LIMITS[durationUnit]
+    const parsedVal = Math.max(
+      limits.min,
+      Math.min(limits.max, parseInt(durationValue, 10) || limits.min)
+    )
+    const normalizedMinutes = durationToApproxMinutes(parsedVal, durationUnit)
+
     onCreateService({
       title,
       description,
       category,
       price: parseInt(price, 10) || 10000,
-      duration: parseInt(duration, 10) || 60,
+      duration: normalizedMinutes,
+      durationUnit,
+      durationValue: parsedVal,
     })
     setSelectedTemplate("")
     setTitle("")
     setDescription("")
     setCategory("")
     setPrice("")
-    setDuration("")
+    setDurationUnit("MINUTES")
+    setDurationValue("60")
     onOpenChange(false)
   }
 
@@ -178,7 +203,7 @@ export function CreateServiceDialog({
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="category">Catégorie *</Label>
                 <Select value={category} onValueChange={setCategory} required>
@@ -228,17 +253,41 @@ export function CreateServiceDialog({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="duration">Durée estimée (min) *</Label>
+                <Label htmlFor="durationValue">Durée estimée *</Label>
                 <Input
-                  id="duration"
+                  id="durationValue"
                   type="number"
-                  min="15"
-                  step="15"
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
+                  min={DURATION_UNIT_LIMITS[durationUnit].min}
+                  max={DURATION_UNIT_LIMITS[durationUnit].max}
+                  step={DURATION_UNIT_LIMITS[durationUnit].step}
+                  value={durationValue}
+                  onChange={(e) => setDurationValue(e.target.value)}
                   placeholder="60"
                   required
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="durationUnit">Échelle de durée *</Label>
+                <Select
+                  value={durationUnit}
+                  onValueChange={(val) => {
+                    const nextUnit = val as DurationUnit
+                    setDurationUnit(nextUnit)
+                    setDurationValue(String(DURATION_UNIT_LIMITS[nextUnit].min))
+                  }}
+                >
+                  <SelectTrigger id="durationUnit">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(DURATION_UNIT_LABELS) as DurationUnit[]).map((u) => (
+                      <SelectItem key={u} value={u}>
+                        {DURATION_UNIT_LABELS[u]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
@@ -247,7 +296,7 @@ export function CreateServiceDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Annuler
             </Button>
-            <Button type="submit" disabled={!title || !description || !category || !price || !duration}>
+            <Button type="submit" disabled={!title || !description || !category || !price || !durationValue}>
               Publier la prestation
             </Button>
           </DialogFooter>

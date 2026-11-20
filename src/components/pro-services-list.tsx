@@ -1,4 +1,5 @@
 import { formatFCFA } from "@/lib/formatters"
+import { formatDurationLabel } from "@/lib/scheduling"
 import type { CatalogService } from "@/lib/types/catalog"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -38,7 +39,9 @@ export function ProServicesList({ proId, services }: ProServicesListProps) {
             </div>
             <div className="flex items-center gap-2 text-sm">
               <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
-              <span>Durée estimée : {service.duration} min</span>
+              <span>
+                Durée estimée : {formatDurationLabel(service.durationValue, service.durationUnit)}
+              </span>
             </div>
           </CardContent>
           <CardFooter className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t bg-muted/20 py-4 px-4 sm:px-6">

@@ -7,6 +7,7 @@ import { enqueueFollowUpNotification } from "@/lib/qstash"
 import { enforceRateLimit, invalidateCatalogCache } from "@/lib/redis"
 import { broadcastBookingStatusEvent } from "@/lib/supabase-server"
 import { requireActionSession } from "@/server/auth-guard"
+import { syncProAvailabilityFromCapacity } from "@/server/helpers/availability-sync"
 
 const entityIdSchema = z.string().trim().min(1, "Identifiant requis").max(120)
 
@@ -104,7 +105,7 @@ export async function validateOfferAction(
   ServerActionResponse<{
     bookingId: string
     status: "IN_PROGRESS"
-    proStatus: "BUSY_TODAY"
+    proStatus: ProAvailabilityType
   }>
 > {
   try {
@@ -151,18 +152,24 @@ export async function validateOfferAction(
       }
     }
 
-    await prisma.$transaction(async (tx) => {
+    const nextProStatus = await prisma.$transaction(async (tx) => {
       await tx.booking.update({
         where: { id: bookingId },
         data: { status: "IN_PROGRESS" },
       })
 
-      if (booking.pro.proProfile) {
-        await tx.proProfile.update({
-          where: { id: booking.pro.proProfile.id },
-          data: { availabilityStatus: "BUSY_TODAY" },
-        })
+      if (!booking.pro.proProfile) {
+        return "BUSY_TODAY" as const
       }
+
+      return syncProAvailabilityFromCapacity(tx, {
+        proUserId: booking.proId,
+        proProfileId: booking.pro.proProfile.id,
+        currentAvailabilityStatus: booking.pro.proProfile.availabilityStatus,
+        organizationType: booking.pro.proProfile.organizationType,
+        maxConcurrentProjects: booking.pro.proProfile.maxConcurrentProjects,
+        markBusyWhenSaturated: true,
+      })
     })
 
     await enqueueFollowUpNotification({
@@ -189,7 +196,7 @@ export async function validateOfferAction(
     revalidatePath("/professionals")
 
     return {
-      data: { bookingId, status: "IN_PROGRESS", proStatus: "BUSY_TODAY" },
+      data: { bookingId, status: "IN_PROGRESS", proStatus: nextProStatus },
       error: null,
     }
   } catch (err) {
@@ -279,9 +286,7 @@ export async function answerTaskFollowUpAction(
 
     if (answer === "YES") {
       nextBookingStatus = "COMPLETED"
-      nextProStatus = "AVAILABLE"
-
-      await prisma.$transaction(async (tx) => {
+      nextProStatus = await prisma.$transaction(async (tx) => {
         const wasAlreadyCompleted = booking.status === "COMPLETED"
 
         await tx.booking.update({
@@ -292,31 +297,25 @@ export async function answerTaskFollowUpAction(
           },
         })
 
-        if (booking.pro.proProfile) {
-          const otherActiveBookings = await tx.booking.count({
-            where: {
-              proId: booking.proId,
-              status: "IN_PROGRESS",
-              id: { not: bookingId },
-            },
-          })
+        if (!booking.pro.proProfile) {
+          return "AVAILABLE" as const
+        }
 
-          if (otherActiveBookings > 0) {
-            nextProStatus = "BUSY_TODAY"
-          }
-
+        if (!wasAlreadyCompleted) {
           await tx.proProfile.update({
             where: { id: booking.pro.proProfile.id },
-            data: {
-              ...(wasAlreadyCompleted
-                ? {}
-                : { completedTasks: { increment: 1 } }),
-              ...(otherActiveBookings === 0
-                ? { availabilityStatus: "AVAILABLE" }
-                : {}),
-            },
+            data: { completedTasks: { increment: 1 } },
           })
         }
+
+        return syncProAvailabilityFromCapacity(tx, {
+          proUserId: booking.proId,
+          proProfileId: booking.pro.proProfile.id,
+          currentAvailabilityStatus: booking.pro.proProfile.availabilityStatus,
+          organizationType: booking.pro.proProfile.organizationType,
+          maxConcurrentProjects: booking.pro.proProfile.maxConcurrentProjects,
+          excludeBookingId: bookingId,
+        })
       })
     } else if (answer === "NO") {
       nextBookingStatus = "IN_PROGRESS"

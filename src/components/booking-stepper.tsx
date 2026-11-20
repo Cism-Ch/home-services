@@ -1,6 +1,8 @@
 "use client"
 
+import { m } from "framer-motion"
 import { Check } from "lucide-react"
+import { EASE_OUT_EXPO, SPRING_SNAPPY } from "@/lib/motion"
 import { cn } from "@/lib/utils"
 
 interface BookingStepperProps {
@@ -9,7 +11,8 @@ interface BookingStepperProps {
 }
 
 /**
- * Barre de progression semantique des etapes de reservation (<nav><ol><li aria-current="step">).
+ * Barre de progression semantique des etapes de reservation (<nav><ol><li aria-current="step">)
+ * avec progression animee GPU (scaleX + scale cercle actif).
  */
 export function BookingStepper({ currentStep, steps }: BookingStepperProps) {
   return (
@@ -28,9 +31,12 @@ export function BookingStepper({ currentStep, steps }: BookingStepperProps) {
               className={cn("flex items-start", !isLast && "flex-1")}
             >
               <div className="flex flex-col items-center shrink-0">
-                <div
+                <m.div
+                  initial={false}
+                  animate={{ scale: isCurrent ? 1.06 : 1 }}
+                  transition={SPRING_SNAPPY}
                   className={cn(
-                    "size-8 sm:size-10 rounded-full flex items-center justify-center font-semibold text-xs sm:text-sm transition-all",
+                    "size-8 sm:size-10 rounded-full flex items-center justify-center font-semibold text-xs sm:text-sm transition-colors duration-200",
                     isCompleted && "bg-primary text-primary-foreground",
                     isCurrent &&
                       "bg-primary text-primary-foreground ring-4 ring-primary/20",
@@ -44,10 +50,10 @@ export function BookingStepper({ currentStep, steps }: BookingStepperProps) {
                   ) : (
                     stepNumber
                   )}
-                </div>
+                </m.div>
                 <span
                   className={cn(
-                    "text-[11px] sm:text-xs mt-2 font-medium text-center max-w-[72px] sm:max-w-none leading-tight",
+                    "text-[11px] sm:text-xs mt-2 font-medium text-center max-w-[72px] sm:max-w-none leading-tight transition-colors duration-200",
                     isCurrent || isCompleted
                       ? "text-foreground"
                       : "text-muted-foreground"
@@ -59,11 +65,15 @@ export function BookingStepper({ currentStep, steps }: BookingStepperProps) {
               {!isLast && (
                 <div
                   aria-hidden="true"
-                  className={cn(
-                    "h-0.5 flex-1 mx-2 sm:mx-3 mt-4 sm:mt-5 transition-all",
-                    stepNumber < currentStep ? "bg-primary" : "bg-muted"
-                  )}
-                />
+                  className="h-0.5 flex-1 mx-2 sm:mx-3 mt-4 sm:mt-5 bg-muted overflow-hidden rounded-full"
+                >
+                  <m.div
+                    initial={false}
+                    animate={{ scaleX: stepNumber < currentStep ? 1 : 0 }}
+                    transition={{ duration: 0.28, ease: EASE_OUT_EXPO }}
+                    className="h-full w-full origin-left bg-primary"
+                  />
+                </div>
               )}
             </li>
           )

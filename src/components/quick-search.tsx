@@ -6,6 +6,7 @@ import { Search, Zap, Droplets, Paintbrush, Snowflake, ShieldCheck, Hammer } fro
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { CityCombobox } from "@/components/city-combobox"
+import { RevealOnScroll } from "@/components/motion/reveal"
 import type { LocationItem } from "@/lib/cities-data"
 
 const categories = [
@@ -47,12 +48,18 @@ export function QuickSearch() {
   }
 
   return (
-    <section className="w-full py-12 md:py-16 relative overflow-hidden">
-      <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl h-[500px] bg-primary/5 rounded-full blur-3xl -z-10" />
+    <section
+      id="quick-search"
+      className="w-full py-12 md:py-16 relative overflow-hidden scroll-mt-20"
+    >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,hsl(var(--primary)/0.05)_0%,transparent_72%)]"
+      />
 
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8 animate-appear">
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
+        <div className="w-full max-w-6xl mx-auto">
+        <RevealOnScroll className="text-center mb-8">
           <div className="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-primary mb-3 bg-primary/10 px-4 py-1.5 rounded-full">
             <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
             RECHERCHE GÉOLOCALISÉE
@@ -63,12 +70,10 @@ export function QuickSearch() {
           <p className="text-muted-foreground text-base sm:text-lg">
             Recherchez par métier et par localité (villes et communes)
           </p>
-        </div>
+        </RevealOnScroll>
 
         <form onSubmit={handleSearch} className="relative mb-6">
-          <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            <div className="relative flex flex-col md:flex-row gap-2 bg-card/90 backdrop-blur-md border-2 border-border hover:border-primary/50 rounded-2xl p-2.5 transition-all duration-300 shadow-md">
+          <div className="relative flex flex-col md:flex-row gap-2 bg-card/90 backdrop-blur-md border-2 border-border hover:border-primary/50 focus-within:border-primary/60 focus-within:shadow-lg rounded-2xl p-2.5 transition-[border-color,box-shadow] duration-200 shadow-md">
               <div className="flex-1 flex items-center gap-3 px-2 sm:px-3 min-w-0">
                 <Search className="h-5 w-5 text-muted-foreground shrink-0" />
                 <Input
@@ -96,7 +101,6 @@ export function QuickSearch() {
               >
                 Rechercher
               </Button>
-            </div>
           </div>
         </form>
 

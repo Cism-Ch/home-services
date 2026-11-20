@@ -2,8 +2,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { CatalogProfessional } from "@/lib/types/catalog"
-import { MapPin, Star, Globe, Clock, CheckCircle2 } from "lucide-react"
+import { MapPin, Star, Globe, Clock, CheckCircle2, Users } from "lucide-react"
 import Link from "next/link"
+import { formatOrganizationBadge } from "@/lib/scheduling"
 import { ProContactActions } from "@/components/pro-contact-actions"
 import { ProLiveStatusBadge } from "@/components/pro-live-status-badge"
 
@@ -19,7 +20,7 @@ export function ProHeader({ professional }: ProHeaderProps) {
       {/* Banniere d'en-tete degradee plein cadre */}
       <div className="h-40 sm:h-48 md:h-60 w-full bg-gradient-to-r from-primary/25 via-primary/10 to-secondary/20" />
 
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
         <div className="relative -mt-12 md:-mt-16 flex flex-col lg:flex-row items-start lg:items-end gap-6 pb-6 border-b">
           <Avatar className="h-24 w-24 md:h-32 md:w-32 border-4 border-background shadow-xl ring-2 ring-primary/20 shrink-0">
             <AvatarImage
@@ -51,6 +52,19 @@ export function ProHeader({ professional }: ProHeaderProps) {
                   proProfileId={professional.id}
                   initialStatus={professional.availabilityStatus}
                 />
+                <Badge variant="outline" className="gap-1.5 text-xs">
+                  <Users className="h-3.5 w-3.5 text-primary shrink-0" />
+                  {formatOrganizationBadge(
+                    professional.organizationType,
+                    professional.maxConcurrentProjects
+                  )}
+                  {professional.maxConcurrentProjects > 1 &&
+                    professional.availablePlacesToday !== undefined && (
+                      <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                        ({professional.availablePlacesToday}/{professional.maxConcurrentProjects} libres)
+                      </span>
+                    )}
+                </Badge>
               </div>
             </div>
 

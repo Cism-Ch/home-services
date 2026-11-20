@@ -27,13 +27,30 @@ function getAuthBaseUrl(): string {
 export const authClient = createAuthClient({
   baseURL: getAuthBaseUrl(),
   plugins: [inferAdditionalFields<typeof auth>()],
-
+  sessionOptions: {
+    refetchOnWindowFocus: false,
+  },
   fetchOptions: {
     onError(context) {
-      console.error("[Auth] Erreur d'authentification:", {
-        error: context.error,
-        response: context.response,
-      });
+      const status = context.response?.status ?? context.error?.status;
+      // Les reponses 4xx (identifiants invalides, non authentifie, 429) sont gerees
+      // par les formulaires appelants ; evite de declencher l'overlay Next.js en dev.
+      if (typeof status === "number" && status >= 400 && status < 500) {
+        if (status === 429 && process.env.NODE_ENV !== "production") {
+          console.warn(
+            "[Auth] Limite de requetes atteinte (429):",
+            context.error?.message
+          );
+        }
+        return;
+      }
+
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("[Auth] Erreur reseau ou serveur d'authentification:", {
+          status,
+          message: context.error?.message,
+        });
+      }
     },
   },
 });

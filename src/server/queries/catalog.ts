@@ -4,6 +4,13 @@
 
 import { prisma } from "@/lib/prisma"
 import { CATALOG_CACHE_KEYS, getCachedOrFetch } from "@/lib/redis"
+import {
+  normalizeDurationUnit,
+  normalizeMaxConcurrent,
+  normalizeOrganizationType,
+  toIsoDayKey,
+  type ActiveBookingSpan,
+} from "@/lib/scheduling"
 import type {
   AvailabilityStatusType,
   CatalogCategory,
@@ -129,6 +136,8 @@ export async function getPublicServices(): Promise<CatalogService[]> {
       categoryName: row.category.name,
       price: row.price,
       duration: row.duration,
+      durationUnit: normalizeDurationUnit(row.durationUnit),
+      durationValue: row.durationValue,
       rating: row.proProfile.rating,
       reviewsCount: row.proProfile.reviewsCount,
       providerName: row.proProfile.user.name,
@@ -144,26 +153,46 @@ export async function getPublicServices(): Promise<CatalogService[]> {
 
 export async function getPublicProfessionals(): Promise<CatalogProfessional[]> {
   return getCachedOrFetch(CATALOG_CACHE_KEYS.PROFESSIONALS, 60, async () => {
-    const profiles = await prisma.proProfile.findMany({
-      include: {
-        city: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-            subscriptions: {
-              where: { status: { in: ["ACTIVE", "TRIALING"] } },
-              select: { plan: true, status: true },
+    const todayKey = toIsoDayKey(new Date())
+    const todayStart = new Date(`${todayKey}T00:00:00.000Z`)
+    const todayEnd = new Date(`${todayKey}T23:59:59.999Z`)
+
+    const [profiles, activeTodayGroups] = await Promise.all([
+      prisma.proProfile.findMany({
+        include: {
+          city: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+              subscriptions: {
+                where: { status: { in: ["ACTIVE", "TRIALING"] } },
+                select: { plan: true, status: true },
+              },
             },
           },
+          services: {
+            where: { isActive: true },
+            include: { category: true },
+          },
         },
-        services: {
-          where: { isActive: true },
-          include: { category: true },
+      }),
+      prisma.booking.groupBy({
+        by: ["proId"],
+        where: {
+          status: { in: ["NEGOTIATING", "IN_PROGRESS"] },
+          bookingDate: { lte: todayEnd },
+          endDate: { gte: todayStart },
         },
-      },
-    })
+        _count: { _all: true },
+      }),
+    ])
+
+    const activeCountByPro = new Map<string, number>()
+    for (const grp of activeTodayGroups) {
+      activeCountByPro.set(grp.proId, grp._count._all)
+    }
 
     const sorted = [...profiles].sort((a, b) => {
       const rankA = getSubscriptionPriorityRank(a.user.subscriptions)
@@ -176,6 +205,10 @@ export async function getPublicProfessionals(): Promise<CatalogProfessional[]> {
     return sorted.map((p) => {
       const rank = getSubscriptionPriorityRank(p.user.subscriptions)
       const location = formatLocationLabel(p.city?.name, p.commune)
+      const orgType = normalizeOrganizationType(p.organizationType)
+      const maxConcurrent = normalizeMaxConcurrent(orgType, p.maxConcurrentProjects)
+      const activeToday = activeCountByPro.get(p.userId) ?? 0
+      const availPlacesToday = Math.max(0, maxConcurrent - activeToday)
 
       return {
         id: p.id,
@@ -192,6 +225,10 @@ export async function getPublicProfessionals(): Promise<CatalogProfessional[]> {
         phoneNumber: p.phoneNumber,
         whatsappNumber: p.whatsappNumber,
         availabilityStatus: normalizeAvailability(p.availabilityStatus),
+        organizationType: orgType,
+        maxConcurrentProjects: maxConcurrent,
+        activeProjectsToday: activeToday,
+        availablePlacesToday: availPlacesToday,
         isVerified: p.isVerified,
         bio: p.bio,
         languages: p.languages.length > 0 ? p.languages : ["Français"],
@@ -209,6 +246,8 @@ export async function getPublicProfessionals(): Promise<CatalogProfessional[]> {
           categoryName: s.category.name,
           price: s.price,
           duration: s.duration,
+          durationUnit: normalizeDurationUnit(s.durationUnit),
+          durationValue: s.durationValue,
           rating: p.rating,
           reviewsCount: p.reviewsCount,
           providerName: p.user.name,
@@ -276,6 +315,24 @@ export async function getProfessionalDetail(
   }
 
   const location = formatLocationLabel(profile.city?.name, profile.commune)
+  const orgType = normalizeOrganizationType(profile.organizationType)
+  const maxConcurrent = normalizeMaxConcurrent(
+    orgType,
+    profile.maxConcurrentProjects
+  )
+
+  const todayKey = toIsoDayKey(new Date())
+  const todayStart = new Date(`${todayKey}T00:00:00.000Z`)
+  const todayEnd = new Date(`${todayKey}T23:59:59.999Z`)
+
+  const activeProjectsToday = await prisma.booking.count({
+    where: {
+      proId: profile.userId,
+      status: { in: ["NEGOTIATING", "IN_PROGRESS"] },
+      bookingDate: { lte: todayEnd },
+      endDate: { gte: todayStart },
+    },
+  })
 
   const mappedServices: CatalogService[] = profile.services.map((s) => ({
     id: s.id,
@@ -287,6 +344,8 @@ export async function getProfessionalDetail(
     categoryName: s.category.name,
     price: s.price,
     duration: s.duration,
+    durationUnit: normalizeDurationUnit(s.durationUnit),
+    durationValue: s.durationValue,
     rating: profile.rating,
     reviewsCount: profile.reviewsCount,
     providerName: profile.user.name,
@@ -342,6 +401,10 @@ export async function getProfessionalDetail(
     phoneNumber: profile.phoneNumber,
     whatsappNumber: profile.whatsappNumber,
     availabilityStatus: normalizeAvailability(profile.availabilityStatus),
+    organizationType: orgType,
+    maxConcurrentProjects: maxConcurrent,
+    activeProjectsToday,
+    availablePlacesToday: Math.max(0, maxConcurrent - activeProjectsToday),
     isVerified: profile.isVerified,
     bio: profile.bio,
     languages: profile.languages.length > 0 ? profile.languages : ["Français"],
@@ -371,7 +434,7 @@ export async function getBookingContext(
   service: CatalogService
   timeSlots: CatalogTimeSlot[]
   unavailabilities: CatalogUnavailability[]
-  bookedSlots: Array<{ date: string; timeSlot: string }>
+  bookedSlots: ActiveBookingSpan[]
 } | null> {
   const detail = await getProfessionalDetail(proIdOrUserId)
   if (!detail) return null
@@ -379,18 +442,22 @@ export async function getBookingContext(
   const service = detail.services.find((s) => s.id === serviceId)
   if (!service) return null
 
-  const startOfToday = new Date()
-  startOfToday.setHours(0, 0, 0, 0)
+  const todayKey = toIsoDayKey(new Date())
+  const startOfToday = new Date(`${todayKey}T00:00:00.000Z`)
 
   const activeBookings = await prisma.booking.findMany({
     where: {
       proId: detail.professional.userId,
       status: { in: ["NEGOTIATING", "IN_PROGRESS"] },
-      bookingDate: { gte: startOfToday },
+      endDate: { gte: startOfToday },
     },
     select: {
+      id: true,
       bookingDate: true,
+      endDate: true,
       timeSlot: true,
+      durationUnit: true,
+      durationValue: true,
     },
   })
 
@@ -400,8 +467,12 @@ export async function getBookingContext(
     timeSlots: detail.timeSlots,
     unavailabilities: detail.unavailabilities,
     bookedSlots: activeBookings.map((b) => ({
-      date: b.bookingDate.toISOString().split("T")[0],
+      id: b.id,
+      startDate: b.bookingDate.toISOString(),
+      endDate: b.endDate.toISOString(),
       timeSlot: b.timeSlot,
+      durationUnit: normalizeDurationUnit(b.durationUnit),
+      durationValue: b.durationValue,
     })),
   }
 }

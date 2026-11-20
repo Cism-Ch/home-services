@@ -9,7 +9,7 @@ interface ServiceCardProps {
 
 export function ServiceCard({ title, icon: Icon, description }: ServiceCardProps) {
     return (
-        <Card className="h-full group relative overflow-hidden transition-all duration-300 shadow-md hover:shadow-2xl hover:-translate-y-1 hover:border-[hsl(var(--brand))]/40 bg-card/50 backdrop-blur-sm animate-appear border-border/50">
+        <Card className="h-full group relative overflow-hidden transition-[transform,box-shadow,border-color] duration-300 shadow-md hover:shadow-2xl hover:-translate-y-1 hover:border-[hsl(var(--brand))]/40 bg-card/50 backdrop-blur-sm border-border/50">
             {/* Gradient background on hover */}
             <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--brand))]/8 via-transparent to-[hsl(var(--brand-foreground))]/8 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
@@ -21,8 +21,8 @@ export function ServiceCard({ title, icon: Icon, description }: ServiceCardProps
             <div className="absolute bottom-0 left-0 w-16 h-16 bg-[hsl(var(--brand-foreground))]/5 rounded-tr-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
             <CardHeader className="relative z-10">
-                <div className="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[hsl(var(--brand))]/10 to-[hsl(var(--brand-foreground))]/10 group-hover:from-[hsl(var(--brand))]/20 group-hover:to-[hsl(var(--brand-foreground))]/20 transition-all duration-500 group-hover:scale-110 transform group-hover:rotate-6 ring-2 ring-[hsl(var(--brand))]/0 group-hover:ring-[hsl(var(--brand))]/20">
-                    <Icon className="h-8 w-8 text-[hsl(var(--brand))] group-hover:text-[hsl(var(--brand-foreground))] transition-all duration-500 group-hover:scale-110 group-hover:-rotate-6" />
+                <div className="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[hsl(var(--brand))]/10 to-[hsl(var(--brand-foreground))]/10 group-hover:from-[hsl(var(--brand))]/20 group-hover:to-[hsl(var(--brand-foreground))]/20 transition-transform duration-500 group-hover:scale-110 transform group-hover:rotate-6 ring-2 ring-[hsl(var(--brand))]/0 group-hover:ring-[hsl(var(--brand))]/20">
+                    <Icon className="h-8 w-8 text-[hsl(var(--brand))] group-hover:text-[hsl(var(--brand-foreground))] transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6" />
                 </div>
                 <CardTitle className="group-hover:text-[hsl(var(--brand))] transition-colors duration-300 font-bold text-base sm:text-lg leading-snug break-words">
                     {title}
@@ -35,9 +35,7 @@ export function ServiceCard({ title, icon: Icon, description }: ServiceCardProps
             </CardContent>
 
             {/* Bottom border accent on hover with gradient */}
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-[hsl(var(--brand))] via-[hsl(var(--brand-foreground))] to-[hsl(var(--brand))] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-center">
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-pulse" />
-            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-[hsl(var(--brand))] via-[hsl(var(--brand-foreground))] to-[hsl(var(--brand))] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-center" />
         </Card>
     )
 }

@@ -1,6 +1,11 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  RevealOnScroll,
+  StaggerGrid,
+  StaggerItem,
+} from "@/components/motion/reveal"
 import { Clock, FileText, Shield, Award, ArrowRight } from "lucide-react"
 
 const featuredServices = [
@@ -40,14 +45,16 @@ const featuredServices = [
 
 export function FeaturedServices() {
   return (
-    <section className="py-12 md:py-20 bg-gradient-to-b from-background to-muted/20 relative overflow-hidden">
-      <div className="pointer-events-none absolute top-0 left-0 w-full max-w-lg h-[400px] bg-[hsl(var(--brand))]/5 rounded-full blur-3xl -z-10" />
-      <div className="pointer-events-none absolute bottom-0 right-0 w-full max-w-lg h-[400px] bg-[hsl(var(--brand-foreground))]/5 rounded-full blur-3xl -z-10" />
+    <section className="w-full py-12 md:py-20 bg-gradient-to-b from-background to-muted/20 relative overflow-hidden">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_65%_50%_at_50%_50%,hsla(var(--brand)/0.05)_0%,transparent_74%)]"
+      />
 
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
 
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <div className="text-center mb-10 md:mb-16 animate-appear">
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 relative">
+        <RevealOnScroll className="text-center mb-10 md:mb-16">
           <div className="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-[hsl(var(--brand))] mb-3 bg-[hsl(var(--brand))]/10 px-4 py-1.5 rounded-full">
             <div className="w-2 h-2 rounded-full bg-[hsl(var(--brand))] animate-pulse" />
             NOS AVANTAGES
@@ -58,16 +65,16 @@ export function FeaturedServices() {
           <p className="text-muted-foreground text-base sm:text-lg md:text-xl max-w-2xl mx-auto">
             Des prestations locales encadrées, transparentes et sans intermédiaire financier
           </p>
-        </div>
+        </RevealOnScroll>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StaggerGrid className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {featuredServices.map((service) => {
             const Icon = service.icon
             return (
-              <Card
-                key={service.title}
-                className="flex flex-col h-full group relative overflow-hidden transition-all duration-300 shadow-md hover:shadow-2xl hover:-translate-y-1 border-2 hover:border-[hsl(var(--brand))]/30 bg-card/80 backdrop-blur-sm animate-appear"
-              >
+              <StaggerItem key={service.title}>
+                <Card
+                  className="flex flex-col h-full group relative overflow-hidden transition-[transform,box-shadow,border-color] duration-300 shadow-md hover:shadow-2xl hover:-translate-y-1 border-2 hover:border-[hsl(var(--brand))]/30 bg-card/80 backdrop-blur-sm"
+                >
                 <div
                   className={`absolute inset-0 bg-gradient-to-br ${service.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500 pointer-events-none`}
                 />
@@ -117,12 +124,13 @@ export function FeaturedServices() {
                 <div
                   className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${service.color} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left`}
                 />
-              </Card>
+                </Card>
+              </StaggerItem>
             )
           })}
-        </div>
+        </StaggerGrid>
 
-        <div className="mt-12 md:mt-16 text-center animate-appear">
+        <RevealOnScroll className="mt-12 md:mt-16 text-center">
           <div className="inline-flex flex-col sm:flex-row items-center gap-4 bg-gradient-to-r from-[hsl(var(--brand))]/5 via-[hsl(var(--brand-foreground))]/5 to-[hsl(var(--brand))]/5 border border-[hsl(var(--brand))]/20 rounded-2xl p-6 sm:p-8 backdrop-blur-sm max-w-full">
             <div className="text-center sm:text-left">
               <h3 className="text-xl font-bold mb-1 gradient-brand">
@@ -139,7 +147,7 @@ export function FeaturedServices() {
               </Link>
             </Button>
           </div>
-        </div>
+        </RevealOnScroll>
       </div>
     </section>
   )

@@ -2,14 +2,14 @@ import React from "react"
 import { cn } from "@/lib/utils"
 import { cva, type VariantProps } from "class-variance-authority"
 
-const glowVariants = cva("pointer-events-none absolute inset-x-0 overflow-hidden", {
+const glowVariants = cva("pointer-events-none absolute inset-0 -z-10 overflow-hidden", {
   variants: {
     variant: {
-      top: "top-0",
-      above: "-top-[128px]",
-      bottom: "bottom-0",
-      below: "-bottom-[128px]",
-      center: "top-1/2 -translate-y-1/2",
+      top: "bg-[radial-gradient(ellipse_72%_58%_at_50%_18%,hsla(var(--brand)/0.16)_0%,hsla(var(--brand-foreground)/0.08)_38%,transparent_74%)] dark:bg-[radial-gradient(ellipse_72%_58%_at_50%_18%,hsla(var(--brand)/0.22)_0%,hsla(var(--brand-foreground)/0.09)_42%,transparent_76%)]",
+      above: "bg-[radial-gradient(ellipse_60%_45%_at_50%_8%,hsla(var(--brand)/0.13)_0%,transparent_70%)]",
+      bottom: "bg-[radial-gradient(ellipse_65%_50%_at_50%_82%,hsla(var(--brand-foreground)/0.12)_0%,transparent_70%)]",
+      below: "bg-[radial-gradient(ellipse_65%_50%_at_50%_88%,hsla(var(--brand)/0.12)_0%,transparent_70%)]",
+      center: "bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,hsla(var(--brand)/0.12)_0%,transparent_70%)]",
     },
   },
   defaultVariants: {
@@ -23,20 +23,11 @@ const Glow = React.forwardRef<
 >(({ className, variant, ...props }, ref) => (
   <div
     ref={ref}
+    data-hero-glow="true"
+    aria-hidden="true"
     className={cn(glowVariants({ variant }), className)}
     {...props}
-  >
-    <div
-      className={cn(
-        "mx-auto h-[220px] w-full max-w-3xl rounded-full bg-[radial-gradient(ellipse_at_center,_hsla(var(--brand-foreground)/.35)_10%,_hsla(var(--brand-foreground)/0)_65%)] sm:h-[420px]"
-      )}
-    />
-    <div
-      className={cn(
-        "mx-auto -mt-32 h-[120px] w-full max-w-xl rounded-full bg-[radial-gradient(ellipse_at_center,_hsla(var(--brand)/.25)_10%,_hsla(var(--brand-foreground)/0)_65%)] sm:h-[220px]"
-      )}
-    />
-  </div>
+  />
 ))
 Glow.displayName = "Glow"
 

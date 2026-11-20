@@ -4,6 +4,13 @@ import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { enforceRateLimit, invalidateCatalogCache } from "@/lib/redis"
+import {
+  durationToApproxMinutes,
+  normalizeDurationUnit,
+  normalizeMaxConcurrent,
+  normalizeOrganizationType,
+  type DurationUnit,
+} from "@/lib/scheduling"
 import { createServiceSchema, type CreateServiceInput } from "@/lib/validations/service"
 import { proProfileSchema, type ProProfileInput } from "@/lib/validations/pro-profile"
 import {
@@ -39,14 +46,29 @@ export interface ServerActionResponse<T> {
 export async function createProServiceAction(
   clientProProfileId: string,
   input: CreateServiceInput
-): Promise<ServerActionResponse<{ id: string; title: string; price: number }>> {
+): Promise<
+  ServerActionResponse<{
+    id: string
+    title: string
+    price: number
+    duration: number
+    durationUnit: DurationUnit
+    durationValue: number
+  }>
+> {
   void clientProProfileId
   const authRes = await requireProProfile()
   if (authRes.error !== null) {
     return { data: null, error: authRes.error }
   }
 
-  const parsed = createServiceSchema.safeParse(input)
+  const normalizedInput: CreateServiceInput = {
+    ...input,
+    durationUnit: normalizeDurationUnit(input.durationUnit),
+    durationValue: input.durationValue ?? input.duration ?? 60,
+  }
+
+  const parsed = createServiceSchema.safeParse(normalizedInput)
   if (!parsed.success) {
     const firstIssue = parsed.error.issues[0]?.message || "Données de service invalides"
     return { data: null, error: firstIssue }
@@ -65,6 +87,11 @@ export async function createProServiceAction(
       }
     }
 
+    const normalizedMinutes = durationToApproxMinutes(
+      parsed.data.durationValue,
+      parsed.data.durationUnit
+    )
+
     const created = await prisma.service.create({
       data: {
         proProfileId: authRes.proProfile.id,
@@ -72,7 +99,9 @@ export async function createProServiceAction(
         title: parsed.data.title,
         description: parsed.data.description,
         price: parsed.data.price,
-        duration: parsed.data.duration,
+        duration: normalizedMinutes,
+        durationUnit: parsed.data.durationUnit,
+        durationValue: parsed.data.durationValue,
         isActive: parsed.data.isActive,
       },
     })
@@ -87,6 +116,9 @@ export async function createProServiceAction(
         id: created.id,
         title: created.title,
         price: created.price,
+        duration: created.duration,
+        durationUnit: normalizeDurationUnit(created.durationUnit),
+        durationValue: created.durationValue,
       },
       error: null,
     }
@@ -198,6 +230,15 @@ export async function updateProProfileAction(
           commune: parsed.data.commune,
           address: parsed.data.address,
           availabilityStatus: parsed.data.availabilityStatus,
+          ...(parsed.data.organizationType
+            ? {
+                organizationType: normalizeOrganizationType(parsed.data.organizationType),
+                maxConcurrentProjects: normalizeMaxConcurrent(
+                  normalizeOrganizationType(parsed.data.organizationType),
+                  parsed.data.maxConcurrentProjects
+                ),
+              }
+            : {}),
           ...(parsedExtras.data.languages && parsedExtras.data.languages.length > 0
             ? { languages: parsedExtras.data.languages }
             : {}),

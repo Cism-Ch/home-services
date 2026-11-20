@@ -8,6 +8,7 @@ import { ProLiveStatusBanner } from "@/components/dashboard/pro-live-status-bann
 import { requireRole } from "@/server/auth-guard"
 import { getProDashboardData } from "@/server/queries/dashboard"
 import { formatFCFA } from "@/lib/formatters"
+import { formatDurationLabel } from "@/lib/scheduling"
 
 export const dynamic = "force-dynamic"
 
@@ -70,6 +71,8 @@ export default async function ProDashboardPage() {
         proId={proProfile.id}
         initialStatus={proProfile.availabilityStatus}
         hasActiveMission={hasInProgress}
+        activeProjectsToday={proProfile.activeProjectsToday}
+        maxConcurrentProjects={proProfile.maxConcurrentProjects}
       />
 
       {/* Stats Grid */}
@@ -122,7 +125,8 @@ export default async function ProDashboardPage() {
                           })}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {booking.timeSlot}
+                          {booking.timeSlot} •{" "}
+                          {formatDurationLabel(booking.durationValue, booking.durationUnit)}
                         </div>
                         {getStatusBadge(booking.status)}
                       </div>

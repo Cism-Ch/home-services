@@ -1,9 +1,11 @@
 /**
- * Donnees de test structurees pour l'initialisation Supabase (Sprint 08)
+ * Donnees de test structurees pour l'initialisation Supabase (Sprint 08 / Sprint 12)
  *
  * Contient uniquement des comptes fictifs destines aux environnements
  * developpement et staging : 1 Admin, 5 Clients et 20 Professionnels.
  */
+
+import type { DurationUnit, OrganizationType } from "../src/lib/scheduling"
 
 export const SEED_PASSWORDS = {
   admin: process.env.SEED_ADMIN_PASSWORD || "AdminServ2026!",
@@ -158,6 +160,8 @@ export interface SeedServiceFixture {
   description: string
   price: number
   duration: number
+  durationUnit?: DurationUnit
+  durationValue?: number
 }
 
 export interface SeedProFixture {
@@ -173,6 +177,8 @@ export interface SeedProFixture {
     commune: string
     address: string
     availabilityStatus: "AVAILABLE" | "BUSY_TODAY" | "OFFLINE"
+    organizationType?: OrganizationType
+    maxConcurrentProjects?: number
     isVerified: boolean
     kycStatus: "NOT_SUBMITTED" | "PENDING" | "APPROVED" | "REJECTED"
     portfolioImages: string[]
@@ -200,6 +206,8 @@ export interface SeedBookingFixture {
   status: "NEGOTIATING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED"
   dayOffset: number
   timeSlot: string
+  durationUnit?: DurationUnit
+  durationValue?: number
   clientNotes: string
   indicativePrice: number
   clientAddress: string
@@ -650,6 +658,8 @@ export const SEED_PROS: SeedProFixture[] = [
       commune: "Cocody",
       address: "Cocody Vallon, Rue des Jardins",
       availabilityStatus: "AVAILABLE",
+      organizationType: "PME",
+      maxConcurrentProjects: 4,
       isVerified: true,
       kycStatus: "APPROVED",
       portfolioImages: CATEGORY_PORTFOLIO_IMAGES.menage,
@@ -665,6 +675,8 @@ export const SEED_PROS: SeedProFixture[] = [
           "Dépoussiérage complet, dégraissage cuisine, désinfection salles d'eau et sols.",
         price: 20000,
         duration: 180,
+        durationUnit: "HOURS",
+        durationValue: 3,
       },
       {
         id: "seed-service-pro7-2",
@@ -673,7 +685,9 @@ export const SEED_PROS: SeedProFixture[] = [
         description:
           "Élimination traces de peinture/ciment, lavage baies vitrées et remise à neuf complète.",
         price: 55000,
-        duration: 240,
+        duration: 1440,
+        durationUnit: "DAYS",
+        durationValue: 3,
       },
       {
         id: "seed-service-pro7-3",
@@ -1216,6 +1230,8 @@ export const SEED_PROS: SeedProFixture[] = [
       commune: "Abobo",
       address: "Abobo Baoulé, Abidjan",
       availabilityStatus: "AVAILABLE",
+      organizationType: "TEAM",
+      maxConcurrentProjects: 3,
       isVerified: true,
       kycStatus: "APPROVED",
       portfolioImages: CATEGORY_PORTFOLIO_IMAGES.maconnerie,
@@ -1230,7 +1246,9 @@ export const SEED_PROS: SeedProFixture[] = [
         description:
           "Ragréage support, pose au peigne cranté et jointoiement étanche.",
         price: 45000,
-        duration: 240,
+        duration: 2400,
+        durationUnit: "DAYS",
+        durationValue: 5,
       },
       {
         id: "seed-service-pro17-2",
@@ -1239,7 +1257,9 @@ export const SEED_PROS: SeedProFixture[] = [
         description:
           "Nettoyage support, primaire d'accrochage et membrane d'étanchéité anti-infiltration.",
         price: 60000,
-        duration: 240,
+        duration: 5760,
+        durationUnit: "WEEKS",
+        durationValue: 2,
       },
     ],
     subscription: {
@@ -1376,6 +1396,8 @@ export const SEED_PROS: SeedProFixture[] = [
       commune: "Bonanjo",
       address: "Quartier Bonanjo, Douala",
       availabilityStatus: "AVAILABLE",
+      organizationType: "TEAM",
+      maxConcurrentProjects: 2,
       isVerified: true,
       kycStatus: "APPROVED",
       portfolioImages: CATEGORY_PORTFOLIO_IMAGES.jardinage,
@@ -1620,14 +1642,16 @@ export const SEED_BOOKINGS: SeedBookingFixture[] = [
   },
   {
     id: "seed-booking-15",
-    serviceId: "seed-service-pro7-3",
+    serviceId: "seed-service-pro7-2",
     clientKey: "seed-client-3",
     proUserKey: "seed-pro-user-7",
     status: "IN_PROGRESS",
-    dayOffset: 2,
+    dayOffset: 0,
     timeSlot: "10:00 - 12:00",
-    clientNotes: "Canapé d'angle 5 places en tissu beige.",
-    indicativePrice: 25000,
+    durationUnit: "DAYS",
+    durationValue: 3,
+    clientNotes: "Nettoyage fin de chantier villa 5 pièces sur 3 jours.",
+    indicativePrice: 55000,
     clientAddress: "Riviera Palmeraie, Rue Ministere",
   },
   {
@@ -1651,6 +1675,8 @@ export const SEED_BOOKINGS: SeedBookingFixture[] = [
     status: "NEGOTIATING",
     dayOffset: 4,
     timeSlot: "10:00 - 12:00",
+    durationUnit: "DAYS",
+    durationValue: 5,
     clientNotes: "Carrelage terrasse 18 m2, carreaux 60x60 déjà sur place.",
     indicativePrice: 45000,
     clientAddress: "Cocody Angre 8eme Tranche, Residence Les Palmiers",

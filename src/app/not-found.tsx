@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 
 export default function NotFoundPage() {
   return (
-    <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 flex flex-col items-center justify-center text-center min-h-[60vh] space-y-6">
+    <main className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 py-16 sm:py-20 flex flex-col items-center justify-center text-center min-h-[60vh] space-y-6">
       <div className="space-y-2 max-w-md">
         <p className="text-sm font-semibold uppercase tracking-wider text-primary">
           Erreur 404

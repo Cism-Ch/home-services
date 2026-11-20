@@ -12,7 +12,11 @@ const PROTECTED_PREFIXES = ["/dashboard"];
  */
 const AUTH_PAGES = ["/login", "/register", "/forgot-password", "/reset-password"];
 
-export async function middleware(request: NextRequest) {
+/**
+ * Proxy Next.js 16 : controle optimiste du cookie de session Better-Auth,
+ * protection des routes /dashboard/* et assainissement anti Open Redirect (CWE-601).
+ */
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionToken = getSessionCookie(request);
   const isAuthenticated = Boolean(sessionToken);

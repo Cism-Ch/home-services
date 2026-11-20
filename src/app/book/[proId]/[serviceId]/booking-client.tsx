@@ -3,6 +3,8 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { AnimatePresence, m, useReducedMotion } from "framer-motion"
+import { stepSlideVariants } from "@/lib/motion"
 import { BookingStepper } from "@/components/booking-stepper"
 import { BookingSummary } from "@/components/booking-summary"
 import { DateTimePicker } from "@/components/date-time-picker"
@@ -25,6 +27,15 @@ import {
 import { ProContactActions } from "@/components/pro-contact-actions"
 import { createSlotBooking, type BookingResult } from "@/server/actions/booking"
 import { formatFCFA } from "@/lib/formatters"
+import {
+  computeBookingEndDate,
+  formatDurationLabel,
+  formatOrganizationBadge,
+  toIsoDayKey,
+  toStableMiddayIso,
+  type ActiveBookingSpan,
+  type DurationUnit,
+} from "@/lib/scheduling"
 import type {
   CatalogProfessional,
   CatalogService,
@@ -38,13 +49,13 @@ interface BookingClientProps {
   service: CatalogService
   timeSlots: CatalogTimeSlot[]
   unavailabilities: CatalogUnavailability[]
-  bookedSlots: Array<{ date: string; timeSlot: string }>
+  bookedSlots: ActiveBookingSpan[]
   isAuthenticated: boolean
   initialClientName?: string
   initialClientPhone?: string
 }
 
-const steps = ["Prestation", "Créneau horaire", "Coordonnées", "Mise en relation"]
+const steps = ["Prestation", "Créneau & durée", "Coordonnées", "Mise en relation"]
 
 export function BookingClient({
   professional,
@@ -57,9 +68,17 @@ export function BookingClient({
   initialClientPhone = "",
 }: BookingClientProps) {
   const router = useRouter()
+  const prefersReducedMotion = useReducedMotion()
   const [currentStep, setCurrentStep] = useState(1)
+  const [direction, setDirection] = useState<1 | -1>(1)
   const [selectedDate, setSelectedDate] = useState<Date>()
   const [selectedTime, setSelectedTime] = useState<string>()
+  const [durationUnit, setDurationUnit] = useState<DurationUnit>(
+    service.durationUnit
+  )
+  const [durationValue, setDurationValue] = useState<number>(
+    service.durationValue
+  )
   const [formData, setFormData] = useState({
     name: initialClientName,
     phone: initialClientPhone,
@@ -71,12 +90,14 @@ export function BookingClient({
 
   const handleNext = () => {
     if (currentStep < steps.length) {
+      setDirection(1)
       setCurrentStep(currentStep + 1)
     }
   }
 
   const handleBack = () => {
     if (currentStep > 1) {
+      setDirection(-1)
       setCurrentStep(currentStep - 1)
     }
   }
@@ -98,8 +119,10 @@ export function BookingClient({
       const res = await createSlotBooking({
         proId: professional.id,
         serviceId: service.id,
-        bookingDate: selectedDate.toISOString(),
+        bookingDate: toStableMiddayIso(selectedDate),
         timeSlot: selectedTime,
+        durationUnit,
+        durationValue,
         clientName: formData.name,
         clientPhone: formData.phone,
         clientAddress: formData.address || professional.location,
@@ -118,6 +141,7 @@ export function BookingClient({
 
       if (res.data) {
         setCreatedBooking(res.data)
+        setDirection(1)
         setCurrentStep(4)
         toast.success("Rendez-vous créé avec succès ! Mise en relation en cours.")
       }
@@ -147,12 +171,22 @@ export function BookingClient({
 
   return (
     <div className="min-h-screen bg-muted/20 py-8">
-      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
         <BookingStepper currentStep={currentStep} steps={steps} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
           <div className="lg:col-span-2">
-            {currentStep === 1 && (
+            <div className="overflow-x-clip">
+              <AnimatePresence mode="wait" initial={false} custom={direction}>
+                <m.div
+                  key={currentStep}
+                  custom={direction}
+                  variants={prefersReducedMotion ? undefined : stepSlideVariants}
+                  initial={prefersReducedMotion ? false : "enter"}
+                  animate="center"
+                  exit={prefersReducedMotion ? undefined : "exit"}
+                >
+                  {currentStep === 1 && (
               <Card className="border shadow-sm">
                 <CardHeader>
                   <CardTitle className="text-xl">
@@ -173,10 +207,14 @@ export function BookingClient({
                     <div className="rounded-lg bg-card p-4 border space-y-1">
                       <div className="flex items-center gap-2 font-semibold text-sm">
                         <Clock className="h-4 w-4 text-primary" />
-                        Durée estimée
+                        Durée &amp; Capacité d&apos;équipe
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {service.duration} minutes d&apos;intervention
+                        {formatDurationLabel(durationValue, durationUnit)} •{" "}
+                        {formatOrganizationBadge(
+                          professional.organizationType,
+                          professional.maxConcurrentProjects
+                        )}
                       </p>
                     </div>
 
@@ -222,6 +260,12 @@ export function BookingClient({
                 unavailabilities={unavailabilities}
                 bookedSlots={bookedSlots}
                 availabilityStatus={professional.availabilityStatus}
+                organizationType={professional.organizationType}
+                maxConcurrentProjects={professional.maxConcurrentProjects}
+                durationUnit={durationUnit}
+                durationValue={durationValue}
+                onDurationUnitChange={setDurationUnit}
+                onDurationValueChange={setDurationValue}
               />
             )}
 
@@ -351,6 +395,9 @@ export function BookingClient({
                 </CardContent>
               </Card>
             )}
+                </m.div>
+              </AnimatePresence>
+            </div>
 
             {currentStep < 4 && (
               <div className="flex justify-between items-center mt-6">
@@ -391,6 +438,17 @@ export function BookingClient({
               service={service}
               selectedDate={selectedDate}
               selectedTime={selectedTime}
+              durationUnit={durationUnit}
+              durationValue={durationValue}
+              endDate={
+                selectedDate
+                  ? computeBookingEndDate(
+                      toIsoDayKey(selectedDate),
+                      durationValue,
+                      durationUnit
+                    )
+                  : undefined
+              }
             />
           </div>
         </div>

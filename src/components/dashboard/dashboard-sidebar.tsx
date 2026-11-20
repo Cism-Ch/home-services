@@ -3,6 +3,8 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
+import { m } from "framer-motion"
+import { SPRING_SNAPPY } from "@/lib/motion"
 import { Button } from "@/components/ui/button"
 import {
   LayoutDashboard,
@@ -43,6 +45,7 @@ function getInitials(name: string): string {
 }
 
 interface NavContentProps {
+  layoutScope: "mobile" | "desktop"
   roleMode: "client" | "pro" | "admin"
   actualRole: "client" | "pro" | "admin"
   userName: string
@@ -56,6 +59,7 @@ interface NavContentProps {
 }
 
 function NavContent({
+  layoutScope,
   roleMode,
   actualRole,
   userName,
@@ -100,20 +104,29 @@ function NavContent({
               : pathname.startsWith(link.href)
 
             return (
-              <Button
-                key={link.href}
-                asChild
-                variant={isActive ? "secondary" : "ghost"}
-                className={cn(
-                  "w-full justify-start gap-2 min-h-10",
-                  isActive && "font-medium"
+              <div key={link.href} className="relative">
+                {isActive && (
+                  <m.span
+                    layoutId={`dashboard-nav-indicator-${layoutScope}`}
+                    transition={SPRING_SNAPPY}
+                    aria-hidden="true"
+                    className="pointer-events-none absolute left-0 top-1.5 bottom-1.5 z-10 w-1 rounded-full bg-[hsl(var(--brand))]"
+                  />
                 )}
-              >
-                <Link href={link.href} onClick={onItemClick}>
-                  <Icon className="h-4 w-4 shrink-0" />
-                  <span className="truncate">{link.label}</span>
-                </Link>
-              </Button>
+                <Button
+                  asChild
+                  variant={isActive ? "secondary" : "ghost"}
+                  className={cn(
+                    "w-full justify-start gap-2 min-h-10",
+                    isActive && "font-medium"
+                  )}
+                >
+                  <Link href={link.href} onClick={onItemClick}>
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{link.label}</span>
+                  </Link>
+                </Button>
+              </div>
             )
           })}
         </nav>
@@ -300,6 +313,7 @@ export function DashboardSidebar({ user }: { user: SidebarUserProps }) {
             <SheetTitle className="sr-only">Menu de navigation</SheetTitle>
             <div className="px-4">
               <NavContent
+                layoutScope="mobile"
                 roleMode={roleMode}
                 actualRole={user.userType}
                 userName={user.name}
@@ -319,6 +333,7 @@ export function DashboardSidebar({ user }: { user: SidebarUserProps }) {
       <aside className="hidden md:block w-64 shrink-0">
         <div className="sticky top-24">
           <NavContent
+            layoutScope="desktop"
             roleMode={roleMode}
             actualRole={user.userType}
             userName={user.name}

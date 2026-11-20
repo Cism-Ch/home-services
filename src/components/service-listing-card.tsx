@@ -1,9 +1,10 @@
-import { Star, MapPin, Sparkles } from "lucide-react"
+import { Star, MapPin, Sparkles, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { formatFCFA } from "@/lib/formatters"
+import { formatDurationLabel } from "@/lib/scheduling"
 import type { CatalogService } from "@/lib/types/catalog"
 import Image from "next/image"
 import Link from "next/link"
@@ -14,7 +15,7 @@ interface ServiceListingCardProps {
 
 export function ServiceListingCard({ service }: ServiceListingCardProps) {
   return (
-    <Card className="flex flex-col h-full py-0 gap-0 overflow-hidden transition-all duration-300 group relative bg-card/50 backdrop-blur-sm border-border/50 shadow-md hover:shadow-2xl hover:border-[hsl(var(--brand))]/30 hover:-translate-y-2">
+    <Card className="flex flex-col h-full py-0 gap-0 overflow-hidden transition-[transform,box-shadow,border-color] duration-300 group relative bg-card/50 backdrop-blur-sm border-border/50 shadow-md hover:shadow-2xl hover:border-[hsl(var(--brand))]/30 hover:-translate-y-2">
       {/* Gradient overlay on hover */}
       <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--brand))]/5 via-transparent to-[hsl(var(--brand-foreground))]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-10" />
 
@@ -28,7 +29,7 @@ export function ServiceListingCard({ service }: ServiceListingCardProps) {
           alt={service.title}
           fill
           unoptimized
-          className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-105"
+          className="object-cover transition-[transform,filter] duration-700 group-hover:scale-110 group-hover:brightness-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
 
@@ -60,7 +61,7 @@ export function ServiceListingCard({ service }: ServiceListingCardProps) {
           {service.description}
         </p>
         <div className="flex items-center gap-3 pt-3 border-t border-border/50 group-hover:border-[hsl(var(--brand))]/20 transition-colors duration-300 min-w-0">
-          <Avatar className="h-9 w-9 ring-2 ring-border/50 group-hover:ring-[hsl(var(--brand))]/30 transition-all duration-300 shrink-0">
+          <Avatar className="h-9 w-9 ring-2 ring-border/50 group-hover:ring-[hsl(var(--brand))]/30 transition-[box-shadow,border-color] duration-300 shrink-0">
             <AvatarImage
               src={service.providerAvatar || undefined}
               className="object-cover"
@@ -69,8 +70,12 @@ export function ServiceListingCard({ service }: ServiceListingCardProps) {
               {service.providerName.substring(0, 2)}
             </AvatarFallback>
           </Avatar>
-          <span className="text-sm font-semibold group-hover:text-[hsl(var(--brand))] transition-colors duration-300 truncate">
+          <span className="text-sm font-semibold group-hover:text-[hsl(var(--brand))] transition-colors duration-300 truncate flex-1 min-w-0">
             {service.providerName}
+          </span>
+          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+            <Clock className="h-3.5 w-3.5" />
+            {formatDurationLabel(service.durationValue, service.durationUnit)}
           </span>
         </div>
       </CardContent>
@@ -86,7 +91,7 @@ export function ServiceListingCard({ service }: ServiceListingCardProps) {
         </div>
         <Button
           asChild
-          className="bg-[hsl(var(--brand))] hover:bg-[hsl(var(--brand))]/90 text-white shadow-md hover:shadow-lg transition-all duration-300 gap-2 font-semibold"
+          className="bg-[hsl(var(--brand))] hover:bg-[hsl(var(--brand))]/90 text-white shadow-md hover:shadow-lg transition-[box-shadow,background-color] duration-300 gap-2 font-semibold"
         >
           <Link href={`/book/${service.proProfileId}/${service.id}`}>
             <Sparkles className="h-4 w-4" />

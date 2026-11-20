@@ -4,16 +4,21 @@ import { Separator } from "@/components/ui/separator"
 export function SiteFooter() {
   return (
     <footer className="relative border-t border-border/40 bg-gradient-to-b from-muted/30 to-muted/50 backdrop-blur-sm overflow-hidden">
-      {/* Decorative background */}
-      <div className="pointer-events-none absolute top-0 left-1/4 w-full max-w-[400px] h-[400px] bg-[hsl(var(--brand))]/5 rounded-full blur-3xl -z-10" />
-      <div className="pointer-events-none absolute bottom-0 right-1/4 w-full max-w-[300px] h-[300px] bg-[hsl(var(--brand-foreground))]/5 rounded-full blur-3xl -z-10" />
+      {/* Decorative background (gradient radial pur GPU-friendly) */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_55%_60%_at_25%_10%,hsla(var(--brand)/0.06)_0%,transparent_70%),radial-gradient(ellipse_50%_60%_at_80%_90%,hsla(var(--brand-foreground)/0.06)_0%,transparent_70%)]"
+      />
 
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 relative">
+      <div
+        data-layout-container="page"
+        className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 py-12 md:py-16 relative"
+      >
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8">
           {/* Brand */}
           <div className="space-y-4">
             <Link href="/" className="flex items-center space-x-2 group w-fit">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[hsl(var(--brand))] to-[hsl(var(--brand-foreground))] flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 glow-brand group-hover:scale-105">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[hsl(var(--brand))] to-[hsl(var(--brand-foreground))] flex items-center justify-center shadow-md group-hover:shadow-lg transition-[transform,box-shadow] duration-300 glow-brand group-hover:scale-105">
                 <span className="text-white font-bold text-sm">HS</span>
               </div>
               <span className="font-bold text-lg gradient-brand">HomeServices</span>
