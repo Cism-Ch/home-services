@@ -12,7 +12,7 @@ import fnmatch
 import subprocess
 import json
 import argparse
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 # UTF-8 for Windows console
@@ -23,7 +23,11 @@ if sys.stdout.encoding != 'utf-8':
     except Exception:
         pass
 
-ROOT_DIR = Path(__file__).resolve().parent.parent
+CURRENT_EVALS_DIR = Path(__file__).resolve().parent
+if str(CURRENT_EVALS_DIR) not in sys.path:
+    sys.path.insert(0, str(CURRENT_EVALS_DIR))
+
+ROOT_DIR = CURRENT_EVALS_DIR.parent
 TASKS_PATH = ROOT_DIR / "docs" / "TASKS.md"
 ARCHIVE_DIR = ROOT_DIR / "docs" / "archive" / "tasks"
 MODULES_DIR = ROOT_DIR / ".agents" / "rules" / "modules"
@@ -31,27 +35,158 @@ TRAJECTORY_FILE = ROOT_DIR / "evals" / "logs" / "trajectory_latest.json"
 VERSION_FILE = ROOT_DIR / "VERSION"
 MAX_TASKS_LINES = 250
 MAX_MODULE_LINES = 80
-ALWAYS_ALLOWED_GOVERNANCE_FILES = {"docs/TASKS.md", "CHANGELOG.md", "VERSION"}
+ALWAYS_ALLOWED_GOVERNANCE_FILES = {
+    "docs/TASKS.md",
+    "CHANGELOG.md",
+    "VERSION",
+    ".agents/telemetry/cognitive_state.json",
+    ".agents/telemetry/active_session.json",
+    ".agents/telemetry/sync_targets.json",
+    "evals/logs/trajectory_latest.json",
+}
+
+CONSUMER_SYNCED_PROTOCOL_PATTERNS = (
+    "AGENTS.md",
+    "VERSION",
+    ".agents/rules/system_core.md",
+    ".agents/rules/fullstack_playbook.md",
+    ".agents/workflows/*",
+    ".agents/prompts/*",
+    "evals/*",
+    "evals/tests/*",
+)
+
+def is_consumer_project() -> bool:
+    """Returns True when running inside a consumer application repository rather than the source protocol repo."""
+    return any((ROOT_DIR / m).exists() for m in ("package.json", "pyproject.toml", "Cargo.toml", "go.mod"))
+
+def is_governance_exempt(file_path: str) -> bool:
+    """Returns True if file_path is exempt from Scope Drift checks (including synced protocol files in consumer repos)."""
+    if file_path in ALWAYS_ALLOWED_GOVERNANCE_FILES:
+        return True
+    if is_consumer_project():
+        for pat in CONSUMER_SYNCED_PROTOCOL_PATTERNS:
+            if file_path == pat or fnmatch.fnmatch(file_path, pat):
+                return True
+    return False
+
+def _parse_iso_utc(raw_ts: str | None) -> datetime | None:
+    if not raw_ts or not isinstance(raw_ts, str):
+        return None
+    try:
+        dt = datetime.fromisoformat(raw_ts.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    except Exception:
+        return None
+
+def parse_active_sprint_id() -> str:
+    """Extracts the active Sprint identifier (e.g., SPRINT-01, SPRINT-52) from docs/TASKS.md."""
+    if not TASKS_PATH.exists():
+        return "SPRINT-01"
+
+    lines = TASKS_PATH.read_text(encoding="utf-8", errors="ignore").splitlines()
+    sprint_tag_re = re.compile(r"\bSPRINT[-_\s]*(\d+)\b", re.IGNORECASE)
+    sprint_num_re = re.compile(r"\bSprint\s+(\d+)\b", re.IGNORECASE)
+
+    headings = [ln.strip() for ln in lines if ln.strip().startswith("##")]
+    # Prefer explicit Active/Current Sprint heading before generic Sprint headings
+    prioritized = [h for h in headings if "active" in h.lower() or "current" in h.lower()] + headings
+    for h in prioritized:
+        if "sprint" not in h.lower():
+            continue
+        m_tag = sprint_tag_re.search(h)
+        if m_tag:
+            return f"SPRINT-{int(m_tag.group(1)):02d}"
+        m_num = sprint_num_re.search(h)
+        if m_num:
+            return f"SPRINT-{int(m_num.group(1)):02d}"
+
+    return "SPRINT-01"
 
 def run_evaluation(attempt: int, quick: bool = True) -> bool:
     print(f"\n[RSI Loop] Launching deterministic evaluation - Attempt {attempt}/3...")
     eval_script = ROOT_DIR / "evals" / "run_fullstack_eval.py"
-    cmd = [sys.executable, str(eval_script)]
+    cmd = [sys.executable, str(eval_script), "--no-telemetry"]
     if quick:
         cmd.append("--quick")
 
     res = subprocess.run(cmd, cwd=str(ROOT_DIR), capture_output=False)
     passed = res.returncode == 0
 
+    sprint_id = parse_active_sprint_id()
+    active_tasks = parse_active_tasks()
+    scope_report = get_scope_drift_report()
+
+    try:
+        from memory_engine import load_active_session, save_active_session
+    except Exception:
+        load_active_session = lambda: {}
+        save_active_session = lambda _s: None
+
+    active_session = load_active_session()
+    task_id = active_tasks[0]["id"] if active_tasks else (active_session.get("task_id") or "TASK-DEV-01")
+    task_title = active_tasks[0].get("title") if active_tasks else (active_session.get("task_title") or "General Milestone Execution")
+    injected_rule_ids = active_session.get("injected_rule_ids", [])
+
+    # Enrich trajectory_latest.json with orchestrator telemetry
+    if TRAJECTORY_FILE.exists():
+        try:
+            traj = json.loads(TRAJECTORY_FILE.read_text(encoding="utf-8", errors="ignore"))
+            start_dt = _parse_iso_utc(active_session.get("session_started_at"))
+            if start_dt is not None:
+                elapsed = max(0.1, round((datetime.now(timezone.utc) - start_dt).total_seconds(), 2))
+            else:
+                elapsed = round(float(traj.get("total_duration_ms", 0)) / 1000.0, 2)
+
+            traj["attempt"] = attempt
+            traj["task_id"] = task_id
+            traj["task_title"] = task_title
+            traj["sprint_id"] = sprint_id
+            traj["scope_report"] = scope_report
+            traj["injected_rule_ids"] = injected_rule_ids
+            traj["task_elapsed_sec"] = elapsed
+
+            TRAJECTORY_FILE.write_text(json.dumps(traj, indent=2, ensure_ascii=False), encoding="utf-8")
+        except Exception as e:
+            print(f"[WARN] [RSI Loop] Could not enrich trajectory_latest.json: {e}")
+
+    # Fault-tolerant automatic telemetry hook
+    try:
+        from telemetry_hook import record_latest_eval
+        record_latest_eval(attempts=attempt)
+    except Exception as e:
+        print(f"[WARN] [RSI Loop] Telemetry hook skipped: {e}")
+
     if passed:
+        save_active_session({
+            "task_id": None,
+            "task_title": None,
+            "sprint_id": sprint_id,
+            "session_started_at": None,
+            "last_eval_at": datetime.now(timezone.utc).isoformat(),
+            "target_files_queried": [],
+            "injected_modules": [],
+            "injected_rule_ids": [],
+            "last_diagnosis_matches": []
+        })
         print(f"[OK] [RSI Loop] Deterministic validation passed (Score: 100/100) on attempt {attempt}!")
         return True
     else:
+        try:
+            from memory_engine import load_active_session, save_active_session
+            sess = load_active_session()
+            sess["last_eval_at"] = datetime.now(timezone.utc).isoformat()
+            sess["last_failed_attempt"] = attempt
+            save_active_session(sess)
+        except Exception:
+            pass
         print(f"[WARN] [RSI Loop] Attempt {attempt} failed. Inspect evals/logs/trajectory_latest.json.")
         return False
 
-def parse_active_tasks() -> list[dict]:
-    """Extracts currently active [-] tasks (or the just-closed topmost [x] sprint task pre-commit) from docs/TASKS.md."""
+def parse_active_tasks(include_just_closed: bool = True) -> list[dict]:
+    """Extracts currently active [-] tasks (or optionally the just-closed topmost [x] sprint task pre-commit) from docs/TASKS.md."""
     if not TASKS_PATH.exists():
         return []
 
@@ -61,9 +196,9 @@ def parse_active_tasks() -> list[dict]:
     current_task = None
     in_active_sprint = False
 
-    task_active_re = re.compile(r'^-\s*\[-\]\s*\*\*`?(TASK-[A-Z0-9\-]+)`?')
-    task_closed_re = re.compile(r'^-\s*\[[xX]\]\s*\*\*`?(TASK-[A-Z0-9\-]+)`?')
-    any_top_task_re = re.compile(r'^-\s*\[[ xX\-]\]\s*\*\*`?(TASK-[A-Z0-9\-]+)`?')
+    task_active_re = re.compile(r'^-\s*\[-\]\s*\*\*`?(TASK-[A-Z0-9\-]+)`?\*{0,2}(?:\s*[-:]\s*(.*))?')
+    task_closed_re = re.compile(r'^-\s*\[[xX]\]\s*\*\*`?(TASK-[A-Z0-9\-]+)`?\*{0,2}(?:\s*[-:]\s*(.*))?')
+    any_top_task_re = re.compile(r'^-\s*\[[ xX\-!]\]\s*\*\*`?(TASK-[A-Z0-9\-]+)`?')
 
     for line in lines:
         if line.startswith("## Active Sprint"):
@@ -77,13 +212,15 @@ def parse_active_tasks() -> list[dict]:
 
         m_active = task_active_re.match(line)
         if m_active:
-            current_task = {"id": m_active.group(1), "targets": []}
+            raw_title = (m_active.group(2) or "").strip(" *:-")
+            current_task = {"id": m_active.group(1), "title": raw_title or m_active.group(1), "targets": [], "status": "active"}
             active_tasks.append(current_task)
             continue
 
         m_closed = task_closed_re.match(line)
         if in_active_sprint and m_closed:
-            current_task = {"id": m_closed.group(1), "targets": []}
+            raw_title = (m_closed.group(2) or "").strip(" *:-")
+            current_task = {"id": m_closed.group(1), "title": raw_title or m_closed.group(1), "targets": [], "status": "closed"}
             closed_sprint_tasks.append(current_task)
             continue
 
@@ -97,14 +234,28 @@ def parse_active_tasks() -> list[dict]:
 
     if active_tasks:
         return active_tasks
-    # During Phase 4 closure (right after marking [-] -> [x] and before git commit), use the latest closed task
-    return closed_sprint_tasks[:1]
+    if include_just_closed:
+        return closed_sprint_tasks[:1]
+    return []
+
+def parse_blocked_tasks() -> list[dict]:
+    """Extracts tasks marked [!] (BLOCKED) in docs/TASKS.md."""
+    if not TASKS_PATH.exists():
+        return []
+    blocked = []
+    blocked_re = re.compile(r'^-\s*\[!\]\s*\*\*`?(TASK-[A-Z0-9\-]+)`?\*{0,2}(?:\s*[-:]\s*(.*))?')
+    for line in TASKS_PATH.read_text(encoding="utf-8", errors="ignore").splitlines():
+        m = blocked_re.match(line)
+        if m:
+            raw_title = (m.group(2) or "").strip(" *:-")
+            blocked.append({"id": m.group(1), "title": raw_title or m.group(1)})
+    return blocked
 
 def get_modified_workspace_files() -> list[str]:
-    """Returns git-modified and untracked files relative to ROOT_DIR."""
+    """Returns git-modified and untracked non-ignored files relative to ROOT_DIR."""
     try:
         res = subprocess.run(
-            ["git", "status", "--porcelain"],
+            ["git", "status", "--porcelain", "-uall"],
             cwd=str(ROOT_DIR),
             capture_output=True,
             text=True,
@@ -120,20 +271,14 @@ def get_modified_workspace_files() -> list[str]:
             if " -> " in path_part:
                 path_part = path_part.split(" -> ")[-1].strip()
             path_part = path_part.strip('"').replace("\\", "/")
-            if path_part.endswith("/"):
-                dir_path = ROOT_DIR / path_part
-                if dir_path.exists():
-                    for sub in dir_path.rglob("*"):
-                        if sub.is_file():
-                            modified.append(str(sub.relative_to(ROOT_DIR)).replace("\\", "/"))
-            else:
+            if path_part and not path_part.endswith("/"):
                 modified.append(path_part)
         return sorted(set(modified))
     except Exception:
         return []
 
 def matches_target_pattern(file_path: str, patterns: list[str]) -> bool:
-    if file_path in ALWAYS_ALLOWED_GOVERNANCE_FILES:
+    if is_governance_exempt(file_path):
         return True
     for pat in patterns:
         if file_path == pat:
@@ -208,12 +353,49 @@ def classify_task_scope(targets: list[str]) -> dict:
         "directive": directive
     }
 
-def check_scope_drift(strict: bool = False) -> bool:
-    """Verifies that git working tree changes align with an active [-] task in docs/TASKS.md."""
+def get_scope_drift_report() -> dict:
+    """Computes structured Scope Drift status comparing git status against declared Target files."""
     modified_files = [
         f for f in get_modified_workspace_files()
-        if f not in ALWAYS_ALLOWED_GOVERNANCE_FILES
+        if not is_governance_exempt(f)
     ]
+    active_tasks = parse_active_tasks()
+
+    declared_targets = []
+    for t in active_tasks:
+        for pat in t["targets"]:
+            if pat not in declared_targets:
+                declared_targets.append(pat)
+
+    if not modified_files:
+        return {
+            "aligned": True,
+            "declared_targets": declared_targets,
+            "modified_files": [],
+            "out_of_scope_files": []
+        }
+
+    if not active_tasks:
+        return {
+            "aligned": False,
+            "declared_targets": [],
+            "modified_files": modified_files,
+            "out_of_scope_files": list(modified_files)
+        }
+
+    out_of_scope = [f for f in modified_files if not matches_target_pattern(f, declared_targets)]
+    return {
+        "aligned": len(out_of_scope) == 0,
+        "declared_targets": declared_targets,
+        "modified_files": modified_files,
+        "out_of_scope_files": out_of_scope
+    }
+
+def check_scope_drift(strict: bool = False) -> bool:
+    """Verifies that git working tree changes align with an active [-] task in docs/TASKS.md."""
+    report = get_scope_drift_report()
+    modified_files = report["modified_files"]
+    out_of_scope = report["out_of_scope_files"]
     active_tasks = parse_active_tasks()
 
     if not modified_files:
@@ -227,14 +409,8 @@ def check_scope_drift(strict: bool = False) -> bool:
             print(f"  - {mf}")
         return not strict
 
-    all_targets = []
-    task_ids = []
-    for t in active_tasks:
-        task_ids.append(t["id"])
-        all_targets.extend(t["targets"])
-
-    sizing = classify_task_scope(all_targets)
-    out_of_scope = [f for f in modified_files if not matches_target_pattern(f, all_targets)]
+    task_ids = [t["id"] for t in active_tasks]
+    sizing = classify_task_scope(report["declared_targets"])
     if out_of_scope:
         tag = "[FAIL]" if strict else "[WARN]"
         print(f"{tag} [Scope Drift] {sizing['scope_badge']} {len(out_of_scope)} modified file(s) outside declared Target files for {', '.join(task_ids)}:")
@@ -381,22 +557,54 @@ def run_session_pulse() -> None:
     print(f"1. Health & Judge : {eval_status} | TASKS.md capacity: {tasks_lines}/{MAX_TASKS_LINES} lines")
 
     # Active & pending tasks with automatic [Scope: XS..XL] & Blast Radius
-    active = parse_active_tasks()
+    mod_files = get_modified_workspace_files()
+    active = parse_active_tasks(include_just_closed=False)
+    if not active and mod_files:
+        # Pre-commit Phase 4 closure: show just-closed sprint task while working tree is still dirty
+        active = parse_active_tasks(include_just_closed=True)
+    sprint_id = parse_active_sprint_id()
     if active:
+        try:
+            from memory_engine import load_active_session, save_active_session
+            sess = load_active_session()
+            cur_task = active[0]
+            if not sess or sess.get("task_id") != cur_task["id"] or not sess.get("session_started_at"):
+                preserve_pre_pulse = bool(sess and sess.get("task_id") is None)
+                save_active_session({
+                    "task_id": cur_task["id"],
+                    "task_title": cur_task.get("title") or cur_task["id"],
+                    "sprint_id": sprint_id,
+                    "session_started_at": (
+                        sess.get("session_started_at") if preserve_pre_pulse and sess.get("session_started_at")
+                        else datetime.now(timezone.utc).isoformat()
+                    ),
+                    "target_files_queried": sess.get("target_files_queried", []) if preserve_pre_pulse else [],
+                    "injected_modules": sess.get("injected_modules", []) if preserve_pre_pulse else [],
+                    "injected_rule_ids": sess.get("injected_rule_ids", []) if preserve_pre_pulse else [],
+                    "last_diagnosis_matches": sess.get("last_diagnosis_matches", []) if preserve_pre_pulse else []
+                })
+        except Exception:
+            pass
+
         for t in active:
             sizing = classify_task_scope(t["targets"])
             impact_summary = []
             for imp in sizing["target_impacts"][:5]:
                 impact_summary.append(f"{imp['target']} ({imp['tier']}:{imp['count']})")
             t_display = ", ".join(impact_summary) if impact_summary else "None declared"
-            print(f"2. Active Task    : {t['id']} {sizing['scope_badge']} | Blast Radius: {sizing['max_tier']}")
+            closed_note = " (JUST CLOSED pre-commit)" if t.get("status") == "closed" else ""
+            print(f"2. Active Task    : {t['id']} [{sprint_id}]{closed_note} {sizing['scope_badge']} | Blast Radius: {sizing['max_tier']}")
             print(f"   |-- Targets    : {t_display}")
             print(f"   \\-- Directive  : {sizing['directive']}")
     else:
-        print("2. Active Task    : None marked [-]. Mark a task [-] in docs/TASKS.md before editing code.")
+        print(f"2. Active Task    : None marked [-] in {sprint_id}. Mark a task [-] in docs/TASKS.md before editing code.")
+
+    blocked = parse_blocked_tasks()
+    if blocked:
+        b_list = ", ".join(b["id"] for b in blocked)
+        print(f"   [!] Blocked    : {b_list} (awaiting human guidance)")
 
     # Working tree & scope status
-    mod_files = get_modified_workspace_files()
     if mod_files:
         print(f"3. Git Workspace  : {len(mod_files)} modified file(s): {', '.join(mod_files[:5])}")
     else:
@@ -445,6 +653,18 @@ def run_session_pulse() -> None:
     except Exception:
         pass
 
+    # 6. Target Sync Registry reminder (for protocol repository)
+    try:
+        from version_manager import load_sync_targets
+        targets = load_sync_targets()
+        if targets:
+            t_names = ", ".join(t.get("name", "target") for t in targets)
+            print(f"6. Sync Targets   : {len(targets)} registered ({t_names}) -> Ask user after commit before running --sync-all / --sync-to")
+        elif not (ROOT_DIR / "package.json").exists():
+            print("6. Sync Targets   : None registered yet -> Ask user for target workspace paths after commit to initialize --sync-to")
+    except Exception:
+        pass
+
 def main():
     parser = argparse.ArgumentParser(description="RSI Protocol Orchestrator")
     parser.add_argument("--pulse", action="store_true", help="1-command Cold-Start Cockpit Briefing (<50ms)")
@@ -455,7 +675,31 @@ def main():
     parser.add_argument("--strict-scope", action="store_true", help="Fail with exit code 1 on any scope drift or unregistered coding")
     parser.add_argument("--rollover", action="store_true", help="Archive completed [x] sprint blocks from docs/TASKS.md to docs/archive/tasks/")
     parser.add_argument("--dry-run", action="store_true", help="Preview --rollover without modifying files")
+    parser.add_argument("--sync-to", metavar="TARGET_DIR", help="Synchronize or update protocol engine into a target project workspace")
+    parser.add_argument("--init-target", metavar="TARGET_DIR", help="Initialize protocol structure and sync into a new target project")
+    parser.add_argument("--sync-targets", action="store_true", help="List locally registered consumer target projects")
+    parser.add_argument("--sync-all", action="store_true", help="Synchronize protocol updates to all locally registered target projects")
     args = parser.parse_args()
+
+    if args.sync_targets:
+        from version_manager import list_sync_targets
+        list_sync_targets(print_report=True)
+        sys.exit(0)
+
+    if args.sync_all:
+        from version_manager import sync_all_targets
+        ok = sync_all_targets()
+        sys.exit(0 if ok else 1)
+
+    if args.sync_to:
+        from version_manager import sync_protocol_to_target
+        sync_protocol_to_target(args.sync_to, init_mode=False)
+        sys.exit(0)
+
+    if args.init_target:
+        from version_manager import sync_protocol_to_target
+        sync_protocol_to_target(args.init_target, init_mode=True)
+        sys.exit(0)
 
     if args.pulse:
         run_session_pulse()
@@ -465,13 +709,13 @@ def main():
         ok = rollover_tasks(dry_run=args.dry_run)
         sys.exit(0 if ok else 1)
 
-    if args.scope or args.strict_scope:
-        ok = check_scope_drift(strict=args.strict_scope)
-        sys.exit(0 if ok else 1)
-
     if args.guardrail:
         ok = check_guardrails(strict_scope=args.strict_scope)
         print(json.dumps({"passed": ok}, indent=2))
+        sys.exit(0 if ok else 1)
+
+    if args.scope or args.strict_scope:
+        ok = check_scope_drift(strict=args.strict_scope)
         sys.exit(0 if ok else 1)
 
     if args.eval:

@@ -81,6 +81,7 @@ lerna-debug.log*
 coverage/
 .nyc_output/
 reports/
+lint_output.txt
 
 # IDE & Operating System Artifacts
 .idea/
@@ -96,3 +97,13 @@ reports/
 *.sw?
 .DS_Store
 Thumbs.db
+
+# RSI Protocol Ephemeral Telemetry & Logs
+evals/logs/
+evals/backups/
+backups/skills/
+.agents/telemetry/*.tmp
+.agents/telemetry/active_session.json
+.agents/telemetry/cognitive_state.json
+.agents/telemetry/sync_targets.json
+*.pyc

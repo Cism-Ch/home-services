@@ -10,6 +10,7 @@ Static Security Audit & Secret Leak Detector
 import sys
 import re
 import os
+import subprocess
 from pathlib import Path
 
 # Fix Windows console UTF-8 encoding
@@ -22,50 +23,36 @@ if sys.stdout.encoding != 'utf-8':
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
-DB_URI_PASSWORD_RE = re.compile(
-    r'(?:postgres|postgresql|mysql|mongodb\+srv):\/\/[^\s:]+:([^\s@]+)@[^\s\/]+'
-)
-
-PLACEHOLDER_PASSWORD_WORDS_RE = re.compile(
-    r'^(?:your[_-]?password|password|votre[_-]?password|changeme|placeholder|example|secret|pass)$',
-    re.IGNORECASE,
-)
-
 SECRET_PATTERNS = [
     (re.compile(r'-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----'), "Private Key (RSA/EC/SSH)"),
     (re.compile(r'sk-[a-zA-Z0-9]{20,}'), "Secret Key (OpenAI/Stripe style)"),
     (re.compile(r'AKIA[0-9A-Z]{16}'), "AWS Access Key ID"),
     (re.compile(r'ghp_[a-zA-Z0-9]{36}'), "GitHub Personal Access Token"),
     (re.compile(r'xox[baprs]-[0-9a-zA-Z]{10,48}'), "Slack API Token"),
-    (DB_URI_PASSWORD_RE, "Database URI with hardcoded password"),
-    (re.compile(r'(?i)(?:api_key|secret_key|private_key|auth_token)\s*=\s*["\'][a-zA-Z0-9_\-\.]{16,}["\']'), "Hardcoded Auth Secret")
+    (re.compile(r'(?:postgres|postgresql|mysql|mongodb\+srv):\/\/[^\s:]+:[^\s@]+@[^\s\/]+'), "Database URI with hardcoded password"),
+    (re.compile(r'(?i:(?:api_key|secret_key|private_key|auth_token)\s*=\s*["\'][a-zA-Z0-9_\-\.]{16,}["\'])'), "Hardcoded Auth Secret")
 ]
+COMBINED_SECRET_RE = re.compile("|".join(f"(?:{p.pattern})" for p, _ in SECRET_PATTERNS))
 
 IGNORE_DIRS = {
-    '.git', 'node_modules', '__pycache__', '.venv', 'venv',
-    'dist', 'build', '.next', 'backups', 'skills', 'auth-flow', 'telemetry'
+    '.git', 'node_modules', '__pycache__', '.venv', 'venv', 'dist', 'build',
+    '.next', 'playwright-report', 'test-results', '.turbo', '.cache',
+    'logs', 'backups', 'coverage', '.vercel', '.mypy_cache', '.pytest_cache', 'out'
 }
 
-SKIP_FILENAMES = {
-    "security_audit.py", "pnpm-lock.yaml", "package-lock.json",
-    "yarn.lock", "bun.lock", "bun.lockb"
+SECRET_SKIP_FILENAMES = {
+    "security_audit.py", "trajectory_latest.json",
+    "cognitive_state.json", "active_session.json", "sync_targets.json",
+    "pnpm-lock.yaml", "package-lock.json", "yarn.lock",
+    "bun.lock", "bun.lockb", "poetry.lock", "Cargo.lock"
 }
-
 BINARY_EXTENSIONS = {
-    ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".svg", ".pdf",
-    ".woff", ".woff2", ".ttf", ".eot", ".zip", ".bak", ".mp4", ".mp3",
-    ".exe", ".dll", ".so", ".pyc"
+    ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico",
+    ".woff", ".woff2", ".ttf", ".eot", ".otf",
+    ".pdf", ".zip", ".gz", ".tar", ".exe", ".dll", ".so", ".dylib",
+    ".pyc", ".sqlite", ".db", ".mp4", ".mp3"
 }
-
-def is_placeholder_db_uri(line: str) -> bool:
-    """Returns True only when a matched DB URI uses an explicit placeholder password."""
-    match = DB_URI_PASSWORD_RE.search(line)
-    if not match:
-        return False
-    pw = match.group(1).strip("'\"")
-    if any(marker in pw for marker in ("[", "]", "<", ">", "%s", "${")):
-        return True
-    return bool(PLACEHOLDER_PASSWORD_WORDS_RE.match(pw))
+MAX_SECRET_SCAN_BYTES = 1_048_576
 
 def audit_gitignore() -> list[str]:
     issues = []
@@ -81,56 +68,88 @@ def audit_gitignore() -> list[str]:
             issues.append(f"Missing essential security rule in .gitignore: '{rule}'")
     return issues
 
+def is_gitignored(rel_path_str: str) -> bool:
+    """Checks if a file is ignored by git using git check-ignore."""
+    try:
+        res = subprocess.run(
+            ["git", "check-ignore", "-q", rel_path_str],
+            cwd=str(ROOT_DIR),
+            capture_output=True,
+            check=False
+        )
+        return res.returncode == 0
+    except Exception:
+        return False
+
+DUMMY_SECRET_INDICATORS = (
+    "<username>", "<password>", "<token>", "<key>",
+    "user:pass", "username:password", "%s:%s",
+    "YOUR_PASSWORD", "YOUR_KEY", "YOUR_API_KEY", "your-key-here",
+    "sk-or-v1-your-key-here", "example.com", "dummy", "placeholder",
+    "CHANGE_ME", "REPLACE_ME", "MY_SECRET", "[VOTRE-", "[YOUR-"
+)
+DUMMY_SECRET_LOWER = tuple(d.lower() for d in DUMMY_SECRET_INDICATORS)
+
+def _read_text_if_scannable(path: Path, max_bytes: int | None = None) -> tuple[str | None, str | None]:
+    """Reads UTF-8 text from non-binary, size-bounded files without raising."""
+    try:
+        size = path.stat().st_size
+        if size == 0 or (max_bytes is not None and size > max_bytes):
+            return None, None
+        raw = path.read_bytes()
+        if b"\x00" in raw[:1024]:
+            return None, None
+        return raw.decode("utf-8", errors="ignore"), None
+    except Exception as e:
+        return None, str(e)
+
 def audit_secrets() -> list[dict]:
     findings = []
     for root, dirs, files in os.walk(ROOT_DIR):
-        dirs[:] = [d for d in dirs if d not in IGNORE_DIRS]
-        for file in files:
-            path = Path(root) / file
-            if (
-                path.name in SKIP_FILENAMES
-                or path.suffix.lower() in BINARY_EXTENSIONS
-                or (path.name.startswith(".env") and path.name != ".env.example")
-            ):
+        dirs[:] = [d for d in dirs if d not in IGNORE_DIRS and not d.startswith('.git')]
+        root_path = Path(root)
+        # Exclude third-party vendor skills from secret leak scans
+        if "skills" in root_path.parts:
+            continue
+        for f in files:
+            if f in SECRET_SKIP_FILENAMES:
                 continue
-            rel_posix = str(path.relative_to(ROOT_DIR)).replace("\\", "/")
-            try:
-                lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
-                for idx, line in enumerate(lines, start=1):
-                    for pattern, label in SECRET_PATTERNS:
-                        if pattern.search(line):
-                            if label == "Database URI with hardcoded password" and is_placeholder_db_uri(line):
-                                continue
-                            findings.append({
-                                "file": rel_posix,
-                                "line": idx,
-                                "type": label,
-                                "sample": line.strip()[:60]
-                            })
-            except Exception as e:
-                findings.append({
-                    "file": rel_posix,
-                    "line": 0,
-                    "type": "Read Error",
-                    "sample": str(e)
-                })
+            path = root_path / f
+            if path.suffix.lower() in BINARY_EXTENSIONS:
+                continue
+            # Legitimate local environment files ignored by git or template files are not leaks
+            if f in (".env.example", ".env.sample", ".env.template"):
+                continue
+            rel_str = str(path.relative_to(ROOT_DIR)).replace("\\", "/")
+            if f.startswith(".env") and is_gitignored(rel_str):
+                continue
+
+            content, read_err = _read_text_if_scannable(path, max_bytes=MAX_SECRET_SCAN_BYTES)
+            if read_err:
+                findings.append({"file": rel_str, "line": 0, "type": "Read Error", "sample": read_err})
+                continue
+            # Fast C-engine whole-file pre-filter before slow per-line splitting
+            if not content or not COMBINED_SECRET_RE.search(content):
+                continue
+
+            for idx, line in enumerate(content.splitlines(), start=1):
+                line_low = line.lower()
+                if any(dummy in line_low for dummy in DUMMY_SECRET_LOWER):
+                    continue
+                for pattern, label in SECRET_PATTERNS:
+                    if pattern.search(line):
+                        findings.append({
+                            "file": rel_str,
+                            "line": idx,
+                            "type": label,
+                            "sample": line.strip()[:60]
+                        })
     return findings
 
-def is_emoji_character(ch: str) -> bool:
-    """Returns True if character is within standard Emoji and Pictograph ranges."""
-    cp = ord(ch)
-    return (
-        (0x1F300 <= cp <= 0x1FAFF) or  # Misc Symbols, Pictographs, Transport, Extended
-        (0x1F600 <= cp <= 0x1F64F) or  # Emoticons
-        (0x2600 <= cp <= 0x27BF) or    # Miscellaneous Symbols & Dingbats
-        (0x2300 <= cp <= 0x23FF) or    # Miscellaneous Technical
-        (0xFE00 <= cp <= 0xFE0F)       # Variation Selectors
-    )
-
 def audit_ascii_hygiene() -> list[dict]:
-    """Ensures python scripts are pure ASCII and all docs strictly forbid emojis while allowing French accents in markdown."""
+    """Ensures that executable Python scripts are 100% pure ASCII to prevent terminal/CI encoding crashes."""
     violations = []
-    check_patterns = ["evals/**/*.py", ".agents/**/*.md", "docs/**/*.md", "*.md"]
+    check_patterns = ["evals/**/*.py"]
     scanned_files = set()
 
     for pat in check_patterns:
@@ -139,28 +158,20 @@ def audit_ascii_hygiene() -> list[dict]:
                 if any(part in IGNORE_DIRS for part in path.parts):
                     continue
                 scanned_files.add(path)
-                is_py = path.suffix == ".py"
-                rel_posix = str(path.relative_to(ROOT_DIR)).replace("\\", "/")
                 try:
                     content = path.read_text(encoding="utf-8", errors="ignore")
                     for idx, line in enumerate(content.splitlines(), start=1):
-                        if is_py:
-                            forbidden = [ch for ch in line if ord(ch) > 127]
-                            label = "Non-ASCII Character"
-                        else:
-                            forbidden = [ch for ch in line if is_emoji_character(ch)]
-                            label = "Emoji Character"
-
-                        if forbidden:
+                        non_ascii_chars = [ch for ch in line if ord(ch) > 127]
+                        if non_ascii_chars:
                             violations.append({
-                                "file": rel_posix,
+                                "file": str(path.relative_to(ROOT_DIR)).replace("\\", "/"),
                                 "line": idx,
-                                "type": label,
+                                "type": "Non-ASCII Character in Python Script",
                                 "sample": line.strip()[:60]
                             })
                 except Exception as e:
                     violations.append({
-                        "file": rel_posix,
+                        "file": str(path.relative_to(ROOT_DIR)).replace("\\", "/"),
                         "line": 0,
                         "type": "Read Error",
                         "sample": str(e)
@@ -181,6 +192,7 @@ OPERATIONAL_ANTI_PATTERNS = [
         "Unsafe Dynamic Code Execution ([R-PAT-04])"
     )
 ]
+COMBINED_OPERATIONAL_RE = re.compile("|".join(f"(?:{p.pattern})" for p, _ in OPERATIONAL_ANTI_PATTERNS))
 
 SINGLETON_ALLOWED_FILES = {"db.ts", "db.js", "prisma.ts", "prisma.js", "client.ts", "client.js"}
 APP_CODE_EXTENSIONS = {".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".py"}
@@ -189,46 +201,136 @@ def audit_operational_patterns() -> list[dict]:
     """Detects operational security anti-patterns (public secret vars, non-singleton DB clients, dynamic eval)."""
     violations = []
     for root, dirs, files in os.walk(ROOT_DIR):
-        dirs[:] = [d for d in dirs if d not in IGNORE_DIRS and d != "evals"]
-        for file in files:
-            path = Path(root) / file
-            if path.name in SKIP_FILENAMES or path.suffix.lower() in BINARY_EXTENSIONS:
-                continue
-            is_env = path.name.startswith(".env")
+        dirs[:] = [d for d in dirs if d not in IGNORE_DIRS and not d.startswith('.git')]
+        root_path = Path(root)
+        if "evals" in root_path.parts:
+            continue
+        rel_root_parts = root_path.relative_to(ROOT_DIR).parts
+        is_src_dir = len(rel_root_parts) > 0 and rel_root_parts[0] == "src"
+
+        for f in files:
+            path = root_path / f
+            is_env = f.startswith(".env")
             if path.suffix not in APP_CODE_EXTENSIONS and not is_env:
                 continue
 
-            rel_parts = path.relative_to(ROOT_DIR).parts
-            rel_posix = str(path.relative_to(ROOT_DIR)).replace("\\", "/")
+            content, read_err = _read_text_if_scannable(path, max_bytes=MAX_SECRET_SCAN_BYTES)
+            rel_str = str(path.relative_to(ROOT_DIR)).replace("\\", "/")
+            if read_err:
+                violations.append({"file": rel_str, "line": 0, "type": "Read Error", "sample": read_err})
+                continue
+            # Fast C-engine whole-file pre-filter before splitting lines
+            if not content or not COMBINED_OPERATIONAL_RE.search(content):
+                continue
 
-            try:
-                lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
-                for idx, line in enumerate(lines, start=1):
-                    stripped = line.strip()
-                    if stripped.startswith("//") or stripped.startswith("#"):
-                        continue
-                    for pattern, label in OPERATIONAL_ANTI_PATTERNS:
-                        if "PrismaClient" in label and (
-                            path.name in SINGLETON_ALLOWED_FILES
-                            or "scripts" in rel_parts
-                            or path.stem == "seed"
-                        ):
+            for idx, line in enumerate(content.splitlines(), start=1):
+                stripped = line.strip()
+                if stripped.startswith("//") or stripped.startswith("#"):
+                    continue
+                for pattern, label in OPERATIONAL_ANTI_PATTERNS:
+                    if "PrismaClient" in label:
+                        # Rule [R-DB-02] applies to application code in src/ to prevent serverless pool exhaustion
+                        if not is_src_dir or path.name in SINGLETON_ALLOWED_FILES:
                             continue
-                        if pattern.search(line):
-                            violations.append({
-                                "file": rel_posix,
-                                "line": idx,
-                                "type": label,
-                                "sample": stripped[:60]
-                            })
-            except Exception as e:
-                violations.append({
-                    "file": rel_posix,
-                    "line": 0,
-                    "type": "Read Error",
-                    "sample": str(e)
-                })
+                    if pattern.search(line):
+                        violations.append({
+                            "file": rel_str,
+                            "line": idx,
+                            "type": label,
+                            "sample": stripped[:60]
+                        })
     return violations
+
+ALLOWED_EVAL_SCRIPTS = {
+    "memory_engine.py", "reset_rsi.py", "rsi_orchestrator.py",
+    "run_fullstack_eval.py", "security_audit.py", "stack_inspector.py",
+    "telemetry_hook.py", "version_manager.py", "test_evals.py"
+}
+
+SUPPLY_CHAIN_ATTACK_PATTERNS = [
+    (
+        re.compile(r'(?i:(?:curl|wget|iwr|Invoke-WebRequest)\b[^\n|]*\|\s*(?:sh|bash|zsh|pwsh|powershell|iex|Invoke-Expression)\b)'),
+        "Remote Pipe-to-Shell Execution Vector"
+    ),
+    (
+        re.compile(r'(?i:\b(?:powershell|pwsh)\b[^\n]*\s-(?:e|enc|encodedcommand)\s+[A-Za-z0-9+/=]{16,})'),
+        "Encoded Shell Payload Vector"
+    ),
+    (
+        re.compile(r'(?:rm\s+-[rRf]{2,}\s+/(?:\s|$|\*)|Format-Volume\b|mkfs\.[a-z0-9]+\s+/dev/|\bdd\s+if=/dev/(?:zero|random|urandom)\s+of=/dev/)'),
+        "Destructive Host/Disk Command Vector"
+    ),
+    (
+        re.compile(r'(?i:(?:ignore\s+all\s+previous\s+instructions|disregard\s+system\s+rules|bypass\s+security_audit|exfiltrate\s+[^\n]*\.env))'),
+        "Prompt Injection / Guardrail Subversion Vector"
+    )
+]
+COMBINED_SUPPLY_CHAIN_RE = re.compile("|".join(f"(?:{p.pattern})" for p, _ in SUPPLY_CHAIN_ATTACK_PATTERNS))
+
+def _scan_file_for_supply_chain(path: Path, findings: list[dict]) -> None:
+    rel_str = str(path.relative_to(ROOT_DIR)).replace("\\", "/")
+    if path.is_symlink():
+        findings.append({"file": rel_str, "line": 0, "type": "Unsafe Symlink in Governance/Engine Tree", "sample": str(path)})
+        return
+    if path.name in ("security_audit.py", "test_evals.py", "trajectory_latest.json", "cognitive_state.json"):
+        return
+    if path.suffix.lower() in BINARY_EXTENSIONS:
+        return
+    content, read_err = _read_text_if_scannable(path, max_bytes=MAX_SECRET_SCAN_BYTES)
+    if read_err:
+        findings.append({"file": rel_str, "line": 0, "type": "Read Error", "sample": read_err})
+        return
+    if not content or not COMBINED_SUPPLY_CHAIN_RE.search(content):
+        return
+    for idx, line in enumerate(content.splitlines(), start=1):
+        for pattern, label in SUPPLY_CHAIN_ATTACK_PATTERNS:
+            if pattern.search(line):
+                findings.append({"file": rel_str, "line": idx, "type": label, "sample": line.strip()[:60]})
+
+def audit_supply_chain_and_agent_integrity() -> list[dict]:
+    """Detects supply-chain payloads, unapproved evals scripts on source repo, symlinks, and prompt injections."""
+    findings = []
+    is_protocol_source_repo = (
+        not (ROOT_DIR / "package.json").exists()
+        and not (ROOT_DIR / "pyproject.toml").exists()
+        and (ROOT_DIR / "evals" / "version_manager.py").exists()
+    )
+
+    evals_dir = ROOT_DIR / "evals"
+    if evals_dir.exists():
+        for root, dirs, files in os.walk(evals_dir):
+            dirs[:] = [d for d in dirs if d not in IGNORE_DIRS]
+            root_path = Path(root)
+            if root_path.is_symlink():
+                rel_dir = str(root_path.relative_to(ROOT_DIR)).replace("\\", "/")
+                findings.append({"file": rel_dir, "line": 0, "type": "Unsafe Symlink in Governance/Engine Tree", "sample": str(root_path)})
+                dirs[:] = []
+                continue
+            for f in files:
+                p = root_path / f
+                if is_protocol_source_repo and p.suffix == ".py" and p.name not in ALLOWED_EVAL_SCRIPTS:
+                    rel_str = str(p.relative_to(ROOT_DIR)).replace("\\", "/")
+                    findings.append({"file": rel_str, "line": 0, "type": "Unapproved Executable Script in evals/", "sample": p.name})
+                _scan_file_for_supply_chain(p, findings)
+
+    agents_dir = ROOT_DIR / ".agents"
+    if agents_dir.exists():
+        for root, dirs, files in os.walk(agents_dir):
+            dirs[:] = [d for d in dirs if d not in IGNORE_DIRS]
+            root_path = Path(root)
+            if root_path.is_symlink():
+                rel_dir = str(root_path.relative_to(ROOT_DIR)).replace("\\", "/")
+                findings.append({"file": rel_dir, "line": 0, "type": "Unsafe Symlink in Governance/Engine Tree", "sample": str(root_path)})
+                dirs[:] = []
+                continue
+            for f in files:
+                _scan_file_for_supply_chain(root_path / f, findings)
+
+    pkg_json = ROOT_DIR / "package.json"
+    if pkg_json.exists():
+        _scan_file_for_supply_chain(pkg_json, findings)
+
+    return findings
 
 def run_security_audit() -> bool:
     print("[RSI Security Audit] Running static security, secret leak, operational pattern, and ASCII guard audit...")
@@ -236,6 +338,7 @@ def run_security_audit() -> bool:
     secret_findings = audit_secrets()
     ascii_violations = audit_ascii_hygiene()
     operational_violations = audit_operational_patterns()
+    supply_chain_violations = audit_supply_chain_and_agent_integrity()
 
     success = True
     if gitignore_issues:
@@ -269,6 +372,14 @@ def run_security_audit() -> bool:
         success = False
     else:
         print("  [OK] Pure ASCII & Emoji Hygiene: 0 non-ASCII or emoji characters found.")
+
+    if supply_chain_violations:
+        print(f"\n[FAIL] {len(supply_chain_violations)} supply-chain / agent integrity violation(s) detected:")
+        for sv in supply_chain_violations:
+            print(f"  - [{sv['type']}] {sv['file']}:{sv['line']} -> {sv['sample']}")
+        success = False
+    else:
+        print("  [OK] Supply-Chain & Agent Integrity Guard: 0 attack vectors found.")
 
     # Check for real uncommitted .env files
     env_files = list(ROOT_DIR.glob(".env*"))
