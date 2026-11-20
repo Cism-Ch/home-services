@@ -20,10 +20,25 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+/**
+ * Resout metadataBase de facon tolerante aux variables Vercel/production mal formees.
+ */
+function resolveMetadataBase(): URL {
+  const raw =
+    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL.trim()}` : "") ||
+    "http://localhost:3000";
+
+  const candidate = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+  try {
+    return new URL(candidate);
+  } catch {
+    return new URL("http://localhost:3000");
+  }
+}
 
 export const metadata: Metadata = {
-  metadataBase: new URL(appBaseUrl),
+  metadataBase: resolveMetadataBase(),
   title: {
     default: "HomeServices | Artisans et services à domicile en Côte d'Ivoire",
     template: "%s | HomeServices",

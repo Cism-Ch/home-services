@@ -44,6 +44,11 @@
 - [x] Ajouter le test Sprint 13 dans `e2e/responsive-layout.spec.ts` (Cover hero, delta `<= 0.5px` lors de la rotation du slogan, zero `.blur-3xl`/`animate-[spin`, navigation routes, booking transitions, `reducedMotion`).
 - [x] Consigner `[R-UI-14]` et `[R-UI-15]` dans `.agents/rules/modules/ui_frontend.md` et valider avec `python evals/run_fullstack_eval.py` (`100/100 PASS`).
 
+### [x] `TASK-PROD-FIX-01` — Durcissement Production (Prisma/Vercel, SSL Supabase, Redis/URL Fail-Safe, Digest Erreur)
+- [x] Garantir `prisma generate && next build` dans `package.json` et durcir `src/lib/prisma.ts` (SSL `.supabase.co`/`.supabase.com` + normalisation `sslmode`, singleton serverless `max: 5`).
+- [x] Securiser `metadataBase` dans `src/app/layout.tsx`, `getRedisClient()` dans `src/lib/redis.ts`, fallback resilient sur `src/app/page.tsx`, et affichage du `digest` dans `src/app/error.tsx`.
+- [x] Valider avec `python evals/run_fullstack_eval.py` (`100/100 PASS`).
+
 ---
 
 ## Completed Tasks History

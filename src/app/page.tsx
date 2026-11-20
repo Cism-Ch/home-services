@@ -18,7 +18,12 @@ import { getPublicProfessionals } from "@/server/queries/catalog"
 export const dynamic = "force-dynamic"
 
 export default async function Home() {
-  const professionals = await getPublicProfessionals()
+  let professionals: Awaited<ReturnType<typeof getPublicProfessionals>> = []
+  try {
+    professionals = await getPublicProfessionals()
+  } catch (err) {
+    console.error("[home] Echec chargement professionnels en vedette:", err)
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
