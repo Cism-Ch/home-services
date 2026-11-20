@@ -59,9 +59,8 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="container relative flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-1 lg:px-0 min-h-[calc(100vh-4rem)] py-10">
-      <div className="lg:p-8">
-        <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[380px]">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] py-8 sm:py-12">
+      <div className="w-full max-w-[400px] space-y-6">
           <Link
             href="/login"
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
@@ -81,7 +80,7 @@ export default function ForgotPasswordPage() {
             </CardHeader>
 
             {submitted ? (
-              <CardContent className="grid gap-4 py-6">
+              <CardContent className="grid gap-4">
                 <Alert variant="success">
                   <CheckCircle2 className="size-4" />
                   <AlertTitle>Demande enregistrée</AlertTitle>
@@ -94,7 +93,7 @@ export default function ForgotPasswordPage() {
               </CardContent>
             ) : (
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+                <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="flex flex-col gap-6">
                   <CardContent className="grid gap-4">
                     <FormField
                       control={form.control}
@@ -116,7 +115,7 @@ export default function ForgotPasswordPage() {
                     />
                   </CardContent>
 
-                  <CardFooter className="flex flex-col gap-4 pt-2">
+                  <CardFooter className="flex flex-col gap-4">
                     <LoadingButton
                       type="submit"
                       loading={form.formState.isSubmitting}
@@ -141,7 +140,6 @@ export default function ForgotPasswordPage() {
               </Form>
             )}
           </Card>
-        </div>
       </div>
     </div>
   )

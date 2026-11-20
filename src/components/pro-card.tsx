@@ -11,11 +11,11 @@ interface ProCardProps {
 
 export function ProCard({ pro }: ProCardProps) {
   return (
-    <Card className="group relative overflow-hidden transition-all duration-300 shadow-md hover:shadow-2xl hover:-translate-y-1 bg-card/80 backdrop-blur-sm border-border/50 hover:border-[hsl(var(--brand))]/40 animate-appear">
+    <Card className="flex flex-col h-full group relative overflow-hidden transition-all duration-300 shadow-md hover:shadow-2xl hover:-translate-y-1 bg-card/80 backdrop-blur-sm border-border/50 hover:border-[hsl(var(--brand))]/40 animate-appear">
       <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--brand))]/5 via-transparent to-[hsl(var(--brand-foreground))]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 glow-brand pointer-events-none" />
 
-      <CardHeader className="relative flex flex-row items-center gap-4 pb-4">
+      <CardHeader className="relative flex flex-row items-center gap-4">
         <div className="relative shrink-0">
           <Avatar className="h-14 w-14 sm:h-16 sm:w-16 ring-2 ring-background group-hover:ring-[hsl(var(--brand))]/30 transition-all duration-500 shadow-md">
             <AvatarImage src={pro.avatar || undefined} alt={pro.name} className="object-cover" />
@@ -42,7 +42,7 @@ export function ProCard({ pro }: ProCardProps) {
         </div>
       </CardHeader>
 
-      <CardContent className="relative pt-0">
+      <CardContent className="relative flex-1">
         <div className="flex items-center justify-between py-3 px-4 rounded-lg bg-muted/30 group-hover:bg-[hsl(var(--brand))]/10 transition-all duration-500 border border-transparent group-hover:border-[hsl(var(--brand))]/20">
           <div className="flex items-center gap-1.5">
             <Star className="h-5 w-5 fill-amber-500 text-amber-500 drop-shadow-sm" />
@@ -54,7 +54,7 @@ export function ProCard({ pro }: ProCardProps) {
         </div>
       </CardContent>
 
-      <CardFooter className="relative">
+      <CardFooter className="relative mt-auto">
         <Button
           asChild
           className="w-full group-hover:shadow-lg transition-all duration-300 font-semibold"

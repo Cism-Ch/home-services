@@ -40,7 +40,7 @@ export function FileUploadButton({
         disabled={disabled}
         tabIndex={-1}
         aria-hidden="true"
-        className="sr-only"
+        className="hidden"
         onChange={(e) => {
           const selected = e.target.files?.[0]
           e.target.value = ""

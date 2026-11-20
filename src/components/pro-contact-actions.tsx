@@ -104,7 +104,7 @@ export function ProContactActions({
       {waUrl && (
         <Button
           size={size}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-sm transition-all duration-200 gap-2 flex-1 min-w-[170px]"
+          className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-sm transition-all duration-200 gap-2 min-w-0 w-full sm:w-auto sm:flex-1 sm:min-w-[160px]"
           asChild
         >
           <a href={waUrl} target="_blank" rel="noopener noreferrer">
@@ -119,7 +119,7 @@ export function ProContactActions({
         <Button
           variant="outline"
           size={size}
-          className="border-input hover:bg-accent hover:text-accent-foreground font-medium transition-all duration-200 gap-2 flex-1 min-w-[150px]"
+          className="border-input hover:bg-accent hover:text-accent-foreground font-medium transition-all duration-200 gap-2 min-w-0 w-full sm:w-auto sm:flex-1 sm:min-w-[160px]"
           asChild
         >
           <a href={telUrl}>

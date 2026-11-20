@@ -62,12 +62,12 @@ export function HeroSection({
   return (
     <section
       className={cn(
-        "bg-background text-foreground",
-        "py-10 sm:py-20 md:py-28 px-4",
-        "fade-bottom overflow-hidden pb-0"
+        "w-full bg-background text-foreground",
+        "pt-10 pb-12 sm:pt-16 sm:pb-16 md:pt-24 md:pb-20",
+        "overflow-hidden"
       )}
     >
-      <div className="mx-auto flex max-w-container flex-col gap-10 pt-8 sm:pt-14 sm:gap-16">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-10 pt-4 sm:pt-8 sm:gap-14">
         <div className="flex flex-col items-center gap-6 text-center sm:gap-10">
           {badge && (
             <Badge variant="outline" className="animate-appear gap-2 max-w-full flex-wrap justify-center py-1 px-3">

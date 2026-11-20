@@ -49,7 +49,7 @@ export function ResponsiveTable<T>({
   return (
     <div className={cn("w-full space-y-4", className)}>
       {/* Vue Cartes Mobile (< md) */}
-      <div className="grid gap-3 md:hidden">
+      <div className="grid grid-cols-1 min-w-0 gap-3 md:hidden">
         {data.map((item) => {
           const key = keyExtractor(item)
           if (mobileCard) {
@@ -59,19 +59,19 @@ export function ResponsiveTable<T>({
           const visibleColumns = columns.filter((col) => !col.hideOnMobile)
 
           return (
-            <Card key={key} className="shadow-xs border bg-card">
-              <CardContent className="p-4 space-y-3">
+            <Card key={key} className="py-0 min-w-0 overflow-hidden shadow-xs border bg-card">
+              <CardContent className="p-4 min-w-0 space-y-3">
                 {visibleColumns.map((col, idx) => (
                   <div
                     key={idx}
-                    className="flex flex-wrap items-center justify-between gap-2 text-sm"
+                    className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 min-w-0 text-sm"
                   >
                     <span className="text-muted-foreground font-medium shrink-0">
                       {col.header}
                     </span>
                     <div
                       className={cn(
-                        "font-medium text-right min-w-0 break-words",
+                        "font-medium text-right min-w-0 max-w-full break-words [overflow-wrap:anywhere]",
                         col.className
                       )}
                     >

@@ -148,7 +148,7 @@ export function ProScheduleView({
   return (
     <div className="space-y-8 animate-appear">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
           Mon Agenda & Disponibilités
         </h1>
         <p className="text-muted-foreground mt-2">
@@ -162,10 +162,10 @@ export function ProScheduleView({
         hasActiveMission={proBookings.some((b) => b.status === "IN_PROGRESS")}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-        <div className="md:col-span-4 lg:col-span-3 space-y-6">
-          <Card>
-            <CardContent className="p-4">
+      <div className="grid grid-cols-1 xl:grid-cols-[310px_minmax(0,1fr)] gap-6 lg:gap-8">
+        <div className="space-y-6 min-w-0">
+          <Card className="py-4">
+            <CardContent className="flex justify-center overflow-x-auto px-3">
               <Calendar
                 mode="single"
                 selected={date}
@@ -200,7 +200,7 @@ export function ProScheduleView({
           </Card>
         </div>
 
-        <div className="md:col-span-8 lg:col-span-9 space-y-6">
+        <div className="space-y-6 min-w-0">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <h2 className="text-xl font-semibold flex items-center gap-2">
               <CalendarIcon className="h-5 w-5" />
@@ -229,9 +229,9 @@ export function ProScheduleView({
                 return (
                   <Card
                     key={booking.id}
-                    className="overflow-hidden hover:shadow-md transition-shadow"
+                    className="overflow-hidden py-0 hover:shadow-md transition-shadow"
                   >
-                    <CardContent className="p-6">
+                    <CardContent className="p-4 sm:p-6">
                       <div className="flex flex-col md:flex-row gap-6">
                         <div className="shrink-0 flex flex-row md:flex-col items-center justify-between md:justify-center border-b pb-3 md:border-b-0 md:border-r md:pb-0 md:pr-6 md:min-w-[110px]">
                           <span className="text-lg font-bold text-primary">
@@ -245,15 +245,15 @@ export function ProScheduleView({
                           </span>
                         </div>
 
-                        <div className="flex-1 space-y-3">
-                          <div className="flex justify-between items-start gap-2">
-                            <div>
-                              <h3 className="text-lg font-semibold">
+                        <div className="flex-1 min-w-0 space-y-3">
+                          <div className="flex flex-wrap justify-between items-start gap-2">
+                            <div className="min-w-0">
+                              <h3 className="text-lg font-semibold break-words">
                                 {booking.serviceTitle}
                               </h3>
                               <div className="flex items-center gap-2 text-muted-foreground mt-1">
-                                <User className="h-4 w-4" />
-                                <span>
+                                <User className="h-4 w-4 shrink-0" />
+                                <span className="truncate">
                                   {booking.clientName} ({booking.clientPhone})
                                 </span>
                               </div>
@@ -323,7 +323,12 @@ export function ProScheduleView({
 
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button size="sm" variant="ghost" className="w-full">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="w-full"
+                                aria-label="Plus d'actions"
+                              >
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
@@ -373,7 +378,7 @@ export function ProScheduleView({
         open={reviewClientBooking !== null}
         onOpenChange={(open) => !open && setReviewClientBooking(null)}
       >
-        <DialogContent className="max-w-lg">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Évaluation mutuelle post-prestation</DialogTitle>
           </DialogHeader>

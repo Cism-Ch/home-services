@@ -5,10 +5,10 @@ export function SiteFooter() {
   return (
     <footer className="relative border-t border-border/40 bg-gradient-to-b from-muted/30 to-muted/50 backdrop-blur-sm overflow-hidden">
       {/* Decorative background */}
-      <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-[hsl(var(--brand))]/5 rounded-full blur-3xl -z-10" />
-      <div className="absolute bottom-0 right-1/4 w-[300px] h-[300px] bg-[hsl(var(--brand-foreground))]/5 rounded-full blur-3xl -z-10" />
+      <div className="pointer-events-none absolute top-0 left-1/4 w-full max-w-[400px] h-[400px] bg-[hsl(var(--brand))]/5 rounded-full blur-3xl -z-10" />
+      <div className="pointer-events-none absolute bottom-0 right-1/4 w-full max-w-[300px] h-[300px] bg-[hsl(var(--brand-foreground))]/5 rounded-full blur-3xl -z-10" />
 
-      <div className="container mx-auto px-4 py-12 md:py-16 relative">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 relative">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8">
           {/* Brand */}
           <div className="space-y-4">

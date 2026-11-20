@@ -35,7 +35,7 @@ export function HowItWorks() {
                 <div key={index} className="relative group">
                     {/* Connecting line for desktop */}
                     {index < steps.length - 1 && (
-                        <div className="hidden md:block absolute top-1/2 -right-4 w-8 h-[2px] bg-border/50 z-0" />
+                        <div className="hidden md:block absolute top-1/2 -right-6 w-6 h-[2px] bg-border/50 z-0" />
                     )}
 
                     <Card className="h-full bg-white/80 dark:bg-black/80 backdrop-blur-xl border-white/50 dark:border-white/20 hover:border-white/80 dark:hover:border-white/40 transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl overflow-hidden group shadow-lg relative z-20">
@@ -55,7 +55,7 @@ export function HowItWorks() {
                             />
                         </div>
 
-                        <CardContent className="p-6 flex flex-col items-center text-center relative z-10 pt-8">
+                        <CardContent className="flex flex-col items-center text-center relative z-10 py-2">
                             <div className={`w-16 h-16 rounded-2xl bg-background/80 shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500 ${step.iconColor} relative overflow-hidden`}>
                                 <div className="absolute inset-0 bg-gradient-to-tr from-white/0 to-white/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                                 <step.icon className="w-8 h-8 relative z-10" />

@@ -146,12 +146,12 @@ export function ClientFollowUpCard({
           {activeTasks.map((task) => (
             <Card
               key={task.id}
-              className="border-2 border-primary/25 bg-gradient-to-r from-primary/5 via-background to-secondary/5 shadow-sm"
+              className="py-0 border-2 border-primary/25 bg-gradient-to-r from-primary/5 via-background to-secondary/5 shadow-sm"
             >
-              <CardContent className="p-5 space-y-4">
+              <CardContent className="p-4 sm:p-5 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="info" className="gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
                         Mission en cours
@@ -160,7 +160,7 @@ export function ClientFollowUpCard({
                         #{task.id}
                       </span>
                     </div>
-                    <h3 className="font-bold text-base text-foreground">
+                    <h3 className="font-bold text-base text-foreground break-words">
                       Suivi d&apos;intervention : {task.serviceName}
                     </h3>
                     <p className="text-xs text-muted-foreground">
@@ -170,7 +170,7 @@ export function ClientFollowUpCard({
                     </p>
                   </div>
 
-                  <div className="rounded-lg bg-card p-3 border text-center min-w-[200px]">
+                  <div className="rounded-lg bg-card p-3 border text-center w-full sm:w-auto sm:min-w-[200px]">
                     <p className="text-xs font-semibold text-foreground mb-1">
                       Vos tâches ont-elles été finalisées ?
                     </p>
@@ -181,10 +181,10 @@ export function ClientFollowUpCard({
                 </div>
 
                 {/* Action Buttons: Oui / En cours / Non */}
-                <div className="flex flex-wrap items-center gap-2 pt-1 border-t">
+                <div className="flex flex-wrap items-center gap-2 pt-3 border-t">
                   <Button
                     size="sm"
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex-1 min-w-[140px] gap-1.5"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium w-full sm:w-auto sm:flex-1 gap-1.5"
                     disabled={loadingTaskId === task.id}
                     onClick={() => handleAnswer(task, "YES")}
                   >
@@ -199,7 +199,7 @@ export function ClientFollowUpCard({
                   <Button
                     size="sm"
                     variant="outline"
-                    className="border-blue-400/40 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex-1 min-w-[130px] gap-1.5"
+                    className="border-blue-400/40 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 w-full sm:w-auto sm:flex-1 gap-1.5"
                     disabled={loadingTaskId === task.id}
                     onClick={() => handleAnswer(task, "IN_PROGRESS")}
                   >
@@ -210,7 +210,7 @@ export function ClientFollowUpCard({
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="text-muted-foreground hover:text-destructive gap-1.5 text-xs"
+                    className="w-full sm:w-auto text-muted-foreground hover:text-destructive gap-1.5 text-xs"
                     disabled={loadingTaskId === task.id}
                     onClick={() => handleAnswer(task, "NO")}
                   >
@@ -235,7 +235,7 @@ export function ClientFollowUpCard({
           }
         }}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-amber-500" />

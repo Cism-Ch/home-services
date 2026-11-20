@@ -288,7 +288,7 @@ export function DashboardSidebar({ user }: { user: SidebarUserProps }) {
 
   return (
     <>
-      <div className="md:hidden w-full mb-4">
+      <div className="md:hidden w-full">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" className="w-full justify-start gap-2">
@@ -296,7 +296,7 @@ export function DashboardSidebar({ user }: { user: SidebarUserProps }) {
               Menu Dashboard
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-[min(85vw,320px)] sm:w-[360px] p-0 pt-10">
+          <SheetContent side="left" className="w-[min(85vw,320px)] sm:w-[360px] p-0 pt-10 pb-6 overflow-y-auto">
             <SheetTitle className="sr-only">Menu de navigation</SheetTitle>
             <div className="px-4">
               <NavContent

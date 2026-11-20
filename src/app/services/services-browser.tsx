@@ -157,7 +157,7 @@ export function ServicesBrowser({
         <div className="pointer-events-none absolute top-0 right-0 w-full max-w-lg h-[400px] bg-[hsl(var(--brand))]/20 rounded-full blur-3xl -z-10" />
         <div className="pointer-events-none absolute bottom-0 left-0 w-full max-w-md h-[350px] bg-[hsl(var(--brand-foreground))]/20 rounded-full blur-3xl -z-10" />
 
-        <div className="container mx-auto px-4 relative">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="max-w-4xl mx-auto text-center animate-appear">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[hsl(var(--brand))]/10 border border-[hsl(var(--brand))]/20 text-xs sm:text-sm font-medium mb-6 backdrop-blur-sm">
               <div className="w-2 h-2 rounded-full bg-[hsl(var(--brand))] animate-pulse" />
@@ -242,8 +242,9 @@ export function ServicesBrowser({
       </section>
 
       {/* Main Content Section */}
-      <section ref={resultsRef} className="container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <section ref={resultsRef} className="w-full py-12 sm:py-16">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <aside className="hidden md:block col-span-1">
             <div className="sticky top-24 animate-appear">
               <div className="relative bg-card/60 backdrop-blur-md rounded-2xl border border-border/50 p-6 shadow-elevated overflow-hidden group hover:shadow-elevated-lg transition-shadow duration-500">
@@ -312,11 +313,13 @@ export function ServicesBrowser({
             />
           </main>
         </div>
+        </div>
       </section>
 
       {/* CTA Section */}
-      <section className="container mx-auto px-4 py-14 sm:py-20">
-        <div className="relative bg-gradient-to-br from-[hsl(var(--brand))] to-[hsl(var(--brand-foreground))] text-white rounded-3xl p-6 sm:p-10 md:p-16 text-center shadow-elevated-lg overflow-hidden group glow-brand-lg animate-appear">
+      <section className="w-full py-12 sm:py-20">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative bg-gradient-to-br from-[hsl(var(--brand))] to-[hsl(var(--brand-foreground))] text-white rounded-3xl p-6 sm:p-10 md:p-16 text-center shadow-elevated-lg overflow-hidden group glow-brand-lg animate-appear">
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:32px_32px]" />
           <div className="pointer-events-none absolute top-0 right-0 w-72 h-72 sm:w-96 sm:h-96 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700" />
 
@@ -343,6 +346,7 @@ export function ServicesBrowser({
                 <span className="ml-2">-&gt;</span>
               </Link>
             </Button>
+          </div>
           </div>
         </div>
       </section>

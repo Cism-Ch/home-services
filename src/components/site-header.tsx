@@ -30,7 +30,7 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 shadow-sm animate-slide-down">
-      <div className="container mx-auto px-4 flex h-16 items-center justify-between gap-2">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between gap-2">
         <div className="flex items-center min-w-0">
           {/* Mobile Menu Trigger (< lg) */}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -40,9 +40,9 @@ export function SiteHeader() {
                 <span className="sr-only">Menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[min(85vw,320px)] sm:w-[360px]">
+            <SheetContent side="left" className="w-[min(85vw,320px)] sm:w-[360px] px-6 py-6 overflow-y-auto">
               <SheetTitle className="sr-only">Menu principal</SheetTitle>
-              <div className="flex flex-col gap-6 py-6">
+              <div className="flex flex-col gap-6 pt-2">
                 <Link
                   href="/"
                   onClick={() => setIsOpen(false)}

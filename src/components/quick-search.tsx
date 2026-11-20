@@ -47,10 +47,11 @@ export function QuickSearch() {
   }
 
   return (
-    <section className="py-12 md:py-16 container mx-auto px-4 relative overflow-hidden">
+    <section className="w-full py-12 md:py-16 relative overflow-hidden">
       <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl h-[500px] bg-primary/5 rounded-full blur-3xl -z-10" />
 
-      <div className="max-w-4xl mx-auto">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8 animate-appear">
           <div className="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-primary mb-3 bg-primary/10 px-4 py-1.5 rounded-full">
             <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
@@ -150,6 +151,7 @@ export function QuickSearch() {
               Rendez-vous par créneaux + contact WhatsApp
             </div>
           </div>
+        </div>
         </div>
       </div>
     </section>

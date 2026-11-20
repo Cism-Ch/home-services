@@ -112,14 +112,14 @@ export function ProServicesView({
     <div className="space-y-8 animate-appear">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
             Mes Services & Tarifs (FCFA)
           </h1>
           <p className="text-muted-foreground mt-2">
             Gérez les prestations et tarifs indicatifs proposés aux clients de votre zone.
           </p>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)} className="gap-2">
+        <Button onClick={() => setIsCreateDialogOpen(true)} className="gap-2 w-full sm:w-auto">
           <Plus className="h-4 w-4" />
           Ajouter une prestation
         </Button>
@@ -127,8 +127,8 @@ export function ProServicesView({
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {myServices.map((service) => (
-          <Card key={service.id} className="flex flex-col overflow-hidden">
-            <div className="aspect-video w-full overflow-hidden relative">
+          <Card key={service.id} className="flex flex-col h-full py-0 gap-0 overflow-hidden">
+            <div className="aspect-video w-full overflow-hidden relative shrink-0">
               <Image
                 src={service.image}
                 alt={service.title}
@@ -140,16 +140,16 @@ export function ProServicesView({
                 {service.categoryName}
               </Badge>
             </div>
-            <CardHeader>
+            <CardHeader className="pt-5 pb-2">
               <CardTitle className="line-clamp-1">{service.title}</CardTitle>
               <CardDescription className="line-clamp-2 min-h-[40px]">
                 {service.description}
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex-1">
-              <div className="flex items-center justify-between text-sm">
+            <CardContent className="flex-1 py-3">
+              <div className="flex items-center justify-between gap-2 text-sm">
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  <Clock className="h-4 w-4" />
+                  <Clock className="h-4 w-4 shrink-0" />
                   <span>{service.duration} min</span>
                 </div>
                 <div className="font-bold text-lg text-primary">
@@ -157,7 +157,7 @@ export function ProServicesView({
                 </div>
               </div>
             </CardContent>
-            <CardFooter className="border-t p-4 justify-end">
+            <CardFooter className="mt-auto border-t py-4 justify-end">
               <Button
                 variant="outline"
                 size="sm"
@@ -171,18 +171,22 @@ export function ProServicesView({
           </Card>
         ))}
 
-        <Card
-          className="flex flex-col items-center justify-center border-dashed p-8 h-full min-h-[300px] cursor-pointer hover:bg-accent/50 transition-colors group"
+        <Button
+          type="button"
+          variant="outline"
           onClick={() => setIsCreateDialogOpen(true)}
+          className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 h-full min-h-[300px] w-full hover:bg-accent/50 transition-colors group whitespace-normal"
         >
-          <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
             <Plus className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-semibold mb-1">Nouvelle prestation</h3>
-          <p className="text-sm text-muted-foreground text-center">
+          <span className="text-lg font-semibold mb-1 text-foreground">
+            Nouvelle prestation
+          </span>
+          <span className="text-sm font-normal text-muted-foreground text-center">
             Ajoutez un service avec tarif indicatif en FCFA
-          </p>
-        </Card>
+          </span>
+        </Button>
       </div>
 
       <CreateServiceDialog

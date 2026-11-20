@@ -23,25 +23,25 @@ export function ProServicesList({ proId, services }: ProServicesListProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {services.map((service) => (
-        <Card key={service.id} className="flex flex-col">
+        <Card key={service.id} className="flex flex-col h-full pb-0 overflow-hidden">
           <CardHeader>
             <div className="flex justify-between items-start gap-4">
-              <CardTitle className="text-lg">{service.title}</CardTitle>
-              <Badge variant="outline">{service.categoryName}</Badge>
+              <CardTitle className="text-lg min-w-0">{service.title}</CardTitle>
+              <Badge variant="outline" className="shrink-0">{service.categoryName}</Badge>
             </div>
           </CardHeader>
-          <CardContent className="flex-grow space-y-4">
+          <CardContent className="flex-1 space-y-4">
             <p className="text-sm text-muted-foreground">{service.description}</p>
             <div className="flex items-center gap-2 text-sm">
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
+              <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
               <span>Devis gratuit avant intervention</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
-              <Clock className="h-4 w-4 text-muted-foreground" />
+              <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
               <span>Durée estimée : {service.duration} min</span>
             </div>
           </CardContent>
-          <CardFooter className="flex items-center justify-between border-t bg-muted/20 p-6">
+          <CardFooter className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t bg-muted/20 py-4 px-4 sm:px-6">
             <div className="flex flex-col">
               <span className="text-xs text-muted-foreground">Tarif indicatif</span>
               <span className="text-xl font-bold text-primary">

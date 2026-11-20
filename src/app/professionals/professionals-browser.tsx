@@ -91,7 +91,7 @@ export function ProfessionalsBrowser({
         <div className="pointer-events-none absolute top-0 left-0 w-full max-w-lg h-[400px] bg-[hsl(var(--brand))]/20 rounded-full blur-3xl -z-10" />
         <div className="pointer-events-none absolute bottom-0 right-0 w-full max-w-md h-[350px] bg-[hsl(var(--brand-foreground))]/20 rounded-full blur-3xl -z-10" />
 
-        <div className="container mx-auto px-4 relative">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="max-w-4xl mx-auto text-center animate-appear">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[hsl(var(--brand))]/10 border border-[hsl(var(--brand))]/20 text-xs sm:text-sm font-medium mb-6 backdrop-blur-sm">
               <div className="w-2 h-2 rounded-full bg-[hsl(var(--brand))] animate-pulse" />
@@ -131,35 +131,38 @@ export function ProfessionalsBrowser({
       </section>
 
       {/* Stats Section */}
-      <section className="container mx-auto px-4 -mt-6 sm:-mt-8 relative z-10 animate-appear">
-        <div className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          <div className="bg-card/85 backdrop-blur-sm rounded-2xl p-5 sm:p-6 text-center border border-border/50 shadow-elevated">
-            <Users className="h-7 w-7 mx-auto mb-2 text-[hsl(var(--brand))]" />
-            <div className="text-2xl sm:text-3xl font-bold mb-1 gradient-brand">
-              {initialProfessionals.length}
+      <section className="w-full -mt-6 sm:-mt-8 relative z-10 animate-appear">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            <div className="bg-card/85 backdrop-blur-sm rounded-2xl p-5 sm:p-6 text-center border border-border/50 shadow-elevated">
+              <Users className="h-7 w-7 mx-auto mb-2 text-[hsl(var(--brand))]" />
+              <div className="text-2xl sm:text-3xl font-bold mb-1 gradient-brand">
+                {initialProfessionals.length}
+              </div>
+              <div className="text-sm text-muted-foreground">Professionnels</div>
             </div>
-            <div className="text-sm text-muted-foreground">Professionnels</div>
-          </div>
-          <div className="bg-card/85 backdrop-blur-sm rounded-2xl p-5 sm:p-6 text-center border border-border/50 shadow-elevated">
-            <Award className="h-7 w-7 mx-auto mb-2 text-[hsl(var(--brand))]" />
-            <div className="text-2xl sm:text-3xl font-bold mb-1 gradient-brand">
-              {initialProfessionals.filter((p) => p.isVerified).length}
+            <div className="bg-card/85 backdrop-blur-sm rounded-2xl p-5 sm:p-6 text-center border border-border/50 shadow-elevated">
+              <Award className="h-7 w-7 mx-auto mb-2 text-[hsl(var(--brand))]" />
+              <div className="text-2xl sm:text-3xl font-bold mb-1 gradient-brand">
+                {initialProfessionals.filter((p) => p.isVerified).length}
+              </div>
+              <div className="text-sm text-muted-foreground">Profils vérifiés</div>
             </div>
-            <div className="text-sm text-muted-foreground">Profils vérifiés</div>
-          </div>
-          <div className="bg-card/85 backdrop-blur-sm rounded-2xl p-5 sm:p-6 text-center border border-border/50 shadow-elevated">
-            <Star className="h-7 w-7 mx-auto mb-2 text-[hsl(var(--brand))]" />
-            <div className="text-2xl sm:text-3xl font-bold mb-1 gradient-brand">
-              {averageRating}
+            <div className="bg-card/85 backdrop-blur-sm rounded-2xl p-5 sm:p-6 text-center border border-border/50 shadow-elevated">
+              <Star className="h-7 w-7 mx-auto mb-2 text-[hsl(var(--brand))]" />
+              <div className="text-2xl sm:text-3xl font-bold mb-1 gradient-brand">
+                {averageRating}
+              </div>
+              <div className="text-sm text-muted-foreground">Note moyenne</div>
             </div>
-            <div className="text-sm text-muted-foreground">Note moyenne</div>
           </div>
         </div>
       </section>
 
       {/* Filters Section */}
-      <section ref={resultsRef} className="container mx-auto px-4 py-8 sm:py-12">
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3 animate-appear">
+      <section ref={resultsRef} className="w-full py-8 sm:py-12">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 animate-appear">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mr-1">
             <Filter className="h-4 w-4" />
             <span>Filtrer par :</span>
@@ -185,43 +188,46 @@ export function ProfessionalsBrowser({
               {cat.name}
             </Button>
           ))}
+          </div>
         </div>
       </section>
 
       {/* Professionals Grid */}
-      <section className="container mx-auto px-4 pb-16 sm:pb-20">
-        {paginatedProfessionals.length > 0 ? (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-              {paginatedProfessionals.map((pro) => (
-                <div key={pro.id} className="animate-appear">
-                  <ProCard pro={pro} />
-                </div>
-              ))}
-            </div>
+      <section className="w-full pb-16 sm:pb-20">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {paginatedProfessionals.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                {paginatedProfessionals.map((pro) => (
+                  <div key={pro.id} className="animate-appear">
+                    <ProCard pro={pro} />
+                  </div>
+                ))}
+              </div>
 
-            <CatalogPagination
-              currentPage={safePage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
-          </>
-        ) : (
-          <div className="text-center py-16 space-y-4">
-            <p className="text-lg font-medium">
-              Aucun professionnel ne correspond à votre recherche.
-            </p>
-            <Button type="button" variant="outline" onClick={resetFilters}>
-              Afficher tous les professionnels
-            </Button>
-          </div>
-        )}
+              <CatalogPagination
+                currentPage={safePage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </>
+          ) : (
+            <div className="text-center py-16 space-y-4">
+              <p className="text-lg font-medium">
+                Aucun professionnel ne correspond à votre recherche.
+              </p>
+              <Button type="button" variant="outline" onClick={resetFilters}>
+                Afficher tous les professionnels
+              </Button>
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Featured Section */}
       {initialProfessionals.length > 0 && (
-        <section className="bg-gradient-to-b from-muted/20 to-background py-14 sm:py-20 relative overflow-hidden">
-          <div className="container mx-auto px-4 relative">
+        <section className="w-full bg-gradient-to-b from-muted/20 to-background py-14 sm:py-20 relative overflow-hidden">
+          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
             <div className="text-center mb-10 sm:mb-12 animate-appear">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[hsl(var(--brand))]/10 border border-[hsl(var(--brand))]/20 text-xs sm:text-sm font-medium mb-4 backdrop-blur-sm">
                 <Star className="h-4 w-4 text-[hsl(var(--brand))]" />
@@ -253,29 +259,31 @@ export function ProfessionalsBrowser({
       )}
 
       {/* CTA Section */}
-      <section className="container mx-auto px-4 py-14 sm:py-20">
-        <div className="relative bg-gradient-to-br from-[hsl(var(--brand))] to-[hsl(var(--brand-foreground))] text-white rounded-3xl p-6 sm:p-10 md:p-16 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 shadow-elevated-lg overflow-hidden group glow-brand-lg animate-appear">
-          <div className="space-y-4 max-w-2xl relative z-10">
-            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold leading-tight">
-              Vous êtes professionnel ?
-            </h2>
-            <p className="text-white/90 text-base sm:text-xl leading-relaxed">
-              Rejoignez notre réseau d&apos;artisans locaux, gérez vos créneaux
-              horaires et développez votre clientèle sans commission sur vos
-              travaux.
-            </p>
+      <section className="w-full py-14 sm:py-20">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative bg-gradient-to-br from-[hsl(var(--brand))] to-[hsl(var(--brand-foreground))] text-white rounded-3xl p-6 sm:p-10 md:p-16 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 shadow-elevated-lg overflow-hidden group glow-brand-lg animate-appear">
+            <div className="space-y-4 max-w-2xl relative z-10">
+              <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold leading-tight">
+                Vous êtes professionnel ?
+              </h2>
+              <p className="text-white/90 text-base sm:text-xl leading-relaxed">
+                Rejoignez notre réseau d&apos;artisans locaux, gérez vos créneaux
+                horaires et développez votre clientèle sans commission sur vos
+                travaux.
+              </p>
+            </div>
+            <Button
+              asChild
+              size="lg"
+              variant="secondary"
+              className="relative z-10 w-full md:w-auto whitespace-nowrap text-base sm:text-lg px-8 py-6 h-auto shadow-lg hover:shadow-xl transition-all duration-300 font-bold bg-white text-[hsl(var(--brand))] hover:bg-white/90"
+            >
+              <Link href="/register">
+                Devenir partenaire
+                <span className="ml-2">-&gt;</span>
+              </Link>
+            </Button>
           </div>
-          <Button
-            asChild
-            size="lg"
-            variant="secondary"
-            className="relative z-10 w-full md:w-auto whitespace-nowrap text-base sm:text-lg px-8 py-6 h-auto shadow-lg hover:shadow-xl transition-all duration-300 font-bold bg-white text-[hsl(var(--brand))] hover:bg-white/90"
-          >
-            <Link href="/register">
-              Devenir partenaire
-              <span className="ml-2">-&gt;</span>
-            </Link>
-          </Button>
         </div>
       </section>
     </div>

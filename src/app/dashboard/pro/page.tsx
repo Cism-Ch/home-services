@@ -57,7 +57,7 @@ export default async function ProDashboardPage() {
   return (
     <div className="space-y-8 animate-appear">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
           Tableau de bord Prestataire
         </h1>
         <p className="text-muted-foreground mt-2">
@@ -103,18 +103,18 @@ export default async function ProDashboardPage() {
               activeBookings.slice(0, 3).map((booking) => (
                 <Card
                   key={booking.id}
-                  className="overflow-hidden border-l-4 border-l-primary"
+                  className="py-0 overflow-hidden border-l-4 border-l-primary"
                 >
                   <CardContent className="p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h3 className="font-semibold">{booking.serviceTitle}</h3>
+                    <div className="flex justify-between items-start gap-2 mb-2">
+                      <div className="min-w-0">
+                        <h3 className="font-semibold break-words">{booking.serviceTitle}</h3>
                         <div className="flex items-center text-sm text-muted-foreground mt-1">
-                          <User className="h-3 w-3 mr-1" />
-                          {booking.clientName}
+                          <User className="h-3 w-3 mr-1 shrink-0" />
+                          <span className="truncate">{booking.clientName}</span>
                         </div>
                       </div>
-                      <div className="text-right space-y-1">
+                      <div className="text-right space-y-1 shrink-0">
                         <div className="font-medium text-primary">
                           {new Date(booking.bookingDate).toLocaleDateString("fr-FR", {
                             day: "numeric",
@@ -128,9 +128,9 @@ export default async function ProDashboardPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground mt-3 pt-3 border-t border-border/50">
+                    <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mt-3 pt-3 border-t border-border/50">
                       <div className="flex items-center gap-1 text-xs">
-                        <Clock className="h-3 w-3" />
+                        <Clock className="h-3 w-3 shrink-0" />
                         {booking.timeSlot}
                       </div>
                       <div className="flex items-center gap-1 text-xs truncate max-w-[160px]">
@@ -145,8 +145,8 @@ export default async function ProDashboardPage() {
                 </Card>
               ))
             ) : (
-              <Card className="bg-muted/50 border-dashed">
-                <CardContent className="flex flex-col items-center justify-center p-8 text-center">
+              <Card className="py-0 bg-muted/50 border-dashed">
+                <CardContent className="flex flex-col items-center justify-center p-6 sm:p-8 text-center">
                   <Calendar className="h-8 w-8 text-muted-foreground mb-3" />
                   <p className="font-medium">Aucun rendez-vous actif</p>
                   <p className="text-sm text-muted-foreground mt-1">
@@ -163,12 +163,12 @@ export default async function ProDashboardPage() {
           <h2 className="text-xl font-semibold">Actions rapides</h2>
           <div className="grid gap-4">
             <Link href="/dashboard/pro/schedule">
-              <Card className="hover:bg-accent/50 transition-colors cursor-pointer group">
-                <CardContent className="p-6 flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Card className="py-0 hover:bg-accent/50 transition-colors cursor-pointer group">
+                <CardContent className="p-5 sm:p-6 flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                     <Calendar className="h-6 w-6" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="font-semibold">Mon Agenda & Offres</h3>
                     <p className="text-sm text-muted-foreground">
                       Consulter et valider les créneaux négociés
@@ -179,12 +179,12 @@ export default async function ProDashboardPage() {
             </Link>
 
             <Link href="/dashboard/pro/services">
-              <Card className="hover:bg-accent/50 transition-colors cursor-pointer group">
-                <CardContent className="p-6 flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-full bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Card className="py-0 hover:bg-accent/50 transition-colors cursor-pointer group">
+                <CardContent className="p-5 sm:p-6 flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-full bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                     <Briefcase className="h-6 w-6" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="font-semibold">Gérer mes services en FCFA</h3>
                     <p className="text-sm text-muted-foreground">
                       Tarifs indicatifs et descriptifs de prestations
@@ -195,12 +195,12 @@ export default async function ProDashboardPage() {
             </Link>
 
             <Link href="/dashboard/pro/profile">
-              <Card className="hover:bg-accent/50 transition-colors cursor-pointer group">
-                <CardContent className="p-6 flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Card className="py-0 hover:bg-accent/50 transition-colors cursor-pointer group">
+                <CardContent className="p-5 sm:p-6 flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                     <User className="h-6 w-6" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="font-semibold">Profil artisan & WhatsApp</h3>
                     <p className="text-sm text-muted-foreground">
                       Coordonnées directes et documents d&apos;activité

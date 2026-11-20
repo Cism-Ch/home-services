@@ -65,7 +65,7 @@ export function BookingTicket({ booking, open, onOpenChange }: BookingTicketProp
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto print:max-w-full backdrop-blur-sm bg-background/95 border-2">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto print:max-w-full backdrop-blur-sm bg-background/95 border-2">
         <DialogHeader className="print:hidden">
           <DialogTitle>Billet de mise en relation & réservation</DialogTitle>
         </DialogHeader>

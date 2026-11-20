@@ -147,7 +147,7 @@ export function BookingClient({
 
   return (
     <div className="min-h-screen bg-muted/20 py-8">
-      <div className="container mx-auto px-4 max-w-6xl">
+      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <BookingStepper currentStep={currentStep} steps={steps} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
@@ -302,7 +302,7 @@ export function BookingClient({
 
             {currentStep === 4 && (
               <Card className="border-2 border-primary/20 shadow-md">
-                <CardContent className="space-y-6 pt-8 pb-8 text-center sm:text-left">
+                <CardContent className="space-y-6 py-2 text-center sm:text-left">
                   <div className="flex flex-col sm:flex-row items-center gap-4 border-b pb-6">
                     <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-950/60 rounded-full flex items-center justify-center shrink-0">
                       <CheckCircle2 className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />

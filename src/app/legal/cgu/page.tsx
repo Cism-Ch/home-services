@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function LegalCguPage() {
   return (
-    <main className="container mx-auto px-4 py-12 max-w-4xl space-y-8">
+    <main className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 space-y-8">
       <PageBreadcrumb
         items={[
           { label: "Accueil", href: "/" },

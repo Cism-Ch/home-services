@@ -26,8 +26,8 @@ export default async function BookingPage({ params }: BookingPageProps) {
 
   return (
     <>
-      <div className="bg-muted/20 border-b">
-        <div className="container mx-auto px-4 max-w-6xl pt-5 pb-1">
+      <div className="w-full bg-muted/20 border-b">
+        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-1">
           <PageBreadcrumb
             className="mb-2"
             items={[

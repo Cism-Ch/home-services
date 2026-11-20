@@ -26,9 +26,9 @@ export default async function ProfessionalProfilePage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen">
-      <div className="container mx-auto px-4 pt-6">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         <PageBreadcrumb
-          className="mb-2"
+          className="mb-3"
           items={[
             { label: "Accueil", href: "/" },
             { label: "Professionnels", href: "/professionals" },
@@ -38,15 +38,15 @@ export default async function ProfessionalProfilePage({ params }: PageProps) {
       </div>
       <ProHeader professional={professional} />
 
-      <div className="container mx-auto px-4 py-12">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-8 min-w-0">
             <section className="bg-card rounded-lg p-6 border">
               <h2 className="text-2xl font-bold mb-4">À propos</h2>
               <p className="text-muted-foreground leading-relaxed">{professional.bio}</p>
 
-              <div className="grid grid-cols-2 gap-4 mt-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
                 <div>
                   <h3 className="font-semibold mb-2">Expérience</h3>
                   <p className="text-muted-foreground">{professional.experienceLabel}</p>

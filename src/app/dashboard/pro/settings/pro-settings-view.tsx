@@ -227,7 +227,7 @@ export function ProSettingsView({
   return (
     <div className="space-y-8 animate-appear">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
           Paramètres & Abonnement Pro
         </h1>
         <p className="text-muted-foreground mt-2">
@@ -245,7 +245,7 @@ export function ProSettingsView({
         <div className="mt-6 space-y-6">
           <TabsContent value="business">
             <Card>
-              <form onSubmit={handleSaveBusiness}>
+              <form onSubmit={handleSaveBusiness} className="flex flex-col gap-6">
                 <CardHeader>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>

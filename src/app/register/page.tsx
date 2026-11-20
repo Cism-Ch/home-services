@@ -82,9 +82,8 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="container relative flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-1 lg:px-0 min-h-[calc(100vh-4rem)] py-10">
-      <div className="lg:p-8">
-        <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[420px]">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] py-8 sm:py-12">
+      <div className="w-full max-w-[440px] space-y-6">
           <Card>
             <CardHeader className="space-y-1">
               <CardTitle className="text-2xl text-center">
@@ -96,7 +95,7 @@ export default function RegisterPage() {
             </CardHeader>
 
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+              <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="flex flex-col gap-6">
                 <CardContent className="grid gap-4">
                   <FormField
                     control={form.control}
@@ -160,12 +159,13 @@ export default function RegisterPage() {
                     }
                   />
 
-                  <div className="relative flex items-center justify-center">
-                    <Separator />
-                    <span className="bg-card px-2 text-xs uppercase text-muted-foreground shrink-0">
+                  <div className="relative flex items-center justify-center py-1">
+                    <div className="absolute inset-0 flex items-center">
+                      <Separator className="w-full" />
+                    </div>
+                    <span className="relative bg-card px-2 text-xs uppercase text-muted-foreground">
                       Ou par email
                     </span>
-                    <Separator />
                   </div>
 
                   {serverError && (
@@ -276,7 +276,7 @@ export default function RegisterPage() {
                   />
                 </CardContent>
 
-                <CardFooter className="flex flex-col gap-4 pt-2">
+                <CardFooter className="flex flex-col gap-4">
                   <LoadingButton
                     type="submit"
                     loading={form.formState.isSubmitting}
@@ -300,7 +300,6 @@ export default function RegisterPage() {
               </form>
             </Form>
           </Card>
-        </div>
       </div>
     </div>
   )

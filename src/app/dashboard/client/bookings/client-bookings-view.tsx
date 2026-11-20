@@ -73,19 +73,19 @@ function BookingList({
   return (
     <div className="space-y-4">
       {items.map((booking) => (
-        <Card key={booking.id} className="overflow-hidden hover:shadow-sm transition-shadow">
+        <Card key={booking.id} className="overflow-hidden py-0 gap-0 hover:shadow-sm transition-shadow">
           <CardContent className="p-0">
             <div className="flex flex-col md:flex-row">
-              <div className="p-6 flex-1">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
+              <div className="p-4 sm:p-6 flex-1 min-w-0">
+                <div className="flex justify-between items-start gap-3 mb-4">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       {getStatusBadge(booking.status)}
                       <span className="text-xs text-muted-foreground font-mono">
                         #{booking.id.slice(0, 12)}
                       </span>
                     </div>
-                    <h3 className="text-xl font-bold">{booking.serviceTitle}</h3>
+                    <h3 className="text-lg sm:text-xl font-bold break-words">{booking.serviceTitle}</h3>
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -140,7 +140,7 @@ function BookingList({
                 </div>
 
                 {booking.proPhone && (
-                  <div className="mt-4 pt-3 border-t flex items-center justify-between">
+                  <div className="mt-4 pt-3 border-t flex flex-wrap items-center justify-between gap-2">
                     <span className="text-xs text-muted-foreground">Contact direct :</span>
                     <ProContactActions
                       proName={booking.proName}
@@ -291,7 +291,7 @@ export function ClientBookingsView({
     <>
       <div className="space-y-8 animate-appear">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
             Mes réservations & rendez-vous
           </h1>
           <p className="text-muted-foreground mt-2">
@@ -353,7 +353,7 @@ export function ClientBookingsView({
         open={reviewBooking !== null}
         onOpenChange={(open) => !open && setReviewBooking(null)}
       >
-        <DialogContent className="max-w-lg">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Évaluer {reviewBooking?.proName}</DialogTitle>
           </DialogHeader>

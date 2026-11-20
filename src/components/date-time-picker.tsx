@@ -108,7 +108,7 @@ export function DateTimePicker({
         <CardHeader>
           <CardTitle className="text-lg">Choisissez une date</CardTitle>
         </CardHeader>
-        <CardContent className="flex justify-center">
+        <CardContent className="flex justify-center overflow-x-auto">
           <Calendar
             mode="single"
             selected={selectedDate}
@@ -128,7 +128,7 @@ export function DateTimePicker({
             <CardTitle className="text-lg">Choisissez un créneau horaire</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {slotsForSelectedDate.map((slotLabel) => {
                 const isBooked = reservedForDate.has(slotLabel)
                 return (
@@ -138,7 +138,7 @@ export function DateTimePicker({
                     disabled={isBooked}
                     variant={selectedTime === slotLabel ? "default" : "outline"}
                     className={cn(
-                      "w-full",
+                      "w-full h-auto min-h-10 py-2 whitespace-normal text-xs sm:text-sm",
                       selectedTime === slotLabel && "ring-2 ring-primary ring-offset-2",
                       isBooked && "opacity-50 line-through"
                     )}

@@ -57,76 +57,78 @@ export default async function Home() {
       <FeaturedServices />
 
       {/* Categories Section */}
-      <section className="py-12 md:py-20 container mx-auto px-4 relative overflow-hidden">
+      <section className="w-full py-12 md:py-20 relative overflow-hidden">
         <div className="pointer-events-none absolute top-0 right-0 w-full max-w-lg h-[400px] bg-[hsl(var(--brand))]/5 rounded-full blur-3xl -z-10" />
 
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 sm:mb-12 animate-appear">
-          <div>
-            <div className="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-[hsl(var(--brand))] mb-3 bg-[hsl(var(--brand))]/10 px-4 py-1.5 rounded-full">
-              <div className="w-2 h-2 rounded-full bg-[hsl(var(--brand))] animate-pulse" />
-              SERVICES POPULAIRES
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 sm:mb-12 animate-appear">
+            <div>
+              <div className="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-[hsl(var(--brand))] mb-3 bg-[hsl(var(--brand))]/10 px-4 py-1.5 rounded-full">
+                <div className="w-2 h-2 rounded-full bg-[hsl(var(--brand))] animate-pulse" />
+                SERVICES POPULAIRES
+              </div>
+              <h2 className="text-2xl md:text-4xl font-bold tracking-tight mb-2 gradient-brand">
+                Nos Services
+              </h2>
+              <p className="text-muted-foreground text-base sm:text-lg">
+                Tout ce dont votre maison a besoin
+              </p>
             </div>
-            <h2 className="text-2xl md:text-4xl font-bold tracking-tight mb-2 gradient-brand">
-              Nos Services
-            </h2>
-            <p className="text-muted-foreground text-base sm:text-lg">
-              Tout ce dont votre maison a besoin
-            </p>
+            <Button
+              asChild
+              variant="link"
+              className="text-base sm:text-lg gap-2 group hover:text-[hsl(var(--brand))] transition-all duration-300 px-0 w-fit"
+            >
+              <Link href="/services">
+                Voir tout
+                <span className="inline-block transition-transform group-hover:translate-x-1">
+                  →
+                </span>
+              </Link>
+            </Button>
           </div>
-          <Button
-            asChild
-            variant="link"
-            className="text-base sm:text-lg gap-2 group hover:text-[hsl(var(--brand))] transition-all duration-300 px-0 w-fit"
-          >
-            <Link href="/services">
-              Voir tout
-              <span className="inline-block transition-transform group-hover:translate-x-1">
-                →
-              </span>
-            </Link>
-          </Button>
-        </div>
 
-        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 sm:gap-6">
-          <ServiceCard
-            title="Électricité"
-            icon={Zap}
-            description="Installations et réparations"
-          />
-          <ServiceCard
-            title="Plomberie"
-            icon={Droplets}
-            description="Fuites et canalisations"
-          />
-          <ServiceCard
-            title="Climatisation"
-            icon={Wrench}
-            description="Entretien et dépannage"
-          />
-          <ServiceCard
-            title="Nettoyage"
-            icon={Paintbrush}
-            description="Maison et bureaux"
-          />
-          <ServiceCard
-            title="Jardinage"
-            icon={Shovel}
-            description="Entretien espaces verts"
-          />
-          <ServiceCard
-            title="Électroménager"
-            icon={Tv}
-            description="Réparation TV, Cuisine"
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6">
+            <ServiceCard
+              title="Électricité"
+              icon={Zap}
+              description="Installations et réparations"
+            />
+            <ServiceCard
+              title="Plomberie"
+              icon={Droplets}
+              description="Fuites et canalisations"
+            />
+            <ServiceCard
+              title="Climatisation"
+              icon={Wrench}
+              description="Entretien et dépannage"
+            />
+            <ServiceCard
+              title="Nettoyage"
+              icon={Paintbrush}
+              description="Maison et bureaux"
+            />
+            <ServiceCard
+              title="Jardinage"
+              icon={Shovel}
+              description="Entretien espaces verts"
+            />
+            <ServiceCard
+              title="Électroménager"
+              icon={Tv}
+              description="Réparation TV, Cuisine"
+            />
+          </div>
         </div>
       </section>
 
       {/* Featured Professionals Section */}
-      <section className="py-12 md:py-20 bg-gradient-to-b from-muted/20 to-background relative overflow-hidden">
+      <section className="w-full py-12 md:py-20 bg-gradient-to-b from-muted/20 to-background relative overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
         <div className="pointer-events-none absolute bottom-0 left-1/4 w-full max-w-xl h-[400px] bg-[hsl(var(--brand-foreground))]/5 rounded-full blur-3xl -z-10" />
 
-        <div className="container mx-auto px-4 relative">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 sm:mb-12 animate-appear">
             <div>
               <div className="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-[hsl(var(--brand))] mb-3 bg-[hsl(var(--brand))]/10 px-4 py-1.5 rounded-full">
@@ -163,8 +165,9 @@ export default async function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-12 md:py-20 container mx-auto px-4">
-        <div className="relative bg-gradient-to-br from-[hsl(var(--brand))] via-[hsl(var(--brand))] to-[hsl(var(--brand-foreground))] text-white rounded-3xl p-6 sm:p-10 md:p-16 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 md:gap-12 shadow-elevated-lg overflow-hidden group glow-brand-lg">
+      <section className="w-full py-12 md:py-20">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative bg-gradient-to-br from-[hsl(var(--brand))] via-[hsl(var(--brand))] to-[hsl(var(--brand-foreground))] text-white rounded-3xl p-6 sm:p-10 md:p-16 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 md:gap-12 shadow-elevated-lg overflow-hidden group glow-brand-lg">
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:32px_32px]" />
           <div className="pointer-events-none absolute top-0 right-0 w-72 h-72 sm:w-96 sm:h-96 bg-[hsl(var(--brand-foreground))]/30 rounded-full blur-3xl z-0 group-hover:scale-150 transition-transform duration-700" />
 
@@ -203,17 +206,18 @@ export default async function Home() {
               </li>
             </ul>
           </div>
-          <Button
-            asChild
-            size="lg"
-            variant="secondary"
-            className="relative z-10 w-full md:w-auto whitespace-nowrap text-base sm:text-lg px-8 py-6 h-auto shadow-lg hover:shadow-xl transition-all duration-300 font-bold bg-white text-[hsl(var(--brand))] hover:bg-white/90"
-          >
-            <Link href="/register">
-              Devenir partenaire
-              <span className="ml-2">→</span>
-            </Link>
-          </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="secondary"
+              className="relative z-10 w-full md:w-auto whitespace-nowrap text-base sm:text-lg px-8 py-6 h-auto shadow-lg hover:shadow-xl transition-all duration-300 font-bold bg-white text-[hsl(var(--brand))] hover:bg-white/90"
+            >
+              <Link href="/register">
+                Devenir partenaire
+                <span className="ml-2">→</span>
+              </Link>
+            </Button>
+          </div>
         </div>
       </section>
     </div>

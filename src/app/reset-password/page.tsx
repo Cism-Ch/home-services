@@ -105,7 +105,7 @@ function ResetPasswordForm() {
         </CardDescription>
       </CardHeader>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+        <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="flex flex-col gap-6">
           <CardContent className="grid gap-4">
             {serverError && (
               <Alert variant="destructive">
@@ -170,29 +170,27 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="container relative flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-1 lg:px-0 min-h-[calc(100vh-4rem)] py-10">
-      <div className="lg:p-8">
-        <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[380px]">
-          <Link
-            href="/login"
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-          >
-            <ArrowLeft className="size-4" />
-            Retour à la connexion
-          </Link>
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] py-8 sm:py-12">
+      <div className="w-full max-w-[400px] space-y-6">
+        <Link
+          href="/login"
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+        >
+          <ArrowLeft className="size-4" />
+          Retour à la connexion
+        </Link>
 
-          <React.Suspense
-            fallback={
-              <Card>
-                <CardContent className="p-8 text-center text-sm text-muted-foreground">
-                  Chargement...
-                </CardContent>
-              </Card>
-            }
-          >
-            <ResetPasswordForm />
-          </React.Suspense>
-        </div>
+        <React.Suspense
+          fallback={
+            <Card>
+              <CardContent className="py-2 text-center text-sm text-muted-foreground">
+                Chargement...
+              </CardContent>
+            </Card>
+          }
+        >
+          <ResetPasswordForm />
+        </React.Suspense>
       </div>
     </div>
   )

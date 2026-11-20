@@ -19,10 +19,10 @@ export function BookingSummary({
 }: BookingSummaryProps) {
   return (
     <Card className="sticky top-24 border shadow-sm">
-      <CardHeader className="pb-3 border-b">
+      <CardHeader className="border-b">
         <CardTitle className="text-lg">Récapitulatif de rendez-vous</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 pt-4">
+      <CardContent className="space-y-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <User className="h-4 w-4 text-primary" />
@@ -35,9 +35,9 @@ export function BookingSummary({
         </div>
 
         <div className="border-t pt-3">
-          <div className="flex justify-between items-start mb-1">
-            <span className="font-medium text-sm">{service.title}</span>
-            <Badge variant="outline" className="text-xs">{service.categoryName}</Badge>
+          <div className="flex justify-between items-start gap-2 mb-1">
+            <span className="font-medium text-sm min-w-0">{service.title}</span>
+            <Badge variant="outline" className="text-xs shrink-0">{service.categoryName}</Badge>
           </div>
           <p className="text-xs text-muted-foreground line-clamp-2">{service.description}</p>
         </div>

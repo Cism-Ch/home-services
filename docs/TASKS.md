@@ -10,44 +10,38 @@
 
 ```
 +-------------------------+  +-------------------------+  +-------------------------+
-| [>] IN PROGRESS (SP 10) |  |   [?] SPRINT 10 QUEUE   |  |       [X] ARCHIVES      |
+| [>] IN PROGRESS (SP 11) |  |   [?] SPRINT 11 QUEUE   |  |       [X] ARCHIVES      |
 +-------------------------+  +-------------------------+  +-------------------------+
-| (All Sprint 10 Done!)   |  | (All SP10 Impl Done)    |  | Sprint 02 (11 tasks)    |
-|                         |  |                         |  | Sprint 03-04 (7 tasks)  |
+| [x] Sprint 11 COMPLETE   |  | (All SP11 Tasks Done!)   |  | Sprint 02 (11 tasks)    |
+|     (60 E2E Geo Checks) |  |                         |  | Sprint 03-04 (7 tasks)  |
 |                         |  |                         |  | Sprint 05-06 (7 tasks)  |
-|                         |  |                         |  | Sprint 07 (4 tasks)     |
-|                         |  |                         |  | Sprint 08-09 (6 tasks)  |
+|                         |  |                         |  | Sprint 07-09 (10 tasks) |
+|                         |  |                         |  | Sprint 10 + UI (5 tasks)|
 +-------------------------+  +-------------------------+  +-------------------------+
 ```
 
 ---
 
-## Active Sprint 10: Unification 100 % shadcn/ui & Maturite Design System
+## Active Sprint 11: Audit Global Responsivite, Full-Width, Alignement & Regles Agents
 
-### [x] `TASK-DS-CLEAN-01` — Assainissement du socle `src/components/ui/` & Tokens Theme
-- [x] Corriger les 11 imports `from "cn"` vers `from "@/lib/utils"` dans `src/components/ui/`.
-- [x] Supprimer le paquet redondant `cn` de `package.json` et vérifier `pnpm audit --prod` = 0 CVE.
-- [x] Activer la variante `dark:` sur le thème `.luxury` dans `src/app/globals.css`.
-- [x] Déplacer `responsive-table.tsx` vers `src/components/data-display/responsive-table.tsx`.
-- [x] Enrichir `badge.tsx` (`success`/`warning`/`info`), `progress.tsx` (`indicatorClassName`), localiser `pagination.tsx` (FR) et ajouter `alert.tsx`, `toggle.tsx`, `toggle-group.tsx`.
+### [x] `TASK-LAYOUT-CONTAINER-01` — Normalisation Full-Width, Conteneurs Canoniques & Header/Auth
+- [x] Standardiser les conteneurs principaux sur `w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8` avec sections externes `w-full`.
+- [x] Corriger les 4 pages auth (`container` sans `mx-auto px-4` / grille asymétrique), le bleed `About`, `HeroSection` (`fade-bottom` / `pb-0`), `ProHeader` (`relative -top-*` -> `-mt-*`) et les marges du drawer `SiteHeader`.
+- [x] Localiser `ModeToggle` en français (`Clair`, `Sombre`, `Système`, `Luxe`).
 
-### [x] `TASK-DS-RAW-01` — Suppression de tous les `<button>` et `<input>` natifs hors `ui/` + Correctifs UX
-- [x] Créer `src/components/star-rating.tsx` (`RadioGroup` accessible) et `src/components/file-upload-button.tsx`.
-- [x] Remplacer les contrôles natifs dans `register/page.tsx`, `create-service-dialog.tsx`, `add-review-form.tsx`, `client-follow-up-card.tsx`, `pro-profile-view.tsx`, `city-combobox.tsx`.
-- [x] Corriger le double bug `ClientFollowUpCard` (unmount avant dialog + persistance réelle `submitMutualReviewAction`) et les `aria-label` / visibilité tactile manquants.
+### [x] `TASK-LAYOUT-CARDS-01` — Harmonisation `Card` v4, `<Card><form>`, Grilles Iso-Hauteur & `<h1>`
+- [x] Ajouter `flex flex-col gap-6` aux 7 blocs `<Card><form>` sans espacement vertical.
+- [x] Corriger les barres blanches / doubles paddings sur `ServiceListingCard`, `ProServicesView`, `ProServicesList`, `ClientBookingsView`, `HowItWorks`, `BookingSummary`, `About`, tableaux de bord Client/Pro.
+- [x] Aligner les hauteurs de grilles (`h-full` + `mt-auto`), retirer la classe morte `xs:grid-cols-2` dans `page.tsx`, et uniformiser les `<h1>` Dashboard (`text-2xl sm:text-3xl`).
 
-### [x] `TASK-DS-ADOPT-01` — Adoption complète des primitives dormantes, Navigation & Badges sémantiques
-- [x] Adopter `Progress`, `Skeleton`, `Alert`, `Form`, `Separator`, `ToggleGroup`, `Breadcrumb`, `Drawer`, `ScrollArea`, `Pagination`.
-- [x] Mettre à niveau `MainNav` (`usePathname()` + `aria-current="page"`) et `BookingStepper` (`<nav><ol><li aria-current="step">`).
-- [x] Migrer tous les `<Badge>` à couleurs hardcodées vers `success` / `warning` / `info`.
+### [x] `TASK-LAYOUT-OVERLAYS-01` — Correction Overflow Calendrier, Créneaux, Contact & Modales
+- [x] Passer `ProScheduleView` en `xl:grid-cols-[310px_minmax(0,1fr)]` pour éviter le débordement du `Calendar` sur tablette.
+- [x] Sécuriser `DateTimePicker` (slots `(Réservé)` multi-lignes + scroll calendrier), `ProContactActions` (`min-w-0 w-full sm:w-auto sm:flex-1`), `DashboardSidebar` (marge mobile + scroll drawer) et toutes les `DialogContent` (`sm:max-w-*`, `p-4 sm:p-6`, `max-h-[90vh] overflow-y-auto`).
 
-### [x] `TASK-DS-AUDIT-01` — Vérification statique 0 dérive, Juge Déterministe, Smoke Test & Commit
-- [x] Audit statique : 0 import `cn`, 0 `<button>`/`<input>` hors `ui/`, 0 primitive inutilisée dans `src/components/ui/`.
-- [x] Validation `python evals/run_fullstack_eval.py` (`100/100 PASS`), `pnpm audit --prod` (0 CVE), smoke test HTTP `200` et commit `feat(sprint-10)`.
-
-### [x] `TASK-UI-SCROLL-01` — Attribut `data-scroll-behavior="smooth"` sur `<html>`
-- [x] Ajouter `data-scroll-behavior="smooth"` dans `src/app/layout.tsx` pour désactiver le scroll fluide lors des transitions de routes Next.js 16.
-- [x] Valider avec `python evals/run_fullstack_eval.py` (`100/100 PASS`).
+### [x] `TASK-LAYOUT-RULES-E2E-01` — Règles Agents UI, Suite Géométrique Playwright & Rapport
+- [x] Enrichir `.agents/rules/modules/ui_frontend.md` (< 80 lignes, ASCII pur, 13 règles durables `[R-UI-01]`..`[R-UI-13]`).
+- [x] Créer `e2e/responsive-layout.spec.ts` et vérifier 20 routes live en Chrome headless à `375px`, `768px`, `1440px` (`60/60` contrôles, `4 passed`).
+- [x] Rédiger `docs/UI_RESPONSIVE_AUDIT_REPORT.md` (zéro emoji) et valider à `100/100 PASS` (`python evals/run_fullstack_eval.py`).
 
 ---
 

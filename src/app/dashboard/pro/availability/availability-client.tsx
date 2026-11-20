@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
@@ -220,7 +220,7 @@ export function AvailabilityClient({
   return (
     <div className="space-y-8 animate-appear">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Disponibilités</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Disponibilités</h1>
         <p className="text-muted-foreground mt-2">
           Définissez vos horaires d&apos;ouverture habituels et vos périodes d&apos;indisponibilité.
         </p>
@@ -433,25 +433,23 @@ export function AvailabilityClient({
             )
           })}
         </CardContent>
-        <CardContent className="border-t pt-6">
-          <div className="flex justify-end gap-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setSchedule(buildInitialSchedule(initialSlots))}
-              disabled={isSavingSchedule}
-            >
-              Annuler
-            </Button>
-            <Button
-              type="button"
-              onClick={handleSaveSchedule}
-              disabled={isSavingSchedule}
-            >
-              {isSavingSchedule ? "Enregistrement..." : "Enregistrer les horaires"}
-            </Button>
-          </div>
-        </CardContent>
+        <CardFooter className="border-t justify-end gap-3 flex-wrap">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setSchedule(buildInitialSchedule(initialSlots))}
+            disabled={isSavingSchedule}
+          >
+            Annuler
+          </Button>
+          <Button
+            type="button"
+            onClick={handleSaveSchedule}
+            disabled={isSavingSchedule}
+          >
+            {isSavingSchedule ? "Enregistrement..." : "Enregistrer les horaires"}
+          </Button>
+        </CardFooter>
       </Card>
     </div>
   )

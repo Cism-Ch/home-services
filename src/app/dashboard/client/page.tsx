@@ -45,7 +45,7 @@ export default async function ClientDashboardPage() {
   return (
     <div className="space-y-8 animate-appear">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Bonjour, {firstName} !</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Bonjour, {firstName} !</h1>
         <p className="text-muted-foreground mt-1">
           Suivez vos demandes d&apos;intervention et vos échanges avec les artisans locaux.
         </p>
@@ -105,7 +105,7 @@ export default async function ClientDashboardPage() {
 
         {activeBookings.length === 0 ? (
           <Card>
-            <CardContent className="py-10 text-center space-y-3">
+            <CardContent className="py-4 text-center space-y-3">
               <p className="text-muted-foreground">
                 Aucun rendez-vous actif pour le moment.
               </p>
@@ -119,24 +119,24 @@ export default async function ClientDashboardPage() {
             {activeBookings.map((booking) => {
               const dateObj = new Date(booking.bookingDate)
               return (
-                <Card key={booking.id} className="hover:shadow-sm transition-shadow">
-                  <CardContent className="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                    <div className="flex items-start gap-4">
+                <Card key={booking.id} className="py-0 hover:shadow-sm transition-shadow">
+                  <CardContent className="p-4 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div className="flex items-start gap-4 min-w-0">
                       <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-lg shrink-0">
                         {dateObj.getDate()}
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-lg">{booking.serviceTitle}</h3>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-base sm:text-lg">{booking.serviceTitle}</h3>
                           {getStatusBadge(booking.status)}
                         </div>
                         <p className="text-sm text-muted-foreground">
                           Prestataire :{" "}
                           <strong className="text-foreground">{booking.proName}</strong>
                         </p>
-                        <div className="flex flex-wrap gap-4 mt-2 text-xs text-muted-foreground">
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground">
                           <div className="flex items-center gap-1">
-                            <Calendar className="h-3.5 w-3.5" />
+                            <Calendar className="h-3.5 w-3.5 shrink-0" />
                             {dateObj.toLocaleDateString("fr-FR", {
                               weekday: "long",
                               month: "long",
@@ -144,19 +144,19 @@ export default async function ClientDashboardPage() {
                             })}
                           </div>
                           <div className="flex items-center gap-1">
-                            <Clock className="h-3.5 w-3.5" />
+                            <Clock className="h-3.5 w-3.5 shrink-0" />
                             {booking.timeSlot}
                           </div>
                           <div className="flex items-center gap-1">
-                            <MapPin className="h-3.5 w-3.5" />
+                            <MapPin className="h-3.5 w-3.5 shrink-0" />
                             {booking.clientAddress}
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-                      <div className="text-right sm:mr-3">
+                    <div className="flex items-center justify-between md:justify-end gap-3 w-full md:w-auto pt-3 border-t md:border-t-0 md:pt-0 shrink-0">
+                      <div className="md:text-right sm:mr-2">
                         <span className="text-lg font-bold text-foreground">
                           {formatFCFA(booking.indicativePrice)}
                         </span>

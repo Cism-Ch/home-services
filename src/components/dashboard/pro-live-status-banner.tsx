@@ -67,7 +67,7 @@ export function ProLiveStatusBanner({
   }
 
   return (
-    <Card className={`border shadow-sm overflow-hidden ${className}`}>
+    <Card className={`py-0 border shadow-sm overflow-hidden ${className}`}>
       <CardContent className="p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">

@@ -393,3 +393,36 @@
   - **Acceptance criteria:**
     - [x] `TASK-SEC-PENTEST-01.01`: Create `e2e/security-guards.spec.ts` and author comprehensive `docs/SECURITY_AUDIT_REPORT.md` (zero emojis).
     - [x] `TASK-SEC-PENTEST-01.02`: Pass `python evals/run_fullstack_eval.py` (`100/100 PASS`) and execute all 8 live HTTP + Supabase PostgREST security controls.
+
+- [x] **`TASK-DS-CLEAN-01` - [Scope: M] Assainissement du socle `src/components/ui/` & Tokens Theme**
+  - **Priority:** HIGH
+  - **Target files:** `src/components/ui/**/*`, `src/components/data-display/responsive-table.tsx`, `src/app/globals.css`, `package.json`, `pnpm-lock.yaml`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-DS-CLEAN-01.01`: Replace all 11 `from "cn"` imports with `@/lib/utils`, remove redundant `cn` package, extend `.luxury` dark variant in `globals.css`, and move `responsive-table.tsx` out of `ui/`.
+    - [x] `TASK-DS-CLEAN-01.02`: Enrich `badge.tsx` (`success`/`warning`/`info`), `progress.tsx` (`indicatorClassName`), localize `pagination.tsx` (FR), and add `alert.tsx`, `toggle.tsx`, `toggle-group.tsx`.
+
+- [x] **`TASK-DS-RAW-01` - [Scope: M] Suppression des controles natifs hors `ui/` & Correctifs UX**
+  - **Priority:** HIGH
+  - **Target files:** `src/components/star-rating.tsx`, `src/components/file-upload-button.tsx`, `src/components/add-review-form.tsx`, `src/components/dashboard/client-follow-up-card.tsx`, `src/components/dashboard/create-service-dialog.tsx`, `src/app/dashboard/pro/profile/pro-profile-view.tsx`, `src/components/city-combobox.tsx`, `src/app/register/page.tsx`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-DS-RAW-01.01`: Replace all raw `<button>` and `<input>` outside `ui/`/`emails/` with accessible shadcn/ui wrappers.
+    - [x] `TASK-DS-RAW-01.02`: Fix `ClientFollowUpCard` unmount bug + real `submitMutualReviewAction` persistence, touch-visible portfolio delete, and missing `aria-label` attributes.
+
+- [x] **`TASK-DS-ADOPT-01` - [Scope: L] Adoption des primitives dormantes, Navigation & Badges semantiques**
+  - **Priority:** HIGH
+  - **Target files:** `src/app/**/*`, `src/components/**/*`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-DS-ADOPT-01.01`: Adopt `Progress`, `Skeleton`, `Alert`, `Form`, `Separator`, `ToggleGroup`, `Breadcrumb`, `Drawer`, `ScrollArea`, `Pagination`, and migrate status badges to `success`/`warning`/`info`.
+    - [x] `TASK-DS-ADOPT-01.02`: Upgrade `MainNav` active detection (`aria-current="page"`) and semantic `BookingStepper` (`<nav><ol><li aria-current="step">`).
+
+- [x] **`TASK-DS-AUDIT-01` - [Scope: S] Verification statique 0 derive, Juge Deterministe & Smoke Test**
+  - **Priority:** HIGH
+  - **Target files:** `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-DS-AUDIT-01.01`: Verify 0 `from "cn"`, 0 raw HTML controls outside `ui/`/`emails/`, 0 unused `ui/` primitives, 0 prod CVEs, `100/100 PASS` on full judge, and HTTP `200` on 11 routes.
+
+- [x] **`TASK-UI-SCROLL-01` - [Scope: XS] Attribut `data-scroll-behavior="smooth"` sur `<html>`**
+  - **Priority:** MEDIUM
+  - **Target files:** `src/app/layout.tsx`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-UI-SCROLL-01.01`: Add `data-scroll-behavior="smooth"` on root `<html>` in `src/app/layout.tsx` and validate `100/100 PASS`.

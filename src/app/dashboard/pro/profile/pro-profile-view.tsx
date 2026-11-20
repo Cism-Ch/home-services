@@ -271,7 +271,7 @@ export function ProProfileView({ profile }: ProProfileViewProps) {
   return (
     <div className="space-y-8 animate-appear">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
           Mon Profil Public & Coordonnées
         </h1>
         <p className="text-muted-foreground mt-2">
@@ -285,7 +285,7 @@ export function ProProfileView({ profile }: ProProfileViewProps) {
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="space-y-6">
+        <div className="space-y-6 min-w-0">
           <Card>
             <CardHeader>
               <CardTitle>Photo de profil</CardTitle>
@@ -374,7 +374,7 @@ export function ProProfileView({ profile }: ProProfileViewProps) {
           </Card>
         </div>
 
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6 min-w-0">
           <Card>
             <CardHeader>
               <CardTitle>Informations & Canaux de Contact Direct</CardTitle>
@@ -525,7 +525,7 @@ export function ProProfileView({ profile }: ProProfileViewProps) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {portfolio.map((item, idx) => (
                   <div
                     key={`${item.key}-${idx}`}
@@ -570,7 +570,7 @@ export function ProProfileView({ profile }: ProProfileViewProps) {
                 </FileUploadButton>
               </div>
             </CardContent>
-            <CardFooter className="flex justify-end gap-4 border-t pt-4">
+            <CardFooter className="flex flex-wrap justify-end gap-3 border-t">
               <Button type="button" onClick={handleSaveProfile} disabled={isSaving}>
                 {isSaving ? "Enregistrement..." : "Enregistrer les modifications"}
               </Button>

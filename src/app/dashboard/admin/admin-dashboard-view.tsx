@@ -282,9 +282,9 @@ export function AdminDashboardView({ data }: { data: AdminDashboardData }) {
     {
       header: "Prestataire",
       cell: (item) => (
-        <div className="min-w-0">
-          <p className="font-semibold text-foreground">{item.name}</p>
-          <p className="text-xs text-muted-foreground truncate">{item.headline}</p>
+        <div className="min-w-0 max-w-full">
+          <p className="font-semibold text-foreground break-words">{item.name}</p>
+          <p className="text-xs text-muted-foreground line-clamp-2 break-words">{item.headline}</p>
         </div>
       ),
     },
@@ -397,7 +397,7 @@ export function AdminDashboardView({ data }: { data: AdminDashboardData }) {
   return (
     <div className="space-y-8 animate-appear">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
           Portail d&apos;Administration & Gouvernance
         </h1>
         <p className="text-muted-foreground mt-2">

@@ -153,7 +153,7 @@ export function ClientSettingsView({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold tracking-tight">Paramètres Client</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Paramètres Client</h1>
             {isGoldMember && (
               <Badge variant="warning" className="gap-1">
                 <Award className="h-3.5 w-3.5" />
@@ -177,7 +177,7 @@ export function ClientSettingsView({
         <div className="mt-6 space-y-6">
           <TabsContent value="profile">
             <Card>
-              <form onSubmit={handleSaveProfile}>
+              <form onSubmit={handleSaveProfile} className="flex flex-col gap-6">
                 <CardHeader>
                   <CardTitle>Informations personnelles</CardTitle>
                   <CardDescription>
