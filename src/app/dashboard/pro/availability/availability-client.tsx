@@ -204,14 +204,16 @@ export function AvailabilityClient({
     }
   }
 
-  const getTypeColor = (type: "vacation" | "sick" | "other") => {
+  const getTypeVariant = (
+    type: "vacation" | "sick" | "other"
+  ): "info" | "warning" | "secondary" => {
     switch (type) {
       case "vacation":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+        return "info"
       case "sick":
-        return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400"
+        return "warning"
       case "other":
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400"
+        return "secondary"
     }
   }
 
@@ -314,7 +316,7 @@ export function AvailabilityClient({
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <Badge variant="outline" className={getTypeColor(period.type)}>
+                        <Badge variant={getTypeVariant(period.type)}>
                           {getTypeLabel(period.type)}
                         </Badge>
                         <span className="font-medium">
@@ -340,6 +342,7 @@ export function AvailabilityClient({
                       type="button"
                       variant="ghost"
                       size="icon"
+                      aria-label="Supprimer la période d'indisponibilité"
                       onClick={() => handleDeletePeriod(period.id)}
                       className="text-destructive hover:text-destructive hover:bg-destructive/10"
                     >

@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useState } from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -28,6 +28,7 @@ import {
   Loader2,
 } from "lucide-react"
 import { CityCombobox } from "@/components/city-combobox"
+import { FileUploadButton } from "@/components/file-upload-button"
 import { ProLiveStatusBanner } from "@/components/dashboard/pro-live-status-banner"
 import {
   updateProProfileAction,
@@ -74,9 +75,6 @@ interface ProProfileViewProps {
 
 export function ProProfileView({ profile }: ProProfileViewProps) {
   const router = useRouter()
-  const avatarInputRef = useRef<HTMLInputElement>(null)
-  const kycInputRef = useRef<HTMLInputElement>(null)
-  const portfolioInputRef = useRef<HTMLInputElement>(null)
 
   const [name, setName] = useState(profile.userName)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(profile.userImage)
@@ -297,23 +295,12 @@ export function ProProfileView({ profile }: ProProfileViewProps) {
                 <AvatarImage src={avatarUrl || undefined} className="object-cover" />
                 <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
-              <input
-                ref={avatarInputRef}
-                type="file"
+              <FileUploadButton
                 accept="image/jpeg,image/png,image/webp"
-                className="hidden"
-                onChange={(e) => {
-                  const selected = e.target.files?.[0]
-                  e.target.value = ""
-                  void handleFileUpload(selected, "avatars")
-                }}
-              />
-              <Button
-                type="button"
                 variant="outline"
                 className="w-full gap-2"
                 disabled={uploadingFolder !== null}
-                onClick={() => avatarInputRef.current?.click()}
+                onFileSelect={(file) => void handleFileUpload(file, "avatars")}
               >
                 {uploadingFolder === "avatars" ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -323,7 +310,7 @@ export function ProProfileView({ profile }: ProProfileViewProps) {
                 {uploadingFolder === "avatars"
                   ? "Envoi vers S3..."
                   : "Changer ma photo (max 5 Mo)"}
-              </Button>
+              </FileUploadButton>
             </CardContent>
           </Card>
 
@@ -351,28 +338,28 @@ export function ProProfileView({ profile }: ProProfileViewProps) {
                       : "Non soumis"}
                   </span>
                 </div>
-                <Badge variant="outline" className="text-[10px]">
+                <Badge
+                  variant={
+                    kycStatus === "APPROVED"
+                      ? "success"
+                      : kycStatus === "PENDING"
+                      ? "warning"
+                      : kycStatus === "REJECTED"
+                      ? "destructive"
+                      : "outline"
+                  }
+                  className="text-[10px]"
+                >
                   {kycStatus}
                 </Badge>
               </div>
-              <input
-                ref={kycInputRef}
-                type="file"
+              <FileUploadButton
                 accept="image/jpeg,image/png,image/webp,application/pdf"
-                className="hidden"
-                onChange={(e) => {
-                  const selected = e.target.files?.[0]
-                  e.target.value = ""
-                  void handleFileUpload(selected, "kyc")
-                }}
-              />
-              <Button
-                type="button"
                 variant="secondary"
                 size="sm"
                 className="w-full gap-2"
                 disabled={uploadingFolder !== null}
-                onClick={() => kycInputRef.current?.click()}
+                onFileSelect={(file) => void handleFileUpload(file, "kyc")}
               >
                 {uploadingFolder === "kyc" ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -382,7 +369,7 @@ export function ProProfileView({ profile }: ProProfileViewProps) {
                 {uploadingFolder === "kyc"
                   ? "Envoi du justificatif..."
                   : "Téléverser CNI / RCCM (max 5 Mo)"}
-              </Button>
+              </FileUploadButton>
             </CardContent>
           </Card>
         </div>
@@ -496,13 +483,16 @@ export function ProProfileView({ profile }: ProProfileViewProps) {
                   {languages.map((lang) => (
                     <Badge key={lang} variant="secondary" className="gap-1 pr-1">
                       {lang}
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon-sm"
                         onClick={() => handleRemoveLanguage(lang)}
-                        className="hover:bg-muted rounded-full p-0.5"
+                        aria-label={`Retirer la langue ${lang}`}
+                        className="size-4 p-0 rounded-full hover:bg-muted"
                       >
                         <X className="h-3 w-3" />
-                      </button>
+                      </Button>
                     </Badge>
                   ))}
                 </div>
@@ -513,7 +503,13 @@ export function ProProfileView({ profile }: ProProfileViewProps) {
                     onChange={(e) => setNewLanguage(e.target.value)}
                     className="max-w-[260px]"
                   />
-                  <Button type="button" variant="outline" size="icon" onClick={handleAddLanguage}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label="Ajouter la langue"
+                    onClick={handleAddLanguage}
+                  >
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
@@ -542,44 +538,36 @@ export function ProProfileView({ profile }: ProProfileViewProps) {
                       unoptimized
                       className="object-cover"
                     />
-                    <button
+                    <Button
                       type="button"
+                      variant="destructive"
+                      size="icon-sm"
                       onClick={() => handleRemovePortfolioItem(item)}
-                      className="absolute top-1.5 right-1.5 bg-black/65 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      aria-label="Supprimer cette photo"
+                      className="absolute top-1.5 right-1.5 size-7 rounded-full opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                      aria-label={`Supprimer la photo ${idx + 1}`}
                     >
-                      <X className="h-4 w-4" />
-                    </button>
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                 ))}
-                <input
-                  ref={portfolioInputRef}
-                  type="file"
+                <FileUploadButton
                   accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                  onChange={(e) => {
-                    const selected = e.target.files?.[0]
-                    e.target.value = ""
-                    void handleFileUpload(selected, "portfolio")
-                  }}
-                />
-                <button
-                  type="button"
+                  variant="outline"
                   disabled={uploadingFolder !== null}
-                  onClick={() => portfolioInputRef.current?.click()}
-                  className="aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground hover:bg-accent/50 cursor-pointer transition-colors disabled:opacity-50"
+                  onFileSelect={(file) => void handleFileUpload(file, "portfolio")}
+                  className="aspect-square h-auto w-full rounded-lg border-2 border-dashed flex-col gap-2 text-muted-foreground hover:bg-accent/50 whitespace-normal"
                 >
                   {uploadingFolder === "portfolio" ? (
-                    <Loader2 className="h-6 w-6 mb-2 animate-spin" />
+                    <Loader2 className="h-6 w-6 animate-spin" />
                   ) : (
-                    <Upload className="h-6 w-6 mb-2" />
+                    <Upload className="h-6 w-6" />
                   )}
                   <span className="text-xs font-medium text-center px-2">
                     {uploadingFolder === "portfolio"
                       ? "Transfert S3..."
                       : "Ajouter photo (max 5 Mo)"}
                   </span>
-                </button>
+                </FileUploadButton>
               </div>
             </CardContent>
             <CardFooter className="flex justify-end gap-4 border-t pt-4">

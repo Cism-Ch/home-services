@@ -2,8 +2,8 @@
 
 import * as React from "react"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { CheckCircle2, AlertTriangle, Moon, RefreshCw } from "lucide-react"
 import { useProAvailabilityRealtime } from "@/hooks/use-realtime-status"
 import {
@@ -19,6 +19,9 @@ interface ProLiveStatusBannerProps {
   className?: string
 }
 
+/**
+ * Bandeau interactif temps reel de gestion du statut de disponibilite prestataire.
+ */
 export function ProLiveStatusBanner({
   proId,
   initialStatus = "AVAILABLE",
@@ -73,13 +76,13 @@ export function ProLiveStatusBanner({
                 Votre statut en direct
               </span>
               {currentStatus === "AVAILABLE" && (
-                <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5">
+                <Badge variant="success" className="gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
                   Disponible
                 </Badge>
               )}
               {currentStatus === "BUSY_TODAY" && (
-                <Badge variant="secondary" className="bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 border-amber-300 gap-1.5">
+                <Badge variant="warning" className="gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-amber-500" />
                   Occupé aujourd&apos;hui
                 </Badge>
@@ -99,47 +102,55 @@ export function ProLiveStatusBanner({
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              size="sm"
-              variant={currentStatus === "AVAILABLE" ? "default" : "outline"}
-              className={currentStatus === "AVAILABLE" ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""}
-              disabled={isUpdating}
-              onClick={() => handleStatusChange("AVAILABLE")}
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            size="sm"
+            value={currentStatus}
+            disabled={isUpdating}
+            aria-label="Changer votre statut de disponibilité"
+            onValueChange={(val) => {
+              if (val) {
+                void handleStatusChange(val as ProAvailabilityType)
+              }
+            }}
+            className="flex-wrap justify-start"
+          >
+            <ToggleGroupItem
+              value="AVAILABLE"
+              aria-label="Disponible"
+              className="gap-1.5 data-[state=on]:bg-emerald-600 data-[state=on]:text-white data-[state=on]:border-emerald-600"
             >
               {isUpdating && currentStatus === "AVAILABLE" ? (
-                <RefreshCw className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                <CheckCircle2 className="h-3.5 w-3.5" />
               )}
               Disponible
-            </Button>
+            </ToggleGroupItem>
 
-            <Button
-              size="sm"
-              variant={currentStatus === "BUSY_TODAY" ? "default" : "outline"}
-              className={currentStatus === "BUSY_TODAY" ? "bg-amber-600 hover:bg-amber-700 text-white" : ""}
-              disabled={isUpdating}
-              onClick={() => handleStatusChange("BUSY_TODAY")}
+            <ToggleGroupItem
+              value="BUSY_TODAY"
+              aria-label="Occupé"
+              className="gap-1.5 data-[state=on]:bg-amber-600 data-[state=on]:text-white data-[state=on]:border-amber-600"
             >
               {isUpdating && currentStatus === "BUSY_TODAY" ? (
-                <RefreshCw className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <AlertTriangle className="h-3.5 w-3.5 mr-1.5" />
+                <AlertTriangle className="h-3.5 w-3.5" />
               )}
               Occupé
-            </Button>
+            </ToggleGroupItem>
 
-            <Button
-              size="sm"
-              variant={currentStatus === "OFFLINE" ? "secondary" : "ghost"}
-              disabled={isUpdating}
-              onClick={() => handleStatusChange("OFFLINE")}
+            <ToggleGroupItem
+              value="OFFLINE"
+              aria-label="Pause"
+              className="gap-1.5 data-[state=on]:bg-secondary data-[state=on]:text-secondary-foreground"
             >
-              <Moon className="h-3.5 w-3.5 mr-1.5" />
+              <Moon className="h-3.5 w-3.5" />
               Pause
-            </Button>
-          </div>
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
       </CardContent>
     </Card>

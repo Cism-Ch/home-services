@@ -35,26 +35,11 @@ import { toast } from "sonner"
 function getStatusBadge(status: DashboardBookingItem["status"]) {
   switch (status) {
     case "NEGOTIATING":
-      return (
-        <Badge
-          variant="secondary"
-          className="bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 border-amber-300"
-        >
-          En négociation
-        </Badge>
-      )
+      return <Badge variant="warning">En négociation</Badge>
     case "IN_PROGRESS":
-      return (
-        <Badge className="bg-blue-600 hover:bg-blue-700 text-white">
-          En traitement
-        </Badge>
-      )
+      return <Badge variant="info">En traitement</Badge>
     case "COMPLETED":
-      return (
-        <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white">
-          Terminé
-        </Badge>
-      )
+      return <Badge variant="success">Terminé</Badge>
     case "CANCELLED":
       return <Badge variant="destructive">Annulé</Badge>
   }
@@ -104,7 +89,11 @@ function BookingList({
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Actions sur la réservation"
+                      >
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>

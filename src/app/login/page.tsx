@@ -1,13 +1,15 @@
-"use client";
+"use client"
 
-import * as React from "react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "sonner";
-import { signIn } from "@/lib/auth-client";
-import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
+import * as React from "react"
+import Link from "next/link"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { toast } from "sonner"
+import { AlertCircle } from "lucide-react"
+import { signIn } from "@/lib/auth-client"
+import { loginSchema, type LoginFormData } from "@/lib/validations/auth"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Card,
   CardContent,
@@ -15,76 +17,81 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { LoadingButton } from "@/components/auth/loading-button";
-import { SocialAuthButtons } from "@/components/auth/social-auth-buttons";
+} from "@/components/ui/card"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Separator } from "@/components/ui/separator"
+import { LoadingButton } from "@/components/auth/loading-button"
+import { SocialAuthButtons } from "@/components/auth/social-auth-buttons"
 
 function sanitizeCallbackUrl(rawUrl: string | null): string | null {
-  if (!rawUrl) return null;
-  const trimmed = rawUrl.trim();
+  if (!rawUrl) return null
+  const trimmed = rawUrl.trim()
   if (!trimmed || /[\u0000-\u001f\u007f]/.test(trimmed)) {
-    return null;
+    return null
   }
   if (
     trimmed.startsWith("/") &&
     !trimmed.startsWith("//") &&
     !trimmed.includes("\\")
   ) {
-    return trimmed;
+    return trimmed
   }
-  return null;
+  return null
 }
 
 function LoginForm() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const callbackUrl = sanitizeCallbackUrl(searchParams.get("callbackUrl"));
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const callbackUrl = sanitizeCallbackUrl(searchParams.get("callbackUrl"))
 
-  const [rememberMe, setRememberMe] = React.useState(true);
-  const [serverError, setServerError] = React.useState<string | null>(null);
+  const [rememberMe, setRememberMe] = React.useState(true)
+  const [serverError, setServerError] = React.useState<string | null>(null)
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<LoginFormData>({
+  const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
       password: "",
     },
-  });
+  })
 
   const onSubmit = async (values: LoginFormData) => {
-    setServerError(null);
+    setServerError(null)
     const { data, error } = await signIn.email({
       email: values.email,
       password: values.password,
       rememberMe,
-    });
+    })
 
     if (error) {
-      const msg = error.message || "Email ou mot de passe incorrect.";
-      setServerError(msg);
-      toast.error(msg);
-      return;
+      const msg = error.message || "Email ou mot de passe incorrect."
+      setServerError(msg)
+      toast.error(msg)
+      return
     }
 
-    toast.success("Connexion réussie !");
-    const userType = (data?.user as { userType?: string } | undefined)?.userType;
+    toast.success("Connexion réussie !")
+    const userType = (data?.user as { userType?: string } | undefined)?.userType
     const defaultTarget =
       userType === "admin"
         ? "/dashboard/admin"
         : userType === "pro"
         ? "/dashboard/pro"
-        : "/dashboard/client";
+        : "/dashboard/client"
 
-    router.push(callbackUrl || defaultTarget);
-    router.refresh();
-  };
+    router.push(callbackUrl || defaultTarget)
+    router.refresh()
+  }
 
   return (
     <Card>
@@ -94,99 +101,109 @@ function LoginForm() {
           Entrez votre email et mot de passe pour accéder à votre espace
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <CardContent className="grid gap-4">
-          <SocialAuthButtons callbackURL={callbackUrl || "/dashboard"} />
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+          <CardContent className="grid gap-4">
+            <SocialAuthButtons callbackURL={callbackUrl || "/dashboard"} />
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
+            <div className="relative flex items-center justify-center">
+              <Separator />
+              <span className="bg-card px-2 text-xs uppercase text-muted-foreground shrink-0">
                 Ou continuer avec
               </span>
+              <Separator />
             </div>
-          </div>
 
-          {serverError && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-              {serverError}
+            {serverError && (
+              <Alert variant="destructive">
+                <AlertCircle className="size-4" />
+                <AlertDescription>{serverError}</AlertDescription>
+              </Alert>
+            )}
+
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="email"
+                      placeholder="nom@exemple.ci"
+                      autoComplete="email"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Mot de passe</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      autoComplete="current-password"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="remember"
+                checked={rememberMe}
+                onCheckedChange={(checked) => setRememberMe(checked === true)}
+              />
+              <Label
+                htmlFor="remember"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Se souvenir de moi
+              </Label>
             </div>
-          )}
+          </CardContent>
 
-          <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="nom@exemple.ci"
-              autoComplete="email"
-              {...register("email")}
-            />
-            {errors.email && (
-              <p className="text-xs text-destructive">{errors.email.message}</p>
-            )}
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="password">Mot de passe</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              {...register("password")}
-            />
-            {errors.password && (
-              <p className="text-xs text-destructive">{errors.password.message}</p>
-            )}
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="remember"
-              checked={rememberMe}
-              onCheckedChange={(checked) => setRememberMe(checked === true)}
-            />
-            <Label
-              htmlFor="remember"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          <CardFooter className="flex flex-col gap-4 pt-2">
+            <LoadingButton
+              type="submit"
+              loading={form.formState.isSubmitting}
+              loadingText="Connexion en cours..."
+              className="w-full"
             >
-              Se souvenir de moi
-            </Label>
-          </div>
-        </CardContent>
-
-        <CardFooter className="flex flex-col gap-4 pt-2">
-          <LoadingButton
-            type="submit"
-            loading={isSubmitting}
-            loadingText="Connexion en cours..."
-            className="w-full"
-          >
-            Se connecter
-          </LoadingButton>
-          <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
-            <Link
-              href="/forgot-password"
-              className="hover:text-primary underline underline-offset-4"
-            >
-              Mot de passe oublié ?
-            </Link>
-            <p>
-              Pas encore de compte ?{" "}
+              Se connecter
+            </LoadingButton>
+            <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
               <Link
-                href="/register"
+                href="/forgot-password"
                 className="hover:text-primary underline underline-offset-4"
               >
-                S&apos;inscrire
+                Mot de passe oublié ?
               </Link>
-            </p>
-          </div>
-        </CardFooter>
-      </form>
+              <p>
+                Pas encore de compte ?{" "}
+                <Link
+                  href="/register"
+                  className="hover:text-primary underline underline-offset-4"
+                >
+                  S&apos;inscrire
+                </Link>
+              </p>
+            </div>
+          </CardFooter>
+        </form>
+      </Form>
     </Card>
-  );
+  )
 }
 
 export default function LoginPage() {
@@ -208,5 +225,5 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }

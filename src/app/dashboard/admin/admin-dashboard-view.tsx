@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { ResponsiveTable, type ColumnDef } from "@/components/ui/responsive-table"
+import { ResponsiveTable, type ColumnDef } from "@/components/data-display/responsive-table"
 import { formatFCFA } from "@/lib/formatters"
 import type {
   AdminCategoryItem,
@@ -78,14 +78,10 @@ const CATEGORY_ICON_MAP: Record<string, React.ComponentType<{ className?: string
 
 function getKycBadge(item: AdminKycItem) {
   if (item.isVerified || item.kycStatus === "APPROVED") {
-    return <Badge className="bg-emerald-600 text-white">Vérifié</Badge>
+    return <Badge variant="success">Vérifié</Badge>
   }
   if (item.kycStatus === "PENDING") {
-    return (
-      <Badge variant="secondary" className="bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200">
-        En attente
-      </Badge>
-    )
+    return <Badge variant="warning">En attente</Badge>
   }
   if (item.kycStatus === "REJECTED") {
     return <Badge variant="destructive">Refusé</Badge>
@@ -96,13 +92,9 @@ function getKycBadge(item: AdminKycItem) {
 function getSubscriptionStatusBadge(status: AdminSubscriptionRow["status"]) {
   switch (status) {
     case "ACTIVE":
-      return <Badge className="bg-emerald-600 text-white">Actif</Badge>
+      return <Badge variant="success">Actif</Badge>
     case "TRIALING":
-      return (
-        <Badge variant="outline" className="border-blue-500 text-blue-600">
-          1er mois offert
-        </Badge>
-      )
+      return <Badge variant="info">1er mois offert</Badge>
     case "PAST_DUE":
       return <Badge variant="destructive">Paiement en échec</Badge>
     case "CANCELLED":
@@ -370,14 +362,7 @@ export function AdminDashboardView({ data }: { data: AdminDashboardData }) {
     {
       header: "Profil",
       cell: (item) => (
-        <Badge
-          variant={item.role === "Client" ? "secondary" : "outline"}
-          className={
-            item.role === "Client"
-              ? "bg-amber-500/15 text-amber-600 border-amber-400"
-              : ""
-          }
-        >
+        <Badge variant={item.role === "Client" ? "warning" : "outline"}>
           {item.role}
         </Badge>
       ),

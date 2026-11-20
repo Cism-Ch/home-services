@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { formatFCFA } from "@/lib/formatters"
@@ -84,10 +85,10 @@ export function ServiceFilter({
       {/* Localisation Geo Section */}
       <div className="space-y-3">
         <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-          <div className="h-px flex-1 bg-gradient-to-r from-border to-transparent" />
+          <Separator className="flex-1" />
           <MapPin className="h-3.5 w-3.5 text-primary" />
           Zone & Ville
-          <div className="h-px flex-1 bg-gradient-to-l from-border to-transparent" />
+          <Separator className="flex-1" />
         </h3>
         <p className="text-xs text-muted-foreground">
           Sélectionnez votre commune ou ville en Côte d&apos;Ivoire
@@ -103,9 +104,9 @@ export function ServiceFilter({
       {/* Catégories Section */}
       <div className="space-y-4 pt-2">
         <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-          <div className="h-px flex-1 bg-gradient-to-r from-border to-transparent" />
+          <Separator className="flex-1" />
           Catégories
-          <div className="h-px flex-1 bg-gradient-to-l from-border to-transparent" />
+          <Separator className="flex-1" />
         </h3>
         <div className="space-y-3">
           {categories.map((category) => (
@@ -129,9 +130,9 @@ export function ServiceFilter({
       {/* Prix Section (FCFA) */}
       <div className="space-y-4 pt-2">
         <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-          <div className="h-px flex-1 bg-gradient-to-r from-border to-transparent" />
+          <Separator className="flex-1" />
           Budget indicatif
-          <div className="h-px flex-1 bg-gradient-to-l from-border to-transparent" />
+          <Separator className="flex-1" />
         </h3>
         <div className="space-y-4 px-1">
           <Slider
@@ -150,7 +151,7 @@ export function ServiceFilter({
                 {formatFCFA(activePriceRange[0])}
               </span>
             </div>
-            <div className="h-px flex-1 mx-3 bg-border" />
+            <Separator className="flex-1 mx-3" />
             <div className="flex flex-col items-end">
               <span className="text-xs text-muted-foreground">Maximum</span>
               <span className="text-sm font-bold text-foreground">
@@ -164,9 +165,9 @@ export function ServiceFilter({
       {/* Note Section */}
       <div className="space-y-4 pt-2">
         <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-          <div className="h-px flex-1 bg-gradient-to-r from-border to-transparent" />
+          <Separator className="flex-1" />
           Note minimum
-          <div className="h-px flex-1 bg-gradient-to-l from-border to-transparent" />
+          <Separator className="flex-1" />
         </h3>
         <div className="space-y-3">
           {[4, 3, 2].map((rating) => (

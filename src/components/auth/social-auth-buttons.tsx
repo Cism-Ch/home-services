@@ -8,7 +8,8 @@
 "use client";
 
 import * as React from "react";
-import { Chrome } from "lucide-react";
+import { AlertCircle, Chrome } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LoadingButton } from "./loading-button";
 import { signIn } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
@@ -63,9 +64,10 @@ export function SocialAuthButtons({
     <div className={cn("grid gap-3", className)}>
       {/* Message d'erreur */}
       {error && (
-        <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-          {error}
-        </div>
+        <Alert variant="destructive">
+          <AlertCircle className="size-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       {/* Bouton Google */}

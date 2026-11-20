@@ -8,10 +8,13 @@ interface BookingStepperProps {
   steps: string[]
 }
 
+/**
+ * Barre de progression semantique des etapes de reservation (<nav><ol><li aria-current="step">).
+ */
 export function BookingStepper({ currentStep, steps }: BookingStepperProps) {
   return (
-    <div className="w-full py-4 sm:py-6">
-      <div className="flex items-start justify-between">
+    <nav aria-label="Étapes de réservation" className="w-full py-4 sm:py-6">
+      <ol className="flex items-start justify-between">
         {steps.map((step, index) => {
           const stepNumber = index + 1
           const isCompleted = stepNumber < currentStep
@@ -19,9 +22,10 @@ export function BookingStepper({ currentStep, steps }: BookingStepperProps) {
           const isLast = index === steps.length - 1
 
           return (
-            <div
-              key={index}
-              className={cn("flex items-center", !isLast && "flex-1")}
+            <li
+              key={step}
+              aria-current={isCurrent ? "step" : undefined}
+              className={cn("flex items-start", !isLast && "flex-1")}
             >
               <div className="flex flex-col items-center shrink-0">
                 <div
@@ -35,7 +39,11 @@ export function BookingStepper({ currentStep, steps }: BookingStepperProps) {
                       "bg-muted text-muted-foreground"
                   )}
                 >
-                  {isCompleted ? <Check className="h-4 w-4 sm:h-5 sm:w-5" /> : stepNumber}
+                  {isCompleted ? (
+                    <Check className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
+                  ) : (
+                    stepNumber
+                  )}
                 </div>
                 <span
                   className={cn(
@@ -50,16 +58,17 @@ export function BookingStepper({ currentStep, steps }: BookingStepperProps) {
               </div>
               {!isLast && (
                 <div
+                  aria-hidden="true"
                   className={cn(
                     "h-0.5 flex-1 mx-2 sm:mx-3 mt-4 sm:mt-5 transition-all",
                     stepNumber < currentStep ? "bg-primary" : "bg-muted"
                   )}
                 />
               )}
-            </div>
+            </li>
           )
         })}
-      </div>
-    </div>
+      </ol>
+    </nav>
   )
 }

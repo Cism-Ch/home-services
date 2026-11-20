@@ -3,6 +3,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
 import { Calendar, Clock, MapPin, User, Printer, ShieldCheck } from "lucide-react"
 import { formatFCFA } from "@/lib/formatters"
 import { ProContactActions } from "@/components/pro-contact-actions"
@@ -43,29 +44,13 @@ export function BookingTicket({ booking, open, onOpenChange }: BookingTicketProp
   const getStatusBadge = (status: BookingStatusType) => {
     switch (status) {
       case "negotiating":
-        return (
-          <Badge variant="secondary" className="bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 border-amber-300">
-            En négociation
-          </Badge>
-        )
+        return <Badge variant="warning">En négociation</Badge>
       case "in_progress":
-        return (
-          <Badge className="bg-blue-600 hover:bg-blue-700 text-white">
-            En cours de traitement
-          </Badge>
-        )
+        return <Badge variant="info">En cours de traitement</Badge>
       case "completed":
-        return (
-          <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white">
-            Traité & Finalisé
-          </Badge>
-        )
+        return <Badge variant="success">Traité & Finalisé</Badge>
       case "cancelled":
-        return (
-          <Badge variant="destructive">
-            Annulé
-          </Badge>
-        )
+        return <Badge variant="destructive">Annulé</Badge>
       case "upcoming":
       default:
         return (
@@ -88,13 +73,14 @@ export function BookingTicket({ booking, open, onOpenChange }: BookingTicketProp
         {/* Ticket Content */}
         <div className="space-y-6 print:p-8">
           {/* Header */}
-          <div className="text-center space-y-2 border-b pb-6">
+          <div className="text-center space-y-2 pb-2">
             <h1 className="text-3xl font-extrabold gradient-brand">HomeServices</h1>
             <p className="text-muted-foreground text-sm">Plateforme de mise en relation directe avec les artisans locaux</p>
             <div className="pt-1">
               {getStatusBadge(booking.status)}
             </div>
           </div>
+          <Separator />
 
           {/* Booking Reference */}
           <div className="bg-muted/40 rounded-lg p-5 text-center space-y-2 border">
@@ -185,7 +171,8 @@ export function BookingTicket({ booking, open, onOpenChange }: BookingTicketProp
                 {formatFCFA(booking.price)}
               </span>
             </div>
-            <div className="flex items-center gap-2 pt-2 border-t text-xs text-muted-foreground">
+            <Separator />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
               <span>Aucune commission prélevée sur le coût des travaux de l&apos;artisan.</span>
             </div>

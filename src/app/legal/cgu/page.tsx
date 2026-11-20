@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { PageBreadcrumb } from "@/components/page-breadcrumb"
 import { Button } from "@/components/ui/button"
 
 export const metadata: Metadata = {
@@ -11,6 +12,12 @@ export const metadata: Metadata = {
 export default function LegalCguPage() {
   return (
     <main className="container mx-auto px-4 py-12 max-w-4xl space-y-8">
+      <PageBreadcrumb
+        items={[
+          { label: "Accueil", href: "/" },
+          { label: "Conditions Générales d'Utilisation" },
+        ]}
+      />
       <div className="space-y-2 border-b pb-6">
         <p className="text-xs font-semibold uppercase tracking-wider text-primary">
           Cadre Contractuel

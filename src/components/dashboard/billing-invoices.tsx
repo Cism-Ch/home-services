@@ -25,16 +25,18 @@ interface BillingInvoicesProps {
   subscriptions?: DashboardSubscriptionItem[]
 }
 
-function getStatusColor(status: DashboardSubscriptionItem["status"]): string {
+function getStatusVariant(
+  status: DashboardSubscriptionItem["status"]
+): "success" | "info" | "warning" | "secondary" {
   switch (status) {
     case "ACTIVE":
-      return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400"
+      return "success"
     case "TRIALING":
-      return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+      return "info"
     case "PAST_DUE":
-      return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
+      return "warning"
     case "CANCELLED":
-      return "bg-muted text-muted-foreground"
+      return "secondary"
   }
 }
 
@@ -124,7 +126,7 @@ export function BillingInvoices({ subscriptions = [] }: BillingInvoicesProps) {
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-3 mb-1">
                     <p className="font-medium">{sub.planLabel}</p>
-                    <Badge variant="outline" className={getStatusColor(sub.status)}>
+                    <Badge variant={getStatusVariant(sub.status)}>
                       {getStatusLabel(sub.status)}
                     </Badge>
                   </div>
@@ -200,7 +202,7 @@ export function BillingInvoices({ subscriptions = [] }: BillingInvoicesProps) {
               </div>
               <div className="flex justify-between py-1.5 border-b">
                 <span className="text-muted-foreground">Statut</span>
-                <Badge variant="outline" className={getStatusColor(selectedItem.status)}>
+                <Badge variant={getStatusVariant(selectedItem.status)}>
                   {getStatusLabel(selectedItem.status)}
                 </Badge>
               </div>

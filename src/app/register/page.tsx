@@ -1,14 +1,15 @@
-"use client";
+"use client"
 
-import * as React from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useForm, useWatch } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "sonner";
-import { Briefcase, User as UserIcon } from "lucide-react";
-import { signUp } from "@/lib/auth-client";
-import { registerSchema, type RegisterFormData } from "@/lib/validations/auth";
+import * as React from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useForm, useWatch } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { toast } from "sonner"
+import { AlertCircle, Briefcase, User as UserIcon } from "lucide-react"
+import { signUp } from "@/lib/auth-client"
+import { registerSchema, type RegisterFormData } from "@/lib/validations/auth"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Card,
   CardContent,
@@ -16,25 +17,29 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { LoadingButton } from "@/components/auth/loading-button";
-import { SocialAuthButtons } from "@/components/auth/social-auth-buttons";
-import { PasswordStrengthIndicator } from "@/components/auth/password-strength-indicator";
-import { cn } from "@/lib/utils";
+} from "@/components/ui/card"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Separator } from "@/components/ui/separator"
+import { LoadingButton } from "@/components/auth/loading-button"
+import { SocialAuthButtons } from "@/components/auth/social-auth-buttons"
+import { PasswordStrengthIndicator } from "@/components/auth/password-strength-indicator"
+import { cn } from "@/lib/utils"
 
 export default function RegisterPage() {
-  const router = useRouter();
-  const [serverError, setServerError] = React.useState<string | null>(null);
+  const router = useRouter()
+  const [serverError, setServerError] = React.useState<string | null>(null)
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    control,
-    formState: { errors, isSubmitting },
-  } = useForm<RegisterFormData>({
+  const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       userType: "client",
@@ -44,13 +49,13 @@ export default function RegisterPage() {
       password: "",
       confirmPassword: "",
     },
-  });
+  })
 
-  const selectedRole = useWatch({ control, name: "userType" });
-  const watchedPassword = useWatch({ control, name: "password" });
+  const selectedRole = useWatch({ control: form.control, name: "userType" })
+  const watchedPassword = useWatch({ control: form.control, name: "password" })
 
   const onSubmit = async (values: RegisterFormData) => {
-    setServerError(null);
+    setServerError(null)
 
     const { error } = await signUp.email({
       name: values.name,
@@ -58,22 +63,23 @@ export default function RegisterPage() {
       password: values.password,
       userType: values.userType,
       phoneNumber: values.phoneNumber || undefined,
-    });
+    })
 
     if (error) {
       const msg =
-        error.message || "Impossible de créer votre compte. Vérifiez vos informations.";
-      setServerError(msg);
-      toast.error(msg);
-      return;
+        error.message ||
+        "Impossible de créer votre compte. Vérifiez vos informations."
+      setServerError(msg)
+      toast.error(msg)
+      return
     }
 
-    toast.success("Compte créé avec succès !");
+    toast.success("Compte créé avec succès !")
     router.push(
       values.userType === "pro" ? "/dashboard/pro/profile" : "/dashboard/client"
-    );
-    router.refresh();
-  };
+    )
+    router.refresh()
+  }
 
   return (
     <div className="container relative flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-1 lg:px-0 min-h-[calc(100vh-4rem)] py-10">
@@ -81,178 +87,221 @@ export default function RegisterPage() {
         <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[420px]">
           <Card>
             <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl text-center">Créer un compte</CardTitle>
+              <CardTitle className="text-2xl text-center">
+                Créer un compte
+              </CardTitle>
               <CardDescription className="text-center">
                 Rejoignez HomeServices en tant que Client ou Artisan Prestataire
               </CardDescription>
             </CardHeader>
 
-            <form onSubmit={handleSubmit(onSubmit)} noValidate>
-              <CardContent className="grid gap-4">
-                <div className="grid gap-2">
-                  <Label>Vous êtes :</Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setValue("userType", "client", { shouldValidate: true })
-                      }
-                      className={cn(
-                        "flex flex-col items-center gap-1.5 rounded-lg border p-3 text-sm font-medium transition-all",
-                        selectedRole === "client"
-                          ? "border-primary bg-primary/10 text-primary ring-1 ring-primary"
-                          : "border-border hover:bg-muted/50 text-muted-foreground"
-                      )}
-                    >
-                      <UserIcon className="h-5 w-5" />
-                      <span>Client</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setValue("userType", "pro", { shouldValidate: true })
-                      }
-                      className={cn(
-                        "flex flex-col items-center gap-1.5 rounded-lg border p-3 text-sm font-medium transition-all",
-                        selectedRole === "pro"
-                          ? "border-primary bg-primary/10 text-primary ring-1 ring-primary"
-                          : "border-border hover:bg-muted/50 text-muted-foreground"
-                      )}
-                    >
-                      <Briefcase className="h-5 w-5" />
-                      <span>Prestataire</span>
-                    </button>
-                  </div>
-                </div>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+                <CardContent className="grid gap-4">
+                  <FormField
+                    control={form.control}
+                    name="userType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Vous êtes :</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            className="grid grid-cols-2 gap-3"
+                          >
+                            <Label
+                              htmlFor="role-client"
+                              className={cn(
+                                "flex cursor-pointer flex-col items-center gap-1.5 rounded-lg border p-3 text-sm font-medium transition-all has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50",
+                                field.value === "client"
+                                  ? "border-primary bg-primary/10 text-primary ring-1 ring-primary"
+                                  : "border-border hover:bg-muted/50 text-muted-foreground"
+                              )}
+                            >
+                              <RadioGroupItem
+                                id="role-client"
+                                value="client"
+                                className="sr-only"
+                              />
+                              <UserIcon className="h-5 w-5" />
+                              <span>Client</span>
+                            </Label>
 
-                <SocialAuthButtons
-                  callbackURL={
-                    selectedRole === "pro"
-                      ? "/dashboard/pro/profile"
-                      : "/dashboard/client"
-                  }
-                />
+                            <Label
+                              htmlFor="role-pro"
+                              className={cn(
+                                "flex cursor-pointer flex-col items-center gap-1.5 rounded-lg border p-3 text-sm font-medium transition-all has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50",
+                                field.value === "pro"
+                                  ? "border-primary bg-primary/10 text-primary ring-1 ring-primary"
+                                  : "border-border hover:bg-muted/50 text-muted-foreground"
+                              )}
+                            >
+                              <RadioGroupItem
+                                id="role-pro"
+                                value="pro"
+                                className="sr-only"
+                              />
+                              <Briefcase className="h-5 w-5" />
+                              <span>Prestataire</span>
+                            </Label>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
+                  <SocialAuthButtons
+                    callbackURL={
+                      selectedRole === "pro"
+                        ? "/dashboard/pro/profile"
+                        : "/dashboard/client"
+                    }
+                  />
+
+                  <div className="relative flex items-center justify-center">
+                    <Separator />
+                    <span className="bg-card px-2 text-xs uppercase text-muted-foreground shrink-0">
                       Ou par email
                     </span>
+                    <Separator />
                   </div>
-                </div>
 
-                {serverError && (
-                  <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-                    {serverError}
+                  {serverError && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="size-4" />
+                      <AlertDescription>{serverError}</AlertDescription>
+                    </Alert>
+                  )}
+
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nom complet</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Kouassi Amadou"
+                            autoComplete="name"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="nom@exemple.ci"
+                            autoComplete="email"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="phoneNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Téléphone / WhatsApp{" "}
+                          <span className="text-xs text-muted-foreground font-normal">
+                            (optionnel)
+                          </span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="tel"
+                            placeholder="+225 07 08 09 10 11"
+                            autoComplete="tel"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mot de passe</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            autoComplete="new-password"
+                            {...field}
+                          />
+                        </FormControl>
+                        <PasswordStrengthIndicator
+                          password={watchedPassword || ""}
+                        />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirmer le mot de passe</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            autoComplete="new-password"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+
+                <CardFooter className="flex flex-col gap-4 pt-2">
+                  <LoadingButton
+                    type="submit"
+                    loading={form.formState.isSubmitting}
+                    loadingText="Création du compte..."
+                    className="w-full"
+                  >
+                    S&apos;inscrire
+                  </LoadingButton>
+                  <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
+                    <p>
+                      Déjà un compte ?{" "}
+                      <Link
+                        href="/login"
+                        className="hover:text-primary underline underline-offset-4"
+                      >
+                        Se connecter
+                      </Link>
+                    </p>
                   </div>
-                )}
-
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Nom complet</Label>
-                  <Input
-                    id="name"
-                    placeholder="Kouassi Amadou"
-                    autoComplete="name"
-                    {...register("name")}
-                  />
-                  {errors.name && (
-                    <p className="text-xs text-destructive">{errors.name.message}</p>
-                  )}
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="nom@exemple.ci"
-                    autoComplete="email"
-                    {...register("email")}
-                  />
-                  {errors.email && (
-                    <p className="text-xs text-destructive">{errors.email.message}</p>
-                  )}
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="phoneNumber">
-                    Téléphone / WhatsApp{" "}
-                    <span className="text-xs text-muted-foreground font-normal">
-                      (optionnel)
-                    </span>
-                  </Label>
-                  <Input
-                    id="phoneNumber"
-                    type="tel"
-                    placeholder="+225 07 08 09 10 11"
-                    autoComplete="tel"
-                    {...register("phoneNumber")}
-                  />
-                  {errors.phoneNumber && (
-                    <p className="text-xs text-destructive">
-                      {errors.phoneNumber.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="password">Mot de passe</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    autoComplete="new-password"
-                    {...register("password")}
-                  />
-                  <PasswordStrengthIndicator password={watchedPassword || ""} />
-                  {errors.password && (
-                    <p className="text-xs text-destructive">{errors.password.message}</p>
-                  )}
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="confirm-password">Confirmer le mot de passe</Label>
-                  <Input
-                    id="confirm-password"
-                    type="password"
-                    autoComplete="new-password"
-                    {...register("confirmPassword")}
-                  />
-                  {errors.confirmPassword && (
-                    <p className="text-xs text-destructive">
-                      {errors.confirmPassword.message}
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-
-              <CardFooter className="flex flex-col gap-4 pt-2">
-                <LoadingButton
-                  type="submit"
-                  loading={isSubmitting}
-                  loadingText="Création du compte..."
-                  className="w-full"
-                >
-                  S&apos;inscrire
-                </LoadingButton>
-                <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
-                  <p>
-                    Déjà un compte ?{" "}
-                    <Link
-                      href="/login"
-                      className="hover:text-primary underline underline-offset-4"
-                    >
-                      Se connecter
-                    </Link>
-                  </p>
-                </div>
-              </CardFooter>
-            </form>
+                </CardFooter>
+              </form>
+            </Form>
           </Card>
         </div>
       </div>
     </div>
-  );
+  )
 }

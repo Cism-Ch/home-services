@@ -203,14 +203,16 @@ export function CityCombobox({
       </Popover>
 
       {selectedLocation && (
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-sm"
           onClick={handleClear}
           aria-label="Effacer la localisation"
-          className="absolute right-8 top-1/2 -translate-y-1/2 z-10 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="absolute right-8 top-1/2 -translate-y-1/2 z-10 size-6 rounded-full text-muted-foreground hover:text-foreground"
         >
           <X className="h-3.5 w-3.5" />
-        </button>
+        </Button>
       )}
     </div>
   )

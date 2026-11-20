@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { Separator } from "@/components/ui/separator"
 
 export function SiteFooter() {
   return (
@@ -142,7 +143,8 @@ export function SiteFooter() {
         </div>
 
         {/* Bottom */}
-        <div className="pt-8 border-t border-border/40 flex flex-col md:flex-row items-center justify-between gap-4">
+        <Separator className="mb-8 bg-border/40" />
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground text-center md:text-left">
             © {new Date().getFullYear()} HomeServices. Tous droits réservés.
           </p>

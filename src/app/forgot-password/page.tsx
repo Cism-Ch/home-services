@@ -1,16 +1,17 @@
-"use client";
+"use client"
 
-import * as React from "react";
-import Link from "next/link";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "sonner";
-import { ArrowLeft, CheckCircle2 } from "lucide-react";
-import { forgetPassword } from "@/lib/auth-client";
+import * as React from "react"
+import Link from "next/link"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { toast } from "sonner"
+import { ArrowLeft, CheckCircle2 } from "lucide-react"
+import { forgetPassword } from "@/lib/auth-client"
 import {
   forgotPasswordSchema,
   type ForgotPasswordFormData,
-} from "@/lib/validations/auth";
+} from "@/lib/validations/auth"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
   Card,
   CardContent,
@@ -18,41 +19,44 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { LoadingButton } from "@/components/auth/loading-button";
+} from "@/components/ui/card"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { LoadingButton } from "@/components/auth/loading-button"
 
 export default function ForgotPasswordPage() {
-  const [submitted, setSubmitted] = React.useState(false);
+  const [submitted, setSubmitted] = React.useState(false)
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<ForgotPasswordFormData>({
+  const form = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
       email: "",
     },
-  });
+  })
 
   const onSubmit = async (values: ForgotPasswordFormData) => {
     try {
       await forgetPassword({
         email: values.email,
         redirectTo: "/reset-password",
-      });
-      setSubmitted(true);
-      toast.success("Si un compte existe avec cet email, un lien a été envoyé.");
+      })
+      setSubmitted(true)
+      toast.success("Si un compte existe avec cet email, un lien a été envoyé.")
     } catch (err) {
       const msg =
         err instanceof Error
           ? err.message
-          : "Impossible d'envoyer le lien pour le moment.";
-      toast.error(msg);
+          : "Impossible d'envoyer le lien pour le moment."
+      toast.error(msg)
     }
-  };
+  }
 
   return (
     <div className="container relative flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-1 lg:px-0 min-h-[calc(100vh-4rem)] py-10">
@@ -77,60 +81,68 @@ export default function ForgotPasswordPage() {
             </CardHeader>
 
             {submitted ? (
-              <CardContent className="grid gap-4 text-center py-6">
-                <CheckCircle2 className="h-10 w-10 text-emerald-600 mx-auto" />
-                <p className="text-sm text-muted-foreground">
-                  Si un compte est associé à cette adresse email, vous recevrez
-                  d&apos;ici quelques instants un message contenant votre lien de
-                  réinitialisation valable 15 minutes.
-                </p>
+              <CardContent className="grid gap-4 py-6">
+                <Alert variant="success">
+                  <CheckCircle2 className="size-4" />
+                  <AlertTitle>Demande enregistrée</AlertTitle>
+                  <AlertDescription>
+                    Si un compte est associé à cette adresse email, vous recevrez
+                    d&apos;ici quelques instants un message contenant votre lien
+                    de réinitialisation valable 15 minutes.
+                  </AlertDescription>
+                </Alert>
               </CardContent>
             ) : (
-              <form onSubmit={handleSubmit(onSubmit)} noValidate>
-                <CardContent className="grid gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="nom@exemple.ci"
-                      autoComplete="email"
-                      {...register("email")}
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+                  <CardContent className="grid gap-4">
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="email"
+                              placeholder="nom@exemple.ci"
+                              autoComplete="email"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                    {errors.email && (
-                      <p className="text-xs text-destructive">
-                        {errors.email.message}
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
+                  </CardContent>
 
-                <CardFooter className="flex flex-col gap-4 pt-2">
-                  <LoadingButton
-                    type="submit"
-                    loading={isSubmitting}
-                    loadingText="Envoi en cours..."
-                    className="w-full"
-                  >
-                    Envoyer le lien de réinitialisation
-                  </LoadingButton>
-                  <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
-                    <p>
-                      Pas encore de compte ?{" "}
-                      <Link
-                        href="/register"
-                        className="hover:text-primary underline underline-offset-4"
-                      >
-                        Créer un compte
-                      </Link>
-                    </p>
-                  </div>
-                </CardFooter>
-              </form>
+                  <CardFooter className="flex flex-col gap-4 pt-2">
+                    <LoadingButton
+                      type="submit"
+                      loading={form.formState.isSubmitting}
+                      loadingText="Envoi en cours..."
+                      className="w-full"
+                    >
+                      Envoyer le lien de réinitialisation
+                    </LoadingButton>
+                    <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
+                      <p>
+                        Pas encore de compte ?{" "}
+                        <Link
+                          href="/register"
+                          className="hover:text-primary underline underline-offset-4"
+                        >
+                          Créer un compte
+                        </Link>
+                      </p>
+                    </div>
+                  </CardFooter>
+                </form>
+              </Form>
             )}
           </Card>
         </div>
       </div>
     </div>
-  );
+  )
 }

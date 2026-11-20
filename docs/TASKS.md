@@ -10,47 +10,40 @@
 
 ```
 +-------------------------+  +-------------------------+  +-------------------------+
-| [>] IN PROGRESS (SP 09) |  |   [?] SPRINT 09 QUEUE   |  |       [X] ARCHIVES      |
+| [>] IN PROGRESS (SP 10) |  |   [?] SPRINT 10 QUEUE   |  |       [X] ARCHIVES      |
 +-------------------------+  +-------------------------+  +-------------------------+
-| (All Sprint 09 Done!)   |  | (All Sprints 02-09 Done)|  | Sprint 02 (11 tasks)    |
-|                         |  |                         |  | Sprint 03-04 (7 tasks)  |
+| (All Sprint 10 Done!)   |  | (All SP10 Impl Done)    |  | Sprint 02 (11 tasks)    |
+|                         |  | [ ] TASK-DS-AUDIT-01    |  | Sprint 03-04 (7 tasks)  |
 |                         |  |                         |  | Sprint 05-06 (7 tasks)  |
 |                         |  |                         |  | Sprint 07 (4 tasks)     |
-|                         |  |                         |  | Sprint 08 (2 tasks)     |
+|                         |  |                         |  | Sprint 08-09 (6 tasks)  |
 +-------------------------+  +-------------------------+  +-------------------------+
 ```
 
 ---
 
-## Active Sprint 09: Audit de Vulnerabilites & Tests de Penetration Applicative
+## Active Sprint 10: Unification 100 % shadcn/ui & Maturite Design System
 
-- [x] **`TASK-SEC-AUDIT-01` - [Scope: L] Durcissement Auth Escalation, Paystack & QStash**
-  - **Priority:** CRITICAL
-  - **Target files:** `src/lib/auth.ts`, `src/lib/paystack.ts`, `src/lib/qstash.ts`, `src/app/api/webhooks/paystack/route.ts`, `src/app/api/queues/follow-up/route.ts`, `src/server/actions/subscription.ts`, `src/lib/validations/subscription.ts`, `docs/TASKS.md`
-  - **Acceptance criteria:**
-    - [x] `TASK-SEC-AUDIT-01.01`: Remove `route.ts.disabled` and add Better-Auth `databaseHooks.user.update.before` blocking client-side `userType`/`emailVerified` escalation and unsafe avatar schemes.
-    - [x] `TASK-SEC-AUDIT-01.02`: Enforce Paystack plan/role eligibility, verified amount >= plan price, strict callback origin allowlist, `invoice.create` non-activation, QStash `alg: "HS256"` + mandatory SHA-256 `claims.body`, and Zod webhook payload schemas.
+### [x] `TASK-DS-CLEAN-01` — Assainissement du socle `src/components/ui/` & Tokens Theme
+- [x] Corriger les 11 imports `from "cn"` vers `from "@/lib/utils"` dans `src/components/ui/`.
+- [x] Supprimer le paquet redondant `cn` de `package.json` et vérifier `pnpm audit --prod` = 0 CVE.
+- [x] Activer la variante `dark:` sur le thème `.luxury` dans `src/app/globals.css`.
+- [x] Déplacer `responsive-table.tsx` vers `src/components/data-display/responsive-table.tsx`.
+- [x] Enrichir `badge.tsx` (`success`/`warning`/`info`), `progress.tsx` (`indicatorClassName`), localiser `pagination.tsx` (FR) et ajouter `alert.tsx`, `toggle.tsx`, `toggle-group.tsx`.
 
-- [x] **`TASK-SEC-LOGIC-01` - [Scope: L] Durcissement Server Actions, S3 Anti-Traversal, Email XSS & Redirections**
-  - **Priority:** HIGH
-  - **Target files:** `src/lib/storage.ts`, `src/server/actions/booking.ts`, `src/server/actions/booking-status.ts`, `src/server/actions/pro-catalog.ts`, `src/server/actions/admin.ts`, `src/server/actions/availability.ts`, `src/server/actions/reviews.ts`, `src/lib/validations/booking.ts`, `src/emails/task-follow-up-email.tsx`, `src/emails/reset-password-email.tsx`, `src/components/auth/social-auth-buttons.tsx`, `src/app/login/page.tsx`, `docs/TASKS.md`
-  - **Acceptance criteria:**
-    - [x] `TASK-SEC-LOGIC-01.01`: Enforce strict S3 objectKey ownership & canonical URL construction in `storage.ts`/`pro-catalog.ts`, plus HTML escaping and URL sanitization in email templates.
-    - [x] `TASK-SEC-LOGIC-01.02`: Enforce booking state-machine transitions, self-booking prevention, past-date & unavailability overlap checks, open-redirect control-char hardening, and sanitized server error responses.
+### [x] `TASK-DS-RAW-01` — Suppression de tous les `<button>` et `<input>` natifs hors `ui/` + Correctifs UX
+- [x] Créer `src/components/star-rating.tsx` (`RadioGroup` accessible) et `src/components/file-upload-button.tsx`.
+- [x] Remplacer les contrôles natifs dans `register/page.tsx`, `create-service-dialog.tsx`, `add-review-form.tsx`, `client-follow-up-card.tsx`, `pro-profile-view.tsx`, `city-combobox.tsx`.
+- [x] Corriger le double bug `ClientFollowUpCard` (unmount avant dialog + persistance réelle `submitMutualReviewAction`) et les `aria-label` / visibilité tactile manquants.
 
-- [x] **`TASK-SEC-INFRA-01` - [Scope: M] Supabase RLS Column Grants, CSP/Headers & CVE Remediation**
-  - **Priority:** HIGH
-  - **Target files:** `prisma/migrations/20261119233000_harden_rls_column_grants/migration.sql`, `prisma/seed-data.ts`, `prisma/seed.ts`, `next.config.ts`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `docs/TASKS.md`
-  - **Acceptance criteria:**
-    - [x] `TASK-SEC-INFRA-01.01`: Deploy Supabase column-level SELECT grant on `pro_profiles` blocking `kycDocumentUrl`/PII, revoke anon table privileges on private tables, align seeded reviews `isModerated` flags, and add CSP + disable `X-Powered-By` in `next.config.ts`.
-    - [x] `TASK-SEC-INFRA-01.02`: Remediate production CVE (`effect >= 3.22.1`) and confirm `pnpm audit --prod --audit-level=low` reports 0 vulnerabilities.
+### [x] `TASK-DS-ADOPT-01` — Adoption complète des primitives dormantes, Navigation & Badges sémantiques
+- [x] Adopter `Progress`, `Skeleton`, `Alert`, `Form`, `Separator`, `ToggleGroup`, `Breadcrumb`, `Drawer`, `ScrollArea`, `Pagination`.
+- [x] Mettre à niveau `MainNav` (`usePathname()` + `aria-current="page"`) et `BookingStepper` (`<nav><ol><li aria-current="step">`).
+- [x] Migrer tous les `<Badge>` à couleurs hardcodées vers `success` / `warning` / `info`.
 
-- [x] **`TASK-SEC-PENTEST-01` - [Scope: M] Suite de Tests Defensifs, Controles Live & Rapport d'Audit**
-  - **Priority:** HIGH
-  - **Target files:** `e2e/security-guards.spec.ts`, `docs/SECURITY_AUDIT_REPORT.md`, `docs/TASKS.md`
-  - **Acceptance criteria:**
-    - [x] `TASK-SEC-PENTEST-01.01`: Create `e2e/security-guards.spec.ts` and author comprehensive `docs/SECURITY_AUDIT_REPORT.md` (zero emojis).
-    - [x] `TASK-SEC-PENTEST-01.02`: Pass `python evals/run_fullstack_eval.py` (`100/100 PASS`) and execute all 8 live HTTP + Supabase PostgREST security controls.
+### [x] `TASK-DS-AUDIT-01` — Vérification statique 0 dérive, Juge Déterministe, Smoke Test & Commit
+- [x] Audit statique : 0 import `cn`, 0 `<button>`/`<input>` hors `ui/`, 0 primitive inutilisée dans `src/components/ui/`.
+- [x] Validation `python evals/run_fullstack_eval.py` (`100/100 PASS`), `pnpm audit --prod` (0 CVE), smoke test HTTP `200` et commit `feat(sprint-10)`.
 
 ---
 

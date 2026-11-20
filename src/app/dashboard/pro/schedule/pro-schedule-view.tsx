@@ -135,26 +135,11 @@ export function ProScheduleView({
   const getStatusBadge = (status: DashboardBookingItem["status"]) => {
     switch (status) {
       case "NEGOTIATING":
-        return (
-          <Badge
-            variant="secondary"
-            className="bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 border-amber-300"
-          >
-            En négociation
-          </Badge>
-        )
+        return <Badge variant="warning">En négociation</Badge>
       case "IN_PROGRESS":
-        return (
-          <Badge className="bg-blue-600 hover:bg-blue-700 text-white">
-            En cours de traitement
-          </Badge>
-        )
+        return <Badge variant="info">En cours de traitement</Badge>
       case "COMPLETED":
-        return (
-          <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white">
-            Terminé
-          </Badge>
-        )
+        return <Badge variant="success">Terminé</Badge>
       case "CANCELLED":
         return <Badge variant="destructive">Annulé</Badge>
     }

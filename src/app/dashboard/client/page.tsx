@@ -13,23 +13,11 @@ export const dynamic = "force-dynamic"
 function getStatusBadge(status: string) {
   switch (status) {
     case "NEGOTIATING":
-      return (
-        <Badge variant="secondary" className="bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 border-amber-300">
-          En négociation
-        </Badge>
-      )
+      return <Badge variant="warning">En négociation</Badge>
     case "IN_PROGRESS":
-      return (
-        <Badge className="bg-blue-600 hover:bg-blue-700 text-white">
-          En cours
-        </Badge>
-      )
+      return <Badge variant="info">En cours</Badge>
     case "COMPLETED":
-      return (
-        <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white">
-          Finalisé
-        </Badge>
-      )
+      return <Badge variant="success">Finalisé</Badge>
     case "CANCELLED":
       return <Badge variant="destructive">Annulé</Badge>
     default:

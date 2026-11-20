@@ -1,12 +1,16 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { Search, Users, Award, Star, Filter } from "lucide-react"
+import { CatalogPagination } from "@/components/catalog-pagination"
 import { ProCard } from "@/components/pro-card"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type { CatalogCategory, CatalogProfessional } from "@/lib/types/catalog"
+
+const ITEMS_PER_PAGE = 9
 
 interface ProfessionalsBrowserProps {
   initialProfessionals: CatalogProfessional[]
@@ -17,8 +21,26 @@ export function ProfessionalsBrowser({
   initialProfessionals,
   categories,
 }: ProfessionalsBrowserProps) {
+  const resultsRef = useRef<HTMLElement>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("ALL")
+  const [currentPage, setCurrentPage] = useState(1)
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value)
+    setCurrentPage(1)
+  }
+
+  const handleCategorySelect = (categoryId: string) => {
+    setSelectedCategoryId(categoryId)
+    setCurrentPage(1)
+  }
+
+  const resetFilters = () => {
+    setSearchQuery("")
+    setSelectedCategoryId("ALL")
+    setCurrentPage(1)
+  }
 
   const filteredProfessionals = useMemo(() => {
     const q = searchQuery.toLowerCase().trim()
@@ -39,6 +61,22 @@ export function ProfessionalsBrowser({
     })
   }, [initialProfessionals, searchQuery, selectedCategoryId])
 
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredProfessionals.length / ITEMS_PER_PAGE)
+  )
+  const safePage = Math.min(currentPage, totalPages)
+
+  const paginatedProfessionals = useMemo(() => {
+    const start = (safePage - 1) * ITEMS_PER_PAGE
+    return filteredProfessionals.slice(start, start + ITEMS_PER_PAGE)
+  }, [filteredProfessionals, safePage])
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }
+
   const averageRating = useMemo(() => {
     if (initialProfessionals.length === 0) return "5.0"
     const total = initialProfessionals.reduce((acc, p) => acc + p.rating, 0)
@@ -57,7 +95,9 @@ export function ProfessionalsBrowser({
           <div className="max-w-4xl mx-auto text-center animate-appear">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[hsl(var(--brand))]/10 border border-[hsl(var(--brand))]/20 text-xs sm:text-sm font-medium mb-6 backdrop-blur-sm">
               <div className="w-2 h-2 rounded-full bg-[hsl(var(--brand))] animate-pulse" />
-              <span className="text-[hsl(var(--brand))]">PROFESSIONNELS VÉRIFIÉS</span>
+              <span className="text-[hsl(var(--brand))]">
+                PROFESSIONNELS VÉRIFIÉS
+              </span>
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold tracking-tight mb-6 gradient-brand">
@@ -65,7 +105,8 @@ export function ProfessionalsBrowser({
             </h1>
 
             <p className="text-base sm:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
-              Découvrez nos artisans qualifiés et expérimentés, prêts à intervenir près de chez vous.
+              Découvrez nos artisans qualifiés et expérimentés, prêts à
+              intervenir près de chez vous.
               <span className="text-foreground font-medium">
                 {" "}
                 {filteredProfessionals.length} expert(s) disponible(s)
@@ -79,7 +120,7 @@ export function ProfessionalsBrowser({
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                   placeholder="Rechercher un professionnel, un métier ou une commune..."
                   className="pl-12 pr-4 h-12 sm:h-14 text-base sm:text-lg bg-background/80 backdrop-blur-sm border-border/50 focus:border-[hsl(var(--brand))] transition-colors shadow-lg"
                 />
@@ -117,7 +158,7 @@ export function ProfessionalsBrowser({
       </section>
 
       {/* Filters Section */}
-      <section className="container mx-auto px-4 py-8 sm:py-12">
+      <section ref={resultsRef} className="container mx-auto px-4 py-8 sm:py-12">
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 animate-appear">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mr-1">
             <Filter className="h-4 w-4" />
@@ -127,18 +168,18 @@ export function ProfessionalsBrowser({
             type="button"
             size="sm"
             variant={selectedCategoryId === "ALL" ? "default" : "outline"}
-            onClick={() => setSelectedCategoryId("ALL")}
+            onClick={() => handleCategorySelect("ALL")}
             className="rounded-full"
           >
             Tous les métiers
           </Button>
-          {categories.slice(0, 6).map((cat) => (
+          {categories.map((cat) => (
             <Button
               key={cat.id}
               type="button"
               size="sm"
               variant={selectedCategoryId === cat.id ? "default" : "outline"}
-              onClick={() => setSelectedCategoryId(cat.id)}
+              onClick={() => handleCategorySelect(cat.id)}
               className="rounded-full"
             >
               {cat.name}
@@ -149,27 +190,28 @@ export function ProfessionalsBrowser({
 
       {/* Professionals Grid */}
       <section className="container mx-auto px-4 pb-16 sm:pb-20">
-        {filteredProfessionals.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {filteredProfessionals.map((pro) => (
-              <div key={pro.id} className="animate-appear">
-                <ProCard pro={pro} />
-              </div>
-            ))}
-          </div>
+        {paginatedProfessionals.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+              {paginatedProfessionals.map((pro) => (
+                <div key={pro.id} className="animate-appear">
+                  <ProCard pro={pro} />
+                </div>
+              ))}
+            </div>
+
+            <CatalogPagination
+              currentPage={safePage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </>
         ) : (
           <div className="text-center py-16 space-y-4">
             <p className="text-lg font-medium">
               Aucun professionnel ne correspond à votre recherche.
             </p>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setSearchQuery("")
-                setSelectedCategoryId("ALL")
-              }}
-            >
+            <Button type="button" variant="outline" onClick={resetFilters}>
               Afficher tous les professionnels
             </Button>
           </div>
@@ -197,10 +239,10 @@ export function ProfessionalsBrowser({
               {initialProfessionals.slice(0, 3).map((pro) => (
                 <div key={pro.id} className="relative animate-appear">
                   <div className="absolute -top-3 -right-2 sm:-right-3 z-10">
-                    <div className="bg-[hsl(var(--brand))] text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg glow-brand flex items-center gap-1">
+                    <Badge className="bg-[hsl(var(--brand))] text-white px-3 py-1 shadow-lg glow-brand gap-1 font-bold">
                       <Star className="h-3 w-3 fill-current" />
                       TOP
-                    </div>
+                    </Badge>
                   </div>
                   <ProCard pro={pro} />
                 </div>
@@ -218,7 +260,9 @@ export function ProfessionalsBrowser({
               Vous êtes professionnel ?
             </h2>
             <p className="text-white/90 text-base sm:text-xl leading-relaxed">
-              Rejoignez notre réseau d&apos;artisans locaux, gérez vos créneaux horaires et développez votre clientèle sans commission sur vos travaux.
+              Rejoignez notre réseau d&apos;artisans locaux, gérez vos créneaux
+              horaires et développez votre clientèle sans commission sur vos
+              travaux.
             </p>
           </div>
           <Button
@@ -229,7 +273,7 @@ export function ProfessionalsBrowser({
           >
             <Link href="/register">
               Devenir partenaire
-              <span className="ml-2">→</span>
+              <span className="ml-2">-&gt;</span>
             </Link>
           </Button>
         </div>

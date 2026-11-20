@@ -27,6 +27,9 @@ interface ResponsiveTableProps<T> {
   className?: string
 }
 
+/**
+ * Tableau adaptatif : rendu en cartes empilees sur mobile et Table shadcn/ui sur desktop.
+ */
 export function ResponsiveTable<T>({
   data,
   columns,

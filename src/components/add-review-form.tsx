@@ -11,7 +11,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Star, ShieldCheck } from "lucide-react"
+import { ShieldCheck } from "lucide-react"
+import { StarRating } from "@/components/star-rating"
 import { submitMutualReviewAction } from "@/server/actions/reviews"
 import { toast } from "sonner"
 
@@ -31,7 +32,6 @@ export function AddReviewForm({
   onReviewSubmitted,
 }: AddReviewFormProps) {
   const [rating, setRating] = useState(0)
-  const [hoverRating, setHoverRating] = useState(0)
   const [comment, setComment] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -121,31 +121,13 @@ export function AddReviewForm({
           {/* Star Rating */}
           <div className="space-y-2">
             <Label>Note globale</Label>
-            <div className="flex items-center gap-2">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  onClick={() => setRating(star)}
-                  onMouseEnter={() => setHoverRating(star)}
-                  onMouseLeave={() => setHoverRating(0)}
-                  className="transition-transform hover:scale-110 focus:outline-none rounded"
-                >
-                  <Star
-                    className={`h-8 w-8 transition-colors ${
-                      star <= (hoverRating || rating)
-                        ? "fill-amber-500 text-amber-500"
-                        : "fill-muted text-muted-foreground"
-                    }`}
-                  />
-                </button>
-              ))}
-              {rating > 0 && (
-                <span className="ml-2 text-sm font-medium text-foreground">
-                  {rating} / 5
-                </span>
-              )}
-            </div>
+            <StarRating
+              value={rating}
+              onChange={setRating}
+              disabled={isSubmitting}
+              showValue
+              size="lg"
+            />
           </div>
 
           {/* Comment */}

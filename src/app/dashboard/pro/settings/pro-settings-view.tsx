@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { BillingInvoices } from "@/components/dashboard/billing-invoices"
 import { PasswordSecurityCard } from "@/components/dashboard/password-security-card"
@@ -346,12 +347,12 @@ export function ProSettingsView({
 
           <TabsContent value="billing" className="space-y-6">
             {activeSubscription?.status === "PAST_DUE" && (
-              <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-4 flex items-center gap-3 text-sm text-amber-900 dark:text-amber-200">
-                <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
-                <span>
+              <Alert variant="warning">
+                <AlertTriangle className="size-4" />
+                <AlertDescription>
                   Votre dernier renouvellement Paystack a échoué. Choisissez une formule ci-dessous pour régulariser votre abonnement et conserver votre visibilité prioritaire.
-                </span>
-              </div>
+                </AlertDescription>
+              </Alert>
             )}
 
             <Card>
@@ -366,7 +367,7 @@ export function ProSettingsView({
                       1 mois d&apos;essai gratuit sur toutes les formules. Aucune commission n&apos;est prélevée sur vos prestations.
                     </CardDescription>
                   </div>
-                  <Badge className="w-fit bg-emerald-600 text-white">
+                  <Badge variant="success" className="w-fit">
                     1er mois offert
                   </Badge>
                 </div>

@@ -1,17 +1,18 @@
-"use client";
+"use client"
 
-import * as React from "react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useForm, useWatch } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
-import { resetPassword } from "@/lib/auth-client";
+import * as React from "react"
+import Link from "next/link"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useForm, useWatch } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { toast } from "sonner"
+import { AlertCircle, ArrowLeft } from "lucide-react"
+import { resetPassword } from "@/lib/auth-client"
 import {
   resetPasswordSchema,
   type ResetPasswordFormData,
-} from "@/lib/validations/auth";
+} from "@/lib/validations/auth"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Card,
   CardContent,
@@ -19,57 +20,58 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { LoadingButton } from "@/components/auth/loading-button";
-import { PasswordStrengthIndicator } from "@/components/auth/password-strength-indicator";
+} from "@/components/ui/card"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { LoadingButton } from "@/components/auth/loading-button"
+import { PasswordStrengthIndicator } from "@/components/auth/password-strength-indicator"
 
 function ResetPasswordForm() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const token = searchParams.get("token") || "";
-  const [serverError, setServerError] = React.useState<string | null>(null);
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const token = searchParams.get("token") || ""
+  const [serverError, setServerError] = React.useState<string | null>(null)
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    control,
-    formState: { errors, isSubmitting },
-  } = useForm<ResetPasswordFormData>({
+  const form = useForm<ResetPasswordFormData>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
       token,
       password: "",
       confirmPassword: "",
     },
-  });
+  })
 
   React.useEffect(() => {
-    setValue("token", token);
-  }, [token, setValue]);
+    form.setValue("token", token)
+  }, [token, form])
 
-  const watchedPassword = useWatch({ control, name: "password" });
+  const watchedPassword = useWatch({ control: form.control, name: "password" })
 
   const onSubmit = async (values: ResetPasswordFormData) => {
-    setServerError(null);
+    setServerError(null)
     try {
       await resetPassword({
         token: values.token,
         password: values.password,
-      });
-      toast.success("Votre mot de passe a été réinitialisé !");
-      router.push("/login");
+      })
+      toast.success("Votre mot de passe a été réinitialisé !")
+      router.push("/login")
     } catch (err) {
       const msg =
         err instanceof Error
           ? err.message
-          : "Le lien est invalide ou a expiré.";
-      setServerError(msg);
-      toast.error(msg);
+          : "Le lien est invalide ou a expiré."
+      setServerError(msg)
+      toast.error(msg)
     }
-  };
+  }
 
   if (!token) {
     return (
@@ -81,73 +83,89 @@ function ResetPasswordForm() {
           </CardDescription>
         </CardHeader>
         <CardFooter>
-          <Link href="/forgot-password" className="w-full text-center text-sm underline">
+          <Link
+            href="/forgot-password"
+            className="w-full text-center text-sm underline"
+          >
             Demander un nouveau lien
           </Link>
         </CardFooter>
       </Card>
-    );
+    )
   }
 
   return (
     <Card>
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl text-center">Nouveau mot de passe</CardTitle>
+        <CardTitle className="text-2xl text-center">
+          Nouveau mot de passe
+        </CardTitle>
         <CardDescription className="text-center">
           Choisissez un nouveau mot de passe sécurisé
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <CardContent className="grid gap-4">
-          {serverError && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-              {serverError}
-            </div>
-          )}
-
-          <div className="grid gap-2">
-            <Label htmlFor="password">Nouveau mot de passe</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="new-password"
-              {...register("password")}
-            />
-            <PasswordStrengthIndicator password={watchedPassword || ""} />
-            {errors.password && (
-              <p className="text-xs text-destructive">{errors.password.message}</p>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+          <CardContent className="grid gap-4">
+            {serverError && (
+              <Alert variant="destructive">
+                <AlertCircle className="size-4" />
+                <AlertDescription>{serverError}</AlertDescription>
+              </Alert>
             )}
-          </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="confirm-password">Confirmer le mot de passe</Label>
-            <Input
-              id="confirm-password"
-              type="password"
-              autoComplete="new-password"
-              {...register("confirmPassword")}
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nouveau mot de passe</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      autoComplete="new-password"
+                      {...field}
+                    />
+                  </FormControl>
+                  <PasswordStrengthIndicator password={watchedPassword || ""} />
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {errors.confirmPassword && (
-              <p className="text-xs text-destructive">
-                {errors.confirmPassword.message}
-              </p>
-            )}
-          </div>
-        </CardContent>
 
-        <CardFooter>
-          <LoadingButton
-            type="submit"
-            loading={isSubmitting}
-            loadingText="Réinitialisation..."
-            className="w-full"
-          >
-            Réinitialiser le mot de passe
-          </LoadingButton>
-        </CardFooter>
-      </form>
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirmer le mot de passe</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      autoComplete="new-password"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </CardContent>
+
+          <CardFooter>
+            <LoadingButton
+              type="submit"
+              loading={form.formState.isSubmitting}
+              loadingText="Réinitialisation..."
+              className="w-full"
+            >
+              Réinitialiser le mot de passe
+            </LoadingButton>
+          </CardFooter>
+        </form>
+      </Form>
     </Card>
-  );
+  )
 }
 
 export default function ResetPasswordPage() {
@@ -177,5 +195,5 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }

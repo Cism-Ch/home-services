@@ -21,17 +21,14 @@ export function ProLiveStatusBadge({
   switch (status) {
     case "AVAILABLE":
       return (
-        <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 shadow-sm">
+        <Badge variant="success" className="gap-1.5 shadow-sm">
           <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
           Disponible aujourd&apos;hui
         </Badge>
       )
     case "BUSY_TODAY":
       return (
-        <Badge
-          variant="secondary"
-          className="bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 gap-1.5 border-amber-300"
-        >
+        <Badge variant="warning" className="gap-1.5">
           <span className="w-2 h-2 rounded-full bg-amber-500" />
           Occupé aujourd&apos;hui
         </Badge>

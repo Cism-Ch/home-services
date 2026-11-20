@@ -12,6 +12,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
@@ -23,6 +25,7 @@ import {
 import { serviceTemplates, serviceCategories } from "@/lib/service-templates"
 import { formatFCFA } from "@/lib/formatters"
 import type { CatalogCategory } from "@/lib/types/catalog"
+import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 
 interface CreateServiceDialogProps {
@@ -105,32 +108,49 @@ export function CreateServiceDialog({
           {/* Template Selection */}
           <div className="space-y-3">
             <Label>Modèles de prestations rapides</Label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[210px] overflow-y-auto border rounded-lg p-3">
-              {serviceTemplates.map((template) => (
-                <button
-                  key={template.id}
-                  type="button"
-                  onClick={() => handleTemplateSelect(template.id)}
-                  className={`text-left p-3 rounded-lg border transition-colors ${
-                    selectedTemplate === template.id
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:bg-accent"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{template.title}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {formatFCFA(template.typicalPrice)} • {template.duration} min
-                      </p>
-                    </div>
-                    <Badge variant="outline" className="text-xs shrink-0">
-                      {template.category}
-                    </Badge>
-                  </div>
-                </button>
-              ))}
-            </div>
+            <ScrollArea className="h-[220px] rounded-lg border p-3">
+              <RadioGroup
+                value={selectedTemplate}
+                onValueChange={handleTemplateSelect}
+                aria-label="Choisir un modèle de prestation"
+                className="grid grid-cols-1 md:grid-cols-2 gap-2"
+              >
+                {serviceTemplates.map((template) => {
+                  const isSelected = selectedTemplate === template.id
+                  const itemId = `tpl-${template.id}`
+                  return (
+                    <Label
+                      key={template.id}
+                      htmlFor={itemId}
+                      className={cn(
+                        "flex cursor-pointer items-start justify-between gap-2 rounded-lg border p-3 text-left transition-colors has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50",
+                        isSelected
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:bg-accent"
+                      )}
+                    >
+                      <RadioGroupItem
+                        id={itemId}
+                        value={template.id}
+                        className="sr-only"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">
+                          {template.title}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {formatFCFA(template.typicalPrice)} •{" "}
+                          {template.duration} min
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="text-xs shrink-0">
+                        {template.category}
+                      </Badge>
+                    </Label>
+                  )
+                })}
+              </RadioGroup>
+            </ScrollArea>
           </div>
 
           {/* Service Details */}

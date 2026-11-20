@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 import { Star, MessageCircle, ShieldCheck } from "lucide-react"
 import { ProHeader } from "@/components/pro-header"
+import { PageBreadcrumb } from "@/components/page-breadcrumb"
 import { ProServicesList } from "@/components/pro-services-list"
 import { ProReviews } from "@/components/pro-reviews"
 import { AddReviewForm } from "@/components/add-review-form"
@@ -25,6 +26,16 @@ export default async function ProfessionalProfilePage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen">
+      <div className="container mx-auto px-4 pt-6">
+        <PageBreadcrumb
+          className="mb-2"
+          items={[
+            { label: "Accueil", href: "/" },
+            { label: "Professionnels", href: "/professionals" },
+            { label: professional.name },
+          ]}
+        />
+      </div>
       <ProHeader professional={professional} />
 
       <div className="container mx-auto px-4 py-12">

@@ -1,19 +1,27 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { SlidersHorizontal, Sparkles } from "lucide-react"
+import { CatalogPagination } from "@/components/catalog-pagination"
 import { ServiceFilter } from "@/components/service-filter"
 import { ServiceListingCard } from "@/components/service-listing-card"
 import { Button } from "@/components/ui/button"
 import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-  SheetTitle,
-} from "@/components/ui/sheet"
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import type { CatalogCategory, CatalogService } from "@/lib/types/catalog"
+
+const ITEMS_PER_PAGE = 12
 
 interface ServicesBrowserProps {
   initialServices: CatalogService[]
@@ -29,6 +37,7 @@ export function ServicesBrowser({
   const initialCategoryParam = searchParams.get("category") || ""
   const initialQueryParam = (searchParams.get("q") || "").toLowerCase().trim()
 
+  const resultsRef = useRef<HTMLDivElement>(null)
   const [selectedCity, setSelectedCity] = useState(initialCityParam)
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
     initialCategoryParam ? [initialCategoryParam] : []
@@ -36,6 +45,12 @@ export function ServicesBrowser({
   const [priceRange, setPriceRange] = useState<number[]>([2000, 150000])
   const [minRating, setMinRating] = useState<number | null>(null)
   const [availableOnly, setAvailableOnly] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+
+  const handleCityChange = (cityId: string) => {
+    setSelectedCity(cityId)
+    setCurrentPage(1)
+  }
 
   const handleCategoryToggle = (categoryId: string) => {
     setSelectedCategories((prev) =>
@@ -43,6 +58,22 @@ export function ServicesBrowser({
         ? prev.filter((id) => id !== categoryId)
         : [...prev, categoryId]
     )
+    setCurrentPage(1)
+  }
+
+  const handlePriceRangeChange = (range: number[]) => {
+    setPriceRange(range)
+    setCurrentPage(1)
+  }
+
+  const handleMinRatingChange = (rating: number | null) => {
+    setMinRating(rating)
+    setCurrentPage(1)
+  }
+
+  const handleAvailableOnlyChange = (value: boolean) => {
+    setAvailableOnly(value)
+    setCurrentPage(1)
   }
 
   const filteredServices = useMemo(() => {
@@ -56,7 +87,10 @@ export function ServicesBrowser({
       ) {
         return false
       }
-      if (s.price < priceRange[0] || (priceRange[1] < 150000 && s.price > priceRange[1])) {
+      if (
+        s.price < priceRange[0] ||
+        (priceRange[1] < 150000 && s.price > priceRange[1])
+      ) {
         return false
       }
       if (minRating !== null && s.rating < minRating) {
@@ -83,12 +117,36 @@ export function ServicesBrowser({
     initialQueryParam,
   ])
 
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredServices.length / ITEMS_PER_PAGE)
+  )
+  const safePage = Math.min(currentPage, totalPages)
+
+  const paginatedServices = useMemo(() => {
+    const start = (safePage - 1) * ITEMS_PER_PAGE
+    return filteredServices.slice(start, start + ITEMS_PER_PAGE)
+  }, [filteredServices, safePage])
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }
+
+  const hasActiveFilters = Boolean(
+    selectedCity ||
+      selectedCategories.length > 0 ||
+      minRating !== null ||
+      availableOnly
+  )
+
   const resetFilters = () => {
     setSelectedCity("")
     setSelectedCategories([])
     setPriceRange([2000, 150000])
     setMinRating(null)
     setAvailableOnly(false)
+    setCurrentPage(1)
   }
 
   return (
@@ -103,7 +161,9 @@ export function ServicesBrowser({
           <div className="max-w-4xl mx-auto text-center animate-appear">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[hsl(var(--brand))]/10 border border-[hsl(var(--brand))]/20 text-xs sm:text-sm font-medium mb-6 backdrop-blur-sm">
               <div className="w-2 h-2 rounded-full bg-[hsl(var(--brand))] animate-pulse" />
-              <span className="text-[hsl(var(--brand))]">TROUVEZ LE SERVICE PARFAIT</span>
+              <span className="text-[hsl(var(--brand))]">
+                TROUVEZ LE SERVICE PARFAIT
+              </span>
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold tracking-tight mb-6 gradient-brand">
@@ -111,7 +171,8 @@ export function ServicesBrowser({
             </h1>
 
             <p className="text-base sm:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
-              Découvrez notre gamme complète de services professionnels pour votre maison.
+              Découvrez notre gamme complète de services professionnels pour votre
+              maison.
               <span className="text-foreground font-medium">
                 {" "}
                 {filteredServices.length} prestation(s) disponible(s)
@@ -119,10 +180,10 @@ export function ServicesBrowser({
               près de chez vous.
             </p>
 
-            {/* Mobile Filter Button */}
+            {/* Mobile Filter Drawer */}
             <div className="md:hidden mt-6">
-              <Sheet>
-                <SheetTrigger asChild>
+              <Drawer>
+                <DrawerTrigger asChild>
                   <Button
                     size="lg"
                     className="gap-2 bg-[hsl(var(--brand))] hover:bg-[hsl(var(--brand))]/90 text-white shadow-lg glow-brand"
@@ -130,33 +191,58 @@ export function ServicesBrowser({
                     <SlidersHorizontal className="h-5 w-5" />
                     Filtrer les services
                   </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[min(85vw,320px)] sm:w-[360px] overflow-y-auto">
-                  <SheetTitle className="sr-only">Filtres de recherche</SheetTitle>
-                  <div className="py-6">
-                    <ServiceFilter
-                      categories={categories}
-                      selectedCity={selectedCity}
-                      selectedCategories={selectedCategories}
-                      priceRange={priceRange}
-                      minRating={minRating}
-                      availableOnly={availableOnly}
-                      onCityChange={setSelectedCity}
-                      onCategoryToggle={handleCategoryToggle}
-                      onPriceRangeChange={setPriceRange}
-                      onMinRatingChange={setMinRating}
-                      onAvailableOnlyChange={setAvailableOnly}
-                    />
-                  </div>
-                </SheetContent>
-              </Sheet>
+                </DrawerTrigger>
+                <DrawerContent>
+                  <DrawerHeader className="text-left">
+                    <DrawerTitle>Filtres de recherche</DrawerTitle>
+                    <DrawerDescription>
+                      Affinez les prestations par commune, catégorie, budget ou
+                      note.
+                    </DrawerDescription>
+                  </DrawerHeader>
+                  <ScrollArea className="max-h-[60vh] px-4 pb-2">
+                    <div className="py-2">
+                      <ServiceFilter
+                        categories={categories}
+                        selectedCity={selectedCity}
+                        selectedCategories={selectedCategories}
+                        priceRange={priceRange}
+                        minRating={minRating}
+                        availableOnly={availableOnly}
+                        onCityChange={handleCityChange}
+                        onCategoryToggle={handleCategoryToggle}
+                        onPriceRangeChange={handlePriceRangeChange}
+                        onMinRatingChange={handleMinRatingChange}
+                        onAvailableOnlyChange={handleAvailableOnlyChange}
+                      />
+                    </div>
+                  </ScrollArea>
+                  <DrawerFooter className="border-t pt-4">
+                    <DrawerClose asChild>
+                      <Button className="w-full">
+                        Voir {filteredServices.length} résultat(s)
+                      </Button>
+                    </DrawerClose>
+                    {hasActiveFilters && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={resetFilters}
+                      >
+                        Réinitialiser les filtres
+                      </Button>
+                    )}
+                  </DrawerFooter>
+                </DrawerContent>
+              </Drawer>
             </div>
           </div>
         </div>
       </section>
 
       {/* Main Content Section */}
-      <section className="container mx-auto px-4 py-16">
+      <section ref={resultsRef} className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <aside className="hidden md:block col-span-1">
             <div className="sticky top-24 animate-appear">
@@ -170,10 +256,7 @@ export function ServicesBrowser({
                       </div>
                       <h2 className="text-lg font-bold gradient-brand">Filtres</h2>
                     </div>
-                    {(selectedCity ||
-                      selectedCategories.length > 0 ||
-                      minRating !== null ||
-                      availableOnly) && (
+                    {hasActiveFilters && (
                       <Button variant="ghost" size="sm" onClick={resetFilters}>
                         Réinitialiser
                       </Button>
@@ -186,11 +269,11 @@ export function ServicesBrowser({
                     priceRange={priceRange}
                     minRating={minRating}
                     availableOnly={availableOnly}
-                    onCityChange={setSelectedCity}
+                    onCityChange={handleCityChange}
                     onCategoryToggle={handleCategoryToggle}
-                    onPriceRangeChange={setPriceRange}
-                    onMinRatingChange={setMinRating}
-                    onAvailableOnlyChange={setAvailableOnly}
+                    onPriceRangeChange={handlePriceRangeChange}
+                    onMinRatingChange={handleMinRatingChange}
+                    onAvailableOnlyChange={handleAvailableOnlyChange}
                   />
                 </div>
               </div>
@@ -199,7 +282,7 @@ export function ServicesBrowser({
 
           <main className="col-span-1 md:col-span-3 min-w-0">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredServices.map((service) => (
+              {paginatedServices.map((service) => (
                 <div key={service.id} className="animate-appear">
                   <ServiceListingCard service={service} />
                 </div>
@@ -213,13 +296,20 @@ export function ServicesBrowser({
                 </div>
                 <h3 className="text-2xl font-semibold">Aucun service trouvé</h3>
                 <p className="text-muted-foreground">
-                  Essayez d&apos;ajuster vos filtres géographiques ou de budget pour voir plus de résultats.
+                  Essayez d&apos;ajuster vos filtres géographiques ou de budget pour
+                  voir plus de résultats.
                 </p>
                 <Button variant="outline" onClick={resetFilters}>
                   Réinitialiser les filtres
                 </Button>
               </div>
             )}
+
+            <CatalogPagination
+              currentPage={safePage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
           </main>
         </div>
       </section>
@@ -239,7 +329,8 @@ export function ServicesBrowser({
               Proposez vos services sur notre plateforme
             </h2>
             <p className="text-white/90 text-base sm:text-lg mb-8 leading-relaxed">
-              Rejoignez notre réseau d&apos;artisans vérifiés et recevez des créneaux de rendez-vous directement sur WhatsApp.
+              Rejoignez notre réseau d&apos;artisans vérifiés et recevez des
+              créneaux de rendez-vous directement sur WhatsApp.
             </p>
             <Button
               asChild
@@ -249,7 +340,7 @@ export function ServicesBrowser({
             >
               <Link href="/register">
                 Devenir partenaire
-                <span className="ml-2">→</span>
+                <span className="ml-2">-&gt;</span>
               </Link>
             </Button>
           </div>

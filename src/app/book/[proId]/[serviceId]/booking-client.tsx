@@ -6,12 +6,14 @@ import { useRouter } from "next/navigation"
 import { BookingStepper } from "@/components/booking-stepper"
 import { BookingSummary } from "@/components/booking-summary"
 import { DateTimePicker } from "@/components/date-time-picker"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
+  AlertTriangle,
   CheckCircle2,
   ShieldCheck,
   Clock,
@@ -230,21 +232,24 @@ export function BookingClient({
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {!isAuthenticated && (
-                    <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <p className="text-sm text-amber-900 dark:text-amber-200">
-                        Connectez-vous pour enregistrer votre créneau et suivre l&apos;intervention.
-                      </p>
-                      <Button asChild size="sm" variant="default" className="gap-2 shrink-0">
-                        <Link
-                          href={`/login?callbackUrl=${encodeURIComponent(
-                            `/book/${professional.id}/${service.id}`
-                          )}`}
-                        >
-                          <LogIn className="h-4 w-4" />
-                          Se connecter
-                        </Link>
-                      </Button>
-                    </div>
+                    <Alert variant="warning">
+                      <AlertTriangle className="size-4" />
+                      <AlertDescription className="flex w-full flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <span>
+                          Connectez-vous pour enregistrer votre créneau et suivre l&apos;intervention.
+                        </span>
+                        <Button asChild size="sm" variant="default" className="gap-2 shrink-0">
+                          <Link
+                            href={`/login?callbackUrl=${encodeURIComponent(
+                              `/book/${professional.id}/${service.id}`
+                            )}`}
+                          >
+                            <LogIn className="h-4 w-4" />
+                            Se connecter
+                          </Link>
+                        </Button>
+                      </AlertDescription>
+                    </Alert>
                   )}
 
                   <div className="space-y-2">

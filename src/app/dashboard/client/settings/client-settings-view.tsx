@@ -155,7 +155,7 @@ export function ClientSettingsView({
           <div className="flex items-center gap-2">
             <h1 className="text-3xl font-bold tracking-tight">Paramètres Client</h1>
             {isGoldMember && (
-              <Badge className="bg-amber-500 hover:bg-amber-600 text-white gap-1">
+              <Badge variant="warning" className="gap-1">
                 <Award className="h-3.5 w-3.5" />
                 Membre Or
               </Badge>
@@ -277,7 +277,7 @@ export function ClientSettingsView({
                         <Award className="h-4 w-4 text-amber-500" />
                         Membre Premium Or
                       </h3>
-                      <Badge className="bg-amber-500 text-white">Soutien & Priorité</Badge>
+                      <Badge variant="warning">Soutien &amp; Priorité</Badge>
                     </div>
                     <div>
                       <span className="text-2xl font-extrabold text-amber-600 dark:text-amber-400">

@@ -365,3 +365,31 @@
   - **Acceptance criteria:**
     - [x] `TASK-SEED-DOCS-01.01`: Author `docs/TEST_ACCOUNTS.md` (zero emojis) documenting all 26 accounts (1 Admin, 5 Clients, 20 Pros) with login credentials, roles, specialties, zones, KYC/availability/subscription states, and guided end-to-end test scenarios.
     - [x] `TASK-SEED-DOCS-01.02`: Execute `pnpm run db:seed` twice against live Supabase PostgreSQL to prove idempotency, pass `python evals/run_fullstack_eval.py` (`100/100 PASS`), and verify live HTTP `200` sign-in on `/api/auth/sign-in/email` for Admin, Client, and Pro accounts.
+
+- [x] **`TASK-SEC-AUDIT-01` - [Scope: L] Durcissement Auth Escalation, Paystack & QStash**
+  - **Priority:** CRITICAL
+  - **Target files:** `src/lib/auth.ts`, `src/lib/paystack.ts`, `src/lib/qstash.ts`, `src/app/api/webhooks/paystack/route.ts`, `src/app/api/queues/follow-up/route.ts`, `src/server/actions/subscription.ts`, `src/lib/validations/subscription.ts`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-SEC-AUDIT-01.01`: Remove `route.ts.disabled` and add Better-Auth `databaseHooks.user.update.before` blocking client-side `userType`/`emailVerified` escalation and unsafe avatar schemes.
+    - [x] `TASK-SEC-AUDIT-01.02`: Enforce Paystack plan/role eligibility, verified amount >= plan price, strict callback origin allowlist, `invoice.create` non-activation, QStash `alg: "HS256"` + mandatory SHA-256 `claims.body`, and Zod webhook payload schemas.
+
+- [x] **`TASK-SEC-LOGIC-01` - [Scope: L] Durcissement Server Actions, S3 Anti-Traversal, Email XSS & Redirections**
+  - **Priority:** HIGH
+  - **Target files:** `src/lib/storage.ts`, `src/server/actions/booking.ts`, `src/server/actions/booking-status.ts`, `src/server/actions/pro-catalog.ts`, `src/server/actions/admin.ts`, `src/server/actions/availability.ts`, `src/server/actions/reviews.ts`, `src/lib/validations/booking.ts`, `src/emails/task-follow-up-email.tsx`, `src/emails/reset-password-email.tsx`, `src/components/auth/social-auth-buttons.tsx`, `src/app/login/page.tsx`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-SEC-LOGIC-01.01`: Enforce strict S3 objectKey ownership & canonical URL construction in `storage.ts`/`pro-catalog.ts`, plus HTML escaping and URL sanitization in email templates.
+    - [x] `TASK-SEC-LOGIC-01.02`: Enforce booking state-machine transitions, self-booking prevention, past-date & unavailability overlap checks, open-redirect control-char hardening, and sanitized server error responses.
+
+- [x] **`TASK-SEC-INFRA-01` - [Scope: M] Supabase RLS Column Grants, CSP/Headers & CVE Remediation**
+  - **Priority:** HIGH
+  - **Target files:** `prisma/migrations/20261119233000_harden_rls_column_grants/migration.sql`, `prisma/seed-data.ts`, `prisma/seed.ts`, `next.config.ts`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-SEC-INFRA-01.01`: Deploy Supabase column-level SELECT grant on `pro_profiles` blocking `kycDocumentUrl`/PII, revoke anon table privileges on private tables, align seeded reviews `isModerated` flags, and add CSP + disable `X-Powered-By` in `next.config.ts`.
+    - [x] `TASK-SEC-INFRA-01.02`: Remediate production CVE (`effect >= 3.22.1`) and confirm `pnpm audit --prod --audit-level=low` reports 0 vulnerabilities.
+
+- [x] **`TASK-SEC-PENTEST-01` - [Scope: M] Suite de Tests Defensifs, Controles Live & Rapport d'Audit**
+  - **Priority:** HIGH
+  - **Target files:** `e2e/security-guards.spec.ts`, `docs/SECURITY_AUDIT_REPORT.md`, `docs/TASKS.md`
+  - **Acceptance criteria:**
+    - [x] `TASK-SEC-PENTEST-01.01`: Create `e2e/security-guards.spec.ts` and author comprehensive `docs/SECURITY_AUDIT_REPORT.md` (zero emojis).
+    - [x] `TASK-SEC-PENTEST-01.02`: Pass `python evals/run_fullstack_eval.py` (`100/100 PASS`) and execute all 8 live HTTP + Supabase PostgREST security controls.
