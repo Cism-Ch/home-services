@@ -13,7 +13,7 @@
 | [>] IN PROGRESS (SP 10) |  |   [?] SPRINT 10 QUEUE   |  |       [X] ARCHIVES      |
 +-------------------------+  +-------------------------+  +-------------------------+
 | (All Sprint 10 Done!)   |  | (All SP10 Impl Done)    |  | Sprint 02 (11 tasks)    |
-|                         |  | [ ] TASK-DS-AUDIT-01    |  | Sprint 03-04 (7 tasks)  |
+|                         |  |                         |  | Sprint 03-04 (7 tasks)  |
 |                         |  |                         |  | Sprint 05-06 (7 tasks)  |
 |                         |  |                         |  | Sprint 07 (4 tasks)     |
 |                         |  |                         |  | Sprint 08-09 (6 tasks)  |
@@ -44,6 +44,10 @@
 ### [x] `TASK-DS-AUDIT-01` — Vérification statique 0 dérive, Juge Déterministe, Smoke Test & Commit
 - [x] Audit statique : 0 import `cn`, 0 `<button>`/`<input>` hors `ui/`, 0 primitive inutilisée dans `src/components/ui/`.
 - [x] Validation `python evals/run_fullstack_eval.py` (`100/100 PASS`), `pnpm audit --prod` (0 CVE), smoke test HTTP `200` et commit `feat(sprint-10)`.
+
+### [x] `TASK-UI-SCROLL-01` — Attribut `data-scroll-behavior="smooth"` sur `<html>`
+- [x] Ajouter `data-scroll-behavior="smooth"` dans `src/app/layout.tsx` pour désactiver le scroll fluide lors des transitions de routes Next.js 16.
+- [x] Valider avec `python evals/run_fullstack_eval.py` (`100/100 PASS`).
 
 ---
 
