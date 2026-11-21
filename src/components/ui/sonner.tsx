@@ -10,13 +10,32 @@ import {
 import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 
+/**
+ * Toaster Sonner normalise avec parite complete light / dark / luxury,
+ * bouton de fermeture et pile bornee.
+ */
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
+  const { resolvedTheme } = useTheme()
+  const sonnerTheme: ToasterProps["theme"] =
+    resolvedTheme === "light" ? "light" : "dark"
 
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
-      className="toaster group"
+      theme={sonnerTheme}
+      closeButton
+      visibleToasts={4}
+      duration={4000}
+      className="toaster group font-sans"
+      toastOptions={{
+        classNames: {
+          toast:
+            "group toast font-sans shadow-lg border border-border/70 backdrop-blur-md",
+          title: "font-semibold text-sm",
+          description: "text-xs text-muted-foreground",
+          closeButton:
+            "bg-background/90 border-border/70 text-foreground hover:bg-muted transition-colors",
+        },
+      }}
       icons={{
         success: <CircleCheckIcon className="size-4" />,
         info: <InfoIcon className="size-4" />,

@@ -13,17 +13,40 @@ import {
   StaggerGrid,
   StaggerItem,
 } from "@/components/motion/reveal"
-import { getPublicProfessionals } from "@/server/queries/catalog"
+import {
+  getPublicCategories,
+  getPublicProfessionals,
+  getPublicServices,
+} from "@/server/queries/catalog"
 
 export const dynamic = "force-dynamic"
 
 export default async function Home() {
   let professionals: Awaited<ReturnType<typeof getPublicProfessionals>> = []
+  let publicServices: Awaited<ReturnType<typeof getPublicServices>> = []
+  let publicCategories: Awaited<ReturnType<typeof getPublicCategories>> = []
   try {
-    professionals = await getPublicProfessionals()
+    ;[professionals, publicServices, publicCategories] = await Promise.all([
+      getPublicProfessionals(),
+      getPublicServices(),
+      getPublicCategories(),
+    ])
   } catch (err) {
-    console.error("[home] Echec chargement professionnels en vedette:", err)
+    console.error("[home] Echec chargement catalogue accueil:", err)
   }
+
+  const serviceSuggestions = publicServices.map((s) => ({
+    id: s.id,
+    title: s.title,
+    categoryId: s.categoryId,
+    categoryName: s.categoryName,
+    price: s.price,
+    providerName: s.providerName,
+  }))
+  const categorySuggestions = publicCategories.map((c) => ({
+    id: c.id,
+    name: c.name,
+  }))
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -58,7 +81,10 @@ export default async function Home() {
       </HeroSection>
 
       {/* Quick Search Section */}
-      <QuickSearch />
+      <QuickSearch
+        services={serviceSuggestions}
+        categoriesList={categorySuggestions}
+      />
 
       {/* Featured Services Section */}
       <FeaturedServices />

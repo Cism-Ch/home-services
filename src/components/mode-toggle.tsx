@@ -11,9 +11,25 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { notify } from "@/lib/notifications"
+
+const THEME_LABELS: Record<string, string> = {
+  light: "Clair",
+  dark: "Sombre",
+  system: "Système",
+  luxury: "Luxe",
+}
 
 export function ModeToggle() {
   const { setTheme } = useTheme()
+
+  const handleSelectTheme = (nextTheme: string) => {
+    setTheme(nextTheme)
+    notify.info(`Thème ${THEME_LABELS[nextTheme] ?? nextTheme} activé`, {
+      id: "theme-mode",
+      duration: 2200,
+    })
+  }
 
   return (
     <DropdownMenu>
@@ -28,16 +44,16 @@ export function ModeToggle() {
         align="end"
         className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
       >
-        <DropdownMenuItem onClick={() => setTheme("light")}>
+        <DropdownMenuItem onClick={() => handleSelectTheme("light")}>
           Clair
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")}>
+        <DropdownMenuItem onClick={() => handleSelectTheme("dark")}>
           Sombre
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")}>
+        <DropdownMenuItem onClick={() => handleSelectTheme("system")}>
           Système
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("luxury")}>
+        <DropdownMenuItem onClick={() => handleSelectTheme("luxury")}>
           Luxe
         </DropdownMenuItem>
       </DropdownMenuContent>

@@ -2,22 +2,29 @@
 
 import { useMemo, useRef, useState } from "react"
 import Link from "next/link"
-import { m, useReducedMotion } from "framer-motion"
-import { Search, Users, Award, Star, Filter } from "lucide-react"
+import { AnimatePresence, m, useReducedMotion } from "framer-motion"
+import { Search, Users, Award, Star, Filter, X } from "lucide-react"
 import { EASE_OUT_EXPO } from "@/lib/motion"
 import {
   RevealOnScroll,
   StaggerGrid,
   StaggerItem,
 } from "@/components/motion/reveal"
+import { AnimatedCounter } from "@/components/motion/animated-counter"
+import { PresenceChip, PresenceFade } from "@/components/motion/presence-primitives"
 import { CatalogPagination } from "@/components/catalog-pagination"
+import {
+  CatalogLayoutToolbar,
+  useCatalogLayout,
+  type CatalogLayoutMode,
+} from "@/components/catalog-layout-toolbar"
 import { ProCard } from "@/components/pro-card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { notify } from "@/lib/notifications"
+import { cn } from "@/lib/utils"
 import type { CatalogCategory, CatalogProfessional } from "@/lib/types/catalog"
-
-const ITEMS_PER_PAGE = 9
 
 interface ProfessionalsBrowserProps {
   initialProfessionals: CatalogProfessional[]
@@ -30,9 +37,15 @@ export function ProfessionalsBrowser({
 }: ProfessionalsBrowserProps) {
   const resultsRef = useRef<HTMLElement>(null)
   const prefersReducedMotion = useReducedMotion()
+  const { mode, preset, setMode } = useCatalogLayout("hs:pros:layout", "grid-3x3")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("ALL")
   const [currentPage, setCurrentPage] = useState(1)
+
+  const handleLayoutChange = (nextMode: CatalogLayoutMode) => {
+    setMode(nextMode)
+    setCurrentPage(1)
+  }
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value)
@@ -48,6 +61,10 @@ export function ProfessionalsBrowser({
     setSearchQuery("")
     setSelectedCategoryId("ALL")
     setCurrentPage(1)
+    notify.info("Filtres réinitialisés", {
+      id: "pros-reset",
+      duration: 2400,
+    })
   }
 
   const filteredProfessionals = useMemo(() => {
@@ -71,25 +88,37 @@ export function ProfessionalsBrowser({
 
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredProfessionals.length / ITEMS_PER_PAGE)
+    Math.ceil(filteredProfessionals.length / preset.itemsPerPage)
   )
   const safePage = Math.min(currentPage, totalPages)
 
   const paginatedProfessionals = useMemo(() => {
-    const start = (safePage - 1) * ITEMS_PER_PAGE
-    return filteredProfessionals.slice(start, start + ITEMS_PER_PAGE)
-  }, [filteredProfessionals, safePage])
+    const start = (safePage - 1) * preset.itemsPerPage
+    return filteredProfessionals.slice(start, start + preset.itemsPerPage)
+  }, [filteredProfessionals, safePage, preset.itemsPerPage])
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
     resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
   }
 
-  const averageRating = useMemo(() => {
-    if (initialProfessionals.length === 0) return "5.0"
+  const verifiedCount = useMemo(
+    () => initialProfessionals.filter((p) => p.isVerified).length,
+    [initialProfessionals]
+  )
+
+  const averageRatingNumber = useMemo(() => {
+    if (initialProfessionals.length === 0) return 5.0
     const total = initialProfessionals.reduce((acc, p) => acc + p.rating, 0)
-    return (total / initialProfessionals.length).toFixed(1)
+    return Number((total / initialProfessionals.length).toFixed(1))
   }, [initialProfessionals])
+
+  const selectedCategoryName = useMemo(
+    () => categories.find((c) => c.id === selectedCategoryId)?.name ?? "",
+    [categories, selectedCategoryId]
+  )
+
+  const hasActiveFilters = Boolean(searchQuery.trim() || selectedCategoryId !== "ALL")
 
   return (
     <div className="min-h-screen">
@@ -147,21 +176,21 @@ export function ProfessionalsBrowser({
             <div className="bg-card/85 backdrop-blur-sm rounded-2xl p-5 sm:p-6 text-center border border-border/50 shadow-elevated">
               <Users className="h-7 w-7 mx-auto mb-2 text-[hsl(var(--brand))]" />
               <div className="text-2xl sm:text-3xl font-bold mb-1 gradient-brand">
-                {initialProfessionals.length}
+                <AnimatedCounter value={initialProfessionals.length} />
               </div>
               <div className="text-sm text-muted-foreground">Professionnels</div>
             </div>
             <div className="bg-card/85 backdrop-blur-sm rounded-2xl p-5 sm:p-6 text-center border border-border/50 shadow-elevated">
               <Award className="h-7 w-7 mx-auto mb-2 text-[hsl(var(--brand))]" />
               <div className="text-2xl sm:text-3xl font-bold mb-1 gradient-brand">
-                {initialProfessionals.filter((p) => p.isVerified).length}
+                <AnimatedCounter value={verifiedCount} />
               </div>
               <div className="text-sm text-muted-foreground">Profils vérifiés</div>
             </div>
             <div className="bg-card/85 backdrop-blur-sm rounded-2xl p-5 sm:p-6 text-center border border-border/50 shadow-elevated">
               <Star className="h-7 w-7 mx-auto mb-2 text-[hsl(var(--brand))]" />
               <div className="text-2xl sm:text-3xl font-bold mb-1 gradient-brand">
-                {averageRating}
+                <AnimatedCounter value={averageRatingNumber} decimals={1} />
               </div>
               <div className="text-sm text-muted-foreground">Note moyenne</div>
             </div>
@@ -170,53 +199,99 @@ export function ProfessionalsBrowser({
       </section>
 
       {/* Filters Section */}
-      <section ref={resultsRef} className="w-full py-8 sm:py-12">
-        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
+      <section ref={resultsRef} className="w-full py-8 sm:py-10">
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 space-y-5">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mr-1">
-            <Filter className="h-4 w-4" />
-            <span>Filtrer par :</span>
-          </div>
-          <Button
-            type="button"
-            size="sm"
-            variant={selectedCategoryId === "ALL" ? "default" : "outline"}
-            onClick={() => handleCategorySelect("ALL")}
-            className="rounded-full"
-          >
-            Tous les métiers
-          </Button>
-          {categories.map((cat) => (
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mr-1">
+              <Filter className="h-4 w-4" />
+              <span>Filtrer par :</span>
+            </div>
             <Button
-              key={cat.id}
               type="button"
               size="sm"
-              variant={selectedCategoryId === cat.id ? "default" : "outline"}
-              onClick={() => handleCategorySelect(cat.id)}
+              variant={selectedCategoryId === "ALL" ? "default" : "outline"}
+              onClick={() => handleCategorySelect("ALL")}
               className="rounded-full"
             >
-              {cat.name}
+              Tous les métiers
             </Button>
-          ))}
+            {categories.map((cat) => (
+              <Button
+                key={cat.id}
+                type="button"
+                size="sm"
+                variant={selectedCategoryId === cat.id ? "default" : "outline"}
+                onClick={() => handleCategorySelect(cat.id)}
+                className="rounded-full"
+              >
+                {cat.name}
+              </Button>
+            ))}
           </div>
+
+          <CatalogLayoutToolbar
+            mode={mode}
+            onModeChange={handleLayoutChange}
+            totalCount={filteredProfessionals.length}
+            itemLabel={
+              filteredProfessionals.length > 1
+                ? "professionnels disponibles"
+                : "professionnel disponible"
+            }
+          />
+
+          <AnimatePresence mode="popLayout">
+            {hasActiveFilters && (
+              <div className="flex flex-wrap items-center gap-2">
+                {searchQuery.trim() && (
+                  <PresenceChip key="pro-chip-q">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleSearchChange("")}
+                      className="h-7 rounded-full gap-1.5 px-3 text-xs font-medium"
+                    >
+                      <span>Recherche : {searchQuery.trim()}</span>
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </PresenceChip>
+                )}
+                {selectedCategoryId !== "ALL" && (
+                  <PresenceChip key="pro-chip-cat">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleCategorySelect("ALL")}
+                      className="h-7 rounded-full gap-1.5 px-3 text-xs font-medium"
+                    >
+                      <span>Métier : {selectedCategoryName}</span>
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </PresenceChip>
+                )}
+              </div>
+            )}
+          </AnimatePresence>
         </div>
       </section>
 
       {/* Professionals Grid */}
       <section className="w-full pb-16 sm:pb-20">
         <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
-          {paginatedProfessionals.length > 0 ? (
+          {paginatedProfessionals.length > 0 && (
             <>
               <m.div
-                key={`${safePage}-${filteredProfessionals.length}`}
+                key={`${mode}-${safePage}-${filteredProfessionals.length}`}
                 initial={prefersReducedMotion ? false : { opacity: 0.7, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.22, ease: EASE_OUT_EXPO }}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6 sm:gap-8"
+                className={cn("grid gap-6", preset.gridClass)}
               >
                 {paginatedProfessionals.map((pro) => (
-                  <div key={pro.id} className="h-full">
-                    <ProCard pro={pro} />
+                  <div key={pro.id} className="h-full min-w-0">
+                    <ProCard pro={pro} layout={preset.cardLayout} />
                   </div>
                 ))}
               </m.div>
@@ -227,8 +302,13 @@ export function ProfessionalsBrowser({
                 onPageChange={handlePageChange}
               />
             </>
-          ) : (
-            <div className="text-center py-16 space-y-4">
+          )}
+
+          <PresenceFade
+            show={paginatedProfessionals.length === 0}
+            keyId="pros-empty"
+          >
+            <div className="text-center py-16 space-y-4 rounded-2xl border border-dashed border-border/70 bg-card/40">
               <p className="text-lg font-medium">
                 Aucun professionnel ne correspond à votre recherche.
               </p>
@@ -236,7 +316,7 @@ export function ProfessionalsBrowser({
                 Afficher tous les professionnels
               </Button>
             </div>
-          )}
+          </PresenceFade>
         </div>
       </section>
 

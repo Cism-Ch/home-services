@@ -1,12 +1,17 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Search, Zap, Droplets, Paintbrush, Snowflake, ShieldCheck, Hammer } from "lucide-react"
+import { Zap, Droplets, Paintbrush, Snowflake, ShieldCheck, Hammer } from "lucide-react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { CityCombobox } from "@/components/city-combobox"
 import { RevealOnScroll } from "@/components/motion/reveal"
+import { AnimatedCounter } from "@/components/motion/animated-counter"
+import {
+  ServiceAutocomplete,
+  type CategorySuggestionItem,
+  type ServiceSuggestionItem,
+} from "@/components/service-autocomplete"
 import type { LocationItem } from "@/lib/cities-data"
 
 const categories = [
@@ -18,39 +23,46 @@ const categories = [
   { name: "Sécurité & Gardiennage", icon: ShieldCheck, slug: "securite" },
 ]
 
-export function QuickSearch() {
+interface QuickSearchProps {
+  services?: ServiceSuggestionItem[]
+  categoriesList?: CategorySuggestionItem[]
+}
+
+export function QuickSearch({
+  services = [],
+  categoriesList = [],
+}: QuickSearchProps) {
   const router = useRouter()
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedLocation, setSelectedLocation] = useState<LocationItem | null>(null)
 
-  const handleSearch = (e?: React.FormEvent) => {
-    if (e) e.preventDefault()
+  const navigateToServices = (opts: { q?: string; category?: string | null }) => {
     const params = new URLSearchParams()
-    if (searchQuery.trim()) params.set("q", searchQuery.trim())
+    if (opts.q?.trim()) params.set("q", opts.q.trim())
     if (selectedLocation) params.set("city", selectedLocation.city)
     if (selectedLocation?.commune) params.set("commune", selectedLocation.commune)
-    if (selectedCategory) params.set("category", selectedCategory)
+    if (opts.category) params.set("category", opts.category)
 
-    router.push(`/services?${params.toString()}`)
+    const qs = params.toString()
+    router.push(qs ? `/services?${qs}` : "/services")
+  }
+
+  const handleSearch = (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    navigateToServices({ q: searchQuery, category: selectedCategory })
   }
 
   const handleCategoryClick = (categorySlug: string) => {
     const nextCategory = selectedCategory === categorySlug ? null : categorySlug
     setSelectedCategory(nextCategory)
-
-    const params = new URLSearchParams()
-    if (searchQuery.trim()) params.set("q", searchQuery.trim())
-    if (selectedLocation) params.set("city", selectedLocation.city)
-    if (nextCategory) params.set("category", nextCategory)
-
-    router.push(`/services?${params.toString()}`)
+    navigateToServices({ q: searchQuery, category: nextCategory })
   }
 
   return (
     <section
       id="quick-search"
-      className="w-full py-12 md:py-16 relative overflow-hidden scroll-mt-20"
+      className="w-full py-12 md:py-16 relative overflow-x-clip scroll-mt-20"
     >
       <div
         aria-hidden="true"
@@ -72,18 +84,20 @@ export function QuickSearch() {
           </p>
         </RevealOnScroll>
 
-        <form onSubmit={handleSearch} className="relative mb-6">
+        <form onSubmit={handleSearch} className="relative z-20 mb-6">
           <div className="relative flex flex-col md:flex-row gap-2 bg-card/90 backdrop-blur-md border-2 border-border hover:border-primary/50 focus-within:border-primary/60 focus-within:shadow-lg rounded-2xl p-2.5 transition-[border-color,box-shadow] duration-200 shadow-md">
-              <div className="flex-1 flex items-center gap-3 px-2 sm:px-3 min-w-0">
-                <Search className="h-5 w-5 text-muted-foreground shrink-0" />
-                <Input
-                  type="text"
-                  placeholder="Quel métier ou service ? (ex: Plombier, Clim...)"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm sm:text-base placeholder:text-muted-foreground"
-                />
-              </div>
+              <ServiceAutocomplete
+                value={searchQuery}
+                onChange={setSearchQuery}
+                services={services}
+                categories={categoriesList}
+                onSelectCategory={(cat) =>
+                  navigateToServices({ category: cat.id })
+                }
+                onSelectService={(svc) =>
+                  navigateToServices({ q: svc.title, category: svc.categoryId })
+                }
+              />
 
               <div className="w-full md:w-[260px] shrink-0 border-t md:border-t-0 md:border-l pt-2 md:pt-0 md:pl-2">
                 <CityCombobox
@@ -133,7 +147,7 @@ export function QuickSearch() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mt-10 pt-8 border-t">
           <div className="text-center">
             <div className="text-2xl sm:text-3xl font-extrabold text-foreground mb-1">
-              0 % commission
+              <AnimatedCounter value={0} suffix=" %" /> commission
             </div>
             <div className="text-xs sm:text-sm text-muted-foreground">
               Sur le montant de vos interventions
@@ -141,7 +155,7 @@ export function QuickSearch() {
           </div>
           <div className="text-center">
             <div className="text-2xl sm:text-3xl font-extrabold text-foreground mb-1">
-              50+ zones GEO
+              <AnimatedCounter value={50} suffix="+" /> zones GEO
             </div>
             <div className="text-xs sm:text-sm text-muted-foreground">
               Communes d&apos;Abidjan et villes de Côte d&apos;Ivoire
@@ -149,7 +163,7 @@ export function QuickSearch() {
           </div>
           <div className="text-center">
             <div className="text-2xl sm:text-3xl font-extrabold text-foreground mb-1">
-              100 % direct
+              <AnimatedCounter value={100} suffix=" %" /> direct
             </div>
             <div className="text-xs sm:text-sm text-muted-foreground">
               Rendez-vous par créneaux + contact WhatsApp

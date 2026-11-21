@@ -1,23 +1,27 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Nunito } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/auth-context";
 import { MotionProvider } from "@/components/motion/motion-provider";
 import { ScrollProgress } from "@/components/motion/scroll-progress";
+import { BackToTop } from "@/components/motion/back-to-top";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const nunito = Nunito({
+  variable: "--font-nunito",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 /**
@@ -64,7 +68,7 @@ export default function RootLayout({
     <html lang="fr" data-scroll-behavior="smooth" suppressHydrationWarning>
       <body
         suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background font-sans text-foreground`}
+        className={`${nunito.variable} ${geistMono.variable} antialiased min-h-screen bg-background font-sans text-foreground`}
       >
         <ThemeProvider
           attribute="class"
@@ -82,7 +86,8 @@ export default function RootLayout({
                   <div className="flex-1">{children}</div>
                   <SiteFooter />
                 </div>
-                <Toaster position="top-right" richColors />
+                <BackToTop />
+                <Toaster position="bottom-right" richColors closeButton />
               </TooltipProvider>
             </MotionProvider>
           </AuthProvider>

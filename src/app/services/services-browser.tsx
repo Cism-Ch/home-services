@@ -3,13 +3,21 @@
 import { useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { m, useReducedMotion } from "framer-motion"
-import { SlidersHorizontal, Sparkles } from "lucide-react"
+import { AnimatePresence, m, useReducedMotion } from "framer-motion"
+import { SlidersHorizontal, Sparkles, X } from "lucide-react"
 import { EASE_OUT_EXPO } from "@/lib/motion"
 import { RevealOnScroll } from "@/components/motion/reveal"
+import { PresenceChip, PresenceFade } from "@/components/motion/presence-primitives"
 import { CatalogPagination } from "@/components/catalog-pagination"
+import {
+  CatalogLayoutToolbar,
+  useCatalogLayout,
+  type CatalogLayoutMode,
+} from "@/components/catalog-layout-toolbar"
+import { ServiceAutocomplete } from "@/components/service-autocomplete"
 import { ServiceFilter } from "@/components/service-filter"
 import { ServiceListingCard } from "@/components/service-listing-card"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Drawer,
@@ -22,9 +30,10 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { formatFCFA } from "@/lib/formatters"
+import { notify } from "@/lib/notifications"
+import { cn } from "@/lib/utils"
 import type { CatalogCategory, CatalogService } from "@/lib/types/catalog"
-
-const ITEMS_PER_PAGE = 12
 
 interface ServicesBrowserProps {
   initialServices: CatalogService[]
@@ -38,10 +47,12 @@ export function ServicesBrowser({
   const searchParams = useSearchParams()
   const initialCityParam = searchParams.get("city") || ""
   const initialCategoryParam = searchParams.get("category") || ""
-  const initialQueryParam = (searchParams.get("q") || "").toLowerCase().trim()
+  const initialQueryParam = searchParams.get("q") || ""
 
   const resultsRef = useRef<HTMLDivElement>(null)
   const prefersReducedMotion = useReducedMotion()
+  const { mode, preset, setMode } = useCatalogLayout("hs:services:layout", "grid-3x3")
+  const [searchQuery, setSearchQuery] = useState(initialQueryParam)
   const [selectedCity, setSelectedCity] = useState(initialCityParam)
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
     initialCategoryParam ? [initialCategoryParam] : []
@@ -50,6 +61,39 @@ export function ServicesBrowser({
   const [minRating, setMinRating] = useState<number | null>(null)
   const [availableOnly, setAvailableOnly] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+
+  const serviceSuggestions = useMemo(
+    () =>
+      initialServices.map((s) => ({
+        id: s.id,
+        title: s.title,
+        categoryId: s.categoryId,
+        categoryName: s.categoryName,
+        price: s.price,
+        providerName: s.providerName,
+      })),
+    [initialServices]
+  )
+
+  const categorySuggestions = useMemo(
+    () => categories.map((c) => ({ id: c.id, name: c.name })),
+    [categories]
+  )
+
+  const categoryNameById = useMemo(
+    () => new Map(categories.map((c) => [c.id, c.name])),
+    [categories]
+  )
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value)
+    setCurrentPage(1)
+  }
+
+  const handleLayoutChange = (nextMode: CatalogLayoutMode) => {
+    setMode(nextMode)
+    setCurrentPage(1)
+  }
 
   const handleCityChange = (cityId: string) => {
     setSelectedCity(cityId)
@@ -81,6 +125,7 @@ export function ServicesBrowser({
   }
 
   const filteredServices = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim()
     return initialServices.filter((s) => {
       if (selectedCity && s.cityId !== selectedCity) {
         return false
@@ -103,9 +148,9 @@ export function ServicesBrowser({
       if (availableOnly && s.availabilityStatus !== "AVAILABLE") {
         return false
       }
-      if (initialQueryParam) {
+      if (q) {
         const hay = `${s.title} ${s.description} ${s.categoryName} ${s.providerName} ${s.location}`.toLowerCase()
-        if (!hay.includes(initialQueryParam)) {
+        if (!hay.includes(q)) {
           return false
         }
       }
@@ -118,45 +163,54 @@ export function ServicesBrowser({
     priceRange,
     minRating,
     availableOnly,
-    initialQueryParam,
+    searchQuery,
   ])
 
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredServices.length / ITEMS_PER_PAGE)
+    Math.ceil(filteredServices.length / preset.itemsPerPage)
   )
   const safePage = Math.min(currentPage, totalPages)
 
   const paginatedServices = useMemo(() => {
-    const start = (safePage - 1) * ITEMS_PER_PAGE
-    return filteredServices.slice(start, start + ITEMS_PER_PAGE)
-  }, [filteredServices, safePage])
+    const start = (safePage - 1) * preset.itemsPerPage
+    return filteredServices.slice(start, start + preset.itemsPerPage)
+  }, [filteredServices, safePage, preset.itemsPerPage])
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
     resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
   }
 
-  const hasActiveFilters = Boolean(
-    selectedCity ||
-      selectedCategories.length > 0 ||
-      minRating !== null ||
-      availableOnly
-  )
+  const isPriceFiltered = priceRange[0] > 2000 || priceRange[1] < 150000
+  const activeFilterCount =
+    (searchQuery.trim() ? 1 : 0) +
+    (selectedCity ? 1 : 0) +
+    selectedCategories.length +
+    (isPriceFiltered ? 1 : 0) +
+    (minRating !== null ? 1 : 0) +
+    (availableOnly ? 1 : 0)
+
+  const hasActiveFilters = activeFilterCount > 0
 
   const resetFilters = () => {
+    setSearchQuery("")
     setSelectedCity("")
     setSelectedCategories([])
     setPriceRange([2000, 150000])
     setMinRating(null)
     setAvailableOnly(false)
     setCurrentPage(1)
+    notify.info("Filtres réinitialisés", {
+      id: "services-reset",
+      duration: 2400,
+    })
   }
 
   return (
     <div className="min-h-screen">
       {/* Hero Header Section */}
-      <section className="relative bg-gradient-to-br from-[hsl(var(--brand))]/10 via-background to-[hsl(var(--brand-foreground))]/10 py-14 sm:py-20 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-[hsl(var(--brand))]/10 via-background to-[hsl(var(--brand-foreground))]/10 py-14 sm:py-20 overflow-x-clip">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
         <div
           aria-hidden="true"
@@ -179,15 +233,36 @@ export function ServicesBrowser({
             <p className="text-base sm:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
               Découvrez notre gamme complète de services professionnels pour votre
               maison.
-              <span className="text-foreground font-medium">
+              <span className="text-foreground font-semibold tabular-nums">
                 {" "}
                 {filteredServices.length} prestation(s) disponible(s)
               </span>{" "}
               près de chez vous.
             </p>
 
-            {/* Mobile Filter Drawer */}
-            <div className="md:hidden mt-6">
+            {/* Autocomplete Search Bar */}
+            <div className="max-w-2xl mx-auto relative z-20 rounded-2xl border border-border/60 bg-card/90 p-1.5 shadow-lg backdrop-blur-md">
+              <ServiceAutocomplete
+                value={searchQuery}
+                onChange={handleSearchChange}
+                services={serviceSuggestions}
+                categories={categorySuggestions}
+                placeholder="Rechercher une prestation ou un métier (ex: Plomberie, Clim...)"
+                onSelectCategory={(cat) => {
+                  setSearchQuery("")
+                  setSelectedCategories([cat.id])
+                  setCurrentPage(1)
+                }}
+                onSelectService={(svc) => {
+                  setSearchQuery(svc.title)
+                  setSelectedCategories([svc.categoryId])
+                  setCurrentPage(1)
+                }}
+              />
+            </div>
+
+            {/* Mobile & Tablet Filter Drawer */}
+            <div className="lg:hidden mt-6">
               <Drawer>
                 <DrawerTrigger asChild>
                   <Button
@@ -196,6 +271,14 @@ export function ServicesBrowser({
                   >
                     <SlidersHorizontal className="h-5 w-5" />
                     Filtrer les services
+                    {activeFilterCount > 0 && (
+                      <Badge
+                        variant="secondary"
+                        className="ml-1 bg-white/20 text-white hover:bg-white/25 tabular-nums"
+                      >
+                        {activeFilterCount}
+                      </Badge>
+                    )}
                   </Button>
                 </DrawerTrigger>
                 <DrawerContent>
@@ -248,83 +331,215 @@ export function ServicesBrowser({
       </section>
 
       {/* Main Content Section */}
-      <section ref={resultsRef} className="w-full py-12 sm:py-16">
+      <section ref={resultsRef} className="w-full py-10 sm:py-14">
         <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <aside className="hidden md:block col-span-1">
-            <div className="sticky top-24">
-              <div className="relative bg-card/60 backdrop-blur-md rounded-2xl border border-border/50 p-6 shadow-elevated overflow-hidden group hover:shadow-elevated-lg transition-shadow duration-500">
-                <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--brand))]/5 via-transparent to-[hsl(var(--brand-foreground))]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between gap-2 mb-6 pb-4 border-b border-border/50">
-                    <div className="flex items-center gap-2">
-                      <div className="p-2 rounded-lg bg-gradient-to-br from-[hsl(var(--brand))]/10 to-[hsl(var(--brand-foreground))]/10">
-                        <Sparkles className="h-5 w-5 text-[hsl(var(--brand))]" />
-                      </div>
-                      <h2 className="text-lg font-bold gradient-brand">Filtres</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)] gap-6 xl:gap-8 items-start">
+            <aside
+              data-services-sidebar="true"
+              className="hidden lg:block sticky top-24"
+            >
+              <div className="relative flex flex-col max-h-[calc(100vh-7rem)] bg-card/70 backdrop-blur-md rounded-2xl border border-border/50 p-5 shadow-elevated overflow-hidden">
+                <div className="flex items-center justify-between gap-2 pb-4 mb-4 border-b border-border/50 shrink-0">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-[hsl(var(--brand))]/10 to-[hsl(var(--brand-foreground))]/10 shrink-0">
+                      <Sparkles className="h-4 w-4 text-[hsl(var(--brand))]" />
                     </div>
-                    {hasActiveFilters && (
-                      <Button variant="ghost" size="sm" onClick={resetFilters}>
-                        Réinitialiser
-                      </Button>
+                    <h2 className="text-base font-bold gradient-brand truncate">
+                      Filtres
+                    </h2>
+                    {activeFilterCount > 0 && (
+                      <Badge
+                        variant="secondary"
+                        className="text-xs font-bold tabular-nums"
+                      >
+                        {activeFilterCount}
+                      </Badge>
                     )}
                   </div>
-                  <ServiceFilter
-                    categories={categories}
-                    selectedCity={selectedCity}
-                    selectedCategories={selectedCategories}
-                    priceRange={priceRange}
-                    minRating={minRating}
-                    availableOnly={availableOnly}
-                    onCityChange={handleCityChange}
-                    onCategoryToggle={handleCategoryToggle}
-                    onPriceRangeChange={handlePriceRangeChange}
-                    onMinRatingChange={handleMinRatingChange}
-                    onAvailableOnlyChange={handleAvailableOnlyChange}
-                  />
+                  {hasActiveFilters && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={resetFilters}
+                      className="h-7 px-2 text-xs"
+                    >
+                      Réinitialiser
+                    </Button>
+                  )}
                 </div>
+
+                <ScrollArea className="flex-1 min-h-0 pr-3 -mr-3">
+                  <div className="pb-2">
+                    <ServiceFilter
+                      categories={categories}
+                      selectedCity={selectedCity}
+                      selectedCategories={selectedCategories}
+                      priceRange={priceRange}
+                      minRating={minRating}
+                      availableOnly={availableOnly}
+                      onCityChange={handleCityChange}
+                      onCategoryToggle={handleCategoryToggle}
+                      onPriceRangeChange={handlePriceRangeChange}
+                      onMinRatingChange={handleMinRatingChange}
+                      onAvailableOnlyChange={handleAvailableOnlyChange}
+                    />
+                  </div>
+                </ScrollArea>
               </div>
-            </div>
-          </aside>
+            </aside>
 
-          <main className="col-span-1 md:col-span-3 min-w-0">
-            <m.div
-              key={`${safePage}-${filteredServices.length}`}
-              initial={prefersReducedMotion ? false : { opacity: 0.7, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.22, ease: EASE_OUT_EXPO }}
-              className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6"
-            >
-              {paginatedServices.map((service) => (
-                <div key={service.id} className="h-full">
-                  <ServiceListingCard service={service} />
+            <main className="min-w-0 space-y-5">
+              <CatalogLayoutToolbar
+                mode={mode}
+                onModeChange={handleLayoutChange}
+                totalCount={filteredServices.length}
+                itemLabel={
+                  filteredServices.length > 1
+                    ? "prestations disponibles"
+                    : "prestation disponible"
+                }
+              />
+
+              {/* Active removable filter chips */}
+              <AnimatePresence mode="popLayout">
+                {hasActiveFilters && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {searchQuery.trim() && (
+                      <PresenceChip key="chip-query">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleSearchChange("")}
+                          className="h-7 rounded-full gap-1.5 px-3 text-xs font-medium"
+                        >
+                          <span>Recherche : {searchQuery.trim()}</span>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </PresenceChip>
+                    )}
+                    {availableOnly && (
+                      <PresenceChip key="chip-avail">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleAvailableOnlyChange(false)}
+                          className="h-7 rounded-full gap-1.5 px-3 text-xs font-medium"
+                        >
+                          <span>Disponible aujourd&apos;hui</span>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </PresenceChip>
+                    )}
+                    {selectedCity && (
+                      <PresenceChip key="chip-city">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleCityChange("")}
+                          className="h-7 rounded-full gap-1.5 px-3 text-xs font-medium"
+                        >
+                          <span>Zone : {selectedCity}</span>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </PresenceChip>
+                    )}
+                    {selectedCategories.map((catId) => (
+                      <PresenceChip key={`chip-cat-${catId}`}>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleCategoryToggle(catId)}
+                          className="h-7 rounded-full gap-1.5 px-3 text-xs font-medium"
+                        >
+                          <span>{categoryNameById.get(catId) ?? catId}</span>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </PresenceChip>
+                    ))}
+                    {isPriceFiltered && (
+                      <PresenceChip key="chip-price">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handlePriceRangeChange([2000, 150000])}
+                          className="h-7 rounded-full gap-1.5 px-3 text-xs font-medium tabular-nums"
+                        >
+                          <span>
+                            {formatFCFA(priceRange[0])} – {formatFCFA(priceRange[1])}
+                          </span>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </PresenceChip>
+                    )}
+                    {minRating !== null && (
+                      <PresenceChip key="chip-rating">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleMinRatingChange(null)}
+                          className="h-7 rounded-full gap-1.5 px-3 text-xs font-medium tabular-nums"
+                        >
+                          <span>Note ≥ {minRating}</span>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </PresenceChip>
+                    )}
+                  </div>
+                )}
+              </AnimatePresence>
+
+              {paginatedServices.length > 0 && (
+                <m.div
+                  key={`${mode}-${safePage}-${filteredServices.length}`}
+                  initial={prefersReducedMotion ? false : { opacity: 0.7, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.22, ease: EASE_OUT_EXPO }}
+                  className={cn("grid gap-6", preset.gridClass)}
+                >
+                  {paginatedServices.map((service) => (
+                    <div key={service.id} className="h-full min-w-0">
+                      <ServiceListingCard
+                        service={service}
+                        layout={preset.cardLayout}
+                      />
+                    </div>
+                  ))}
+                </m.div>
+              )}
+
+              <PresenceFade
+                show={filteredServices.length === 0}
+                keyId="services-empty"
+              >
+                <div className="text-center py-20 space-y-4 rounded-2xl border border-dashed border-border/70 bg-card/40">
+                  <div className="w-20 h-20 mx-auto rounded-full bg-muted flex items-center justify-center">
+                    <SlidersHorizontal className="h-10 w-10 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-2xl font-semibold">Aucun service trouvé</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    Essayez d&apos;ajuster vos filtres géographiques ou de budget
+                    pour voir plus de résultats.
+                  </p>
+                  <Button variant="outline" onClick={resetFilters}>
+                    Réinitialiser les filtres
+                  </Button>
                 </div>
-              ))}
-            </m.div>
+              </PresenceFade>
 
-            {filteredServices.length === 0 && (
-              <div className="text-center py-20 space-y-4">
-                <div className="w-20 h-20 mx-auto rounded-full bg-muted flex items-center justify-center">
-                  <SlidersHorizontal className="h-10 w-10 text-muted-foreground" />
-                </div>
-                <h3 className="text-2xl font-semibold">Aucun service trouvé</h3>
-                <p className="text-muted-foreground">
-                  Essayez d&apos;ajuster vos filtres géographiques ou de budget pour
-                  voir plus de résultats.
-                </p>
-                <Button variant="outline" onClick={resetFilters}>
-                  Réinitialiser les filtres
-                </Button>
-              </div>
-            )}
-
-            <CatalogPagination
-              currentPage={safePage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
-          </main>
-        </div>
+              <CatalogPagination
+                currentPage={safePage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </main>
+          </div>
         </div>
       </section>
 

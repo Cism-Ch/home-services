@@ -10,44 +10,46 @@
 
 ```
 +-------------------------+  +-------------------------+  +-------------------------+
-| [>] IN PROGRESS (SP 13) |  |   [?] SPRINT 13 QUEUE   |  |       [X] ARCHIVES      |
+|    [>] IN PROGRESS      |  |    [x] SPRINT 14 DONE   |  |       [X] ARCHIVES      |
 +-------------------------+  +-------------------------+  +-------------------------+
-| [x] Sprint 13 COMPLETE   |  | (All SP13 Tasks Done!)   |  | Sprint 02-11 (34 tasks) |
-|     (Ready -> Commit)   |  |                         |  | Sprint 12 (6 tasks)     |
-|                         |  | [x] TASK-HERO-COVER-01  |  | (Full Archive Logged)   |
-|                         |  | [x] TASK-MOTION-PERF-01 |  |                         |
-|                         |  |                         |  |                         |
+| (Aucune tache active)   |  | [x] TASK-UI14-FONT-HDR  |  | Sprint 02-12 (40 tasks) |
+|                         |  | [x] TASK-UI14-AUTOCOMP  |  | Sprint 13 + Prod (6)    |
+|                         |  | [x] TASK-UI14-LAYOUTS   |  | (Full Archive Logged)   |
+|                         |  | [x] TASK-UI14-SIDEBAR   |  |                         |
+|                         |  | [x] TASK-UI14-PRESENCE  |  |                         |
+|                         |  | [x] TASK-UI14-TOASTS    |  |                         |
+|                         |  | [x] TASK-UI14-COUNTERS  |  |                         |
 +-------------------------+  +-------------------------+  +-------------------------+
 ```
 
 ---
 
-## Active Sprint 13: Hero Cover Zero-CLS, Framer Motion GPU-Only, Transitions & Perf 60fps
+## Completed Sprint 14: UI/UX Nunito, Autocomplete Services, Modes Grille/Liste, Sidebar, Presence & Notifications (100/100 PASS)
 
-### [x] `TASK-HERO-COVER-01` — Hero Plein Ecran Cover & Slogan Dynamique Zero-CLS
-- [x] Passer `HeroSection` (`src/components/marketing/hero-section.tsx`) en RSC plein ecran (`min-h-[calc(100svh-4rem)]`) avec ancre `#quick-search` et lueur radiale continue dans `src/components/marketing/glow.tsx`.
-- [x] Verrouiller la hauteur de `HeroSloganRotator` (`src/components/hero-slogan-rotator.tsx`) via une grille ghost-stack CSS sans `filter: blur`, pause si onglet masque / `prefers-reduced-motion`, et delta de page `0px`.
+### [x] `TASK-UI14-FONT-HEADER-01` — Police Nunito, Header Translucide Sans Bordure & Cartes Hero/Presentation
+- [x] Migrer la police principale vers `Nunito` (`next/font/google`, poids 400..800) dans `src/app/layout.tsx` et `src/app/globals.css`.
+- [x] Refondre `SiteHeader` en barre translucide sans bordure avec densification au scroll, et raffiner `HowItWorks` et `FeaturedServices`.
 
-### [x] `TASK-MOTION-CORE-01` — Socle Framer Motion (`LazyMotion`, `MotionConfig`, Presets GPU)
-- [x] Creer `src/lib/motion.ts` (variantes GPU `transform`/`opacity` uniquement), `src/components/motion/motion-provider.tsx` (`<LazyMotion features={domMax}>` + `<MotionConfig reducedMotion="user">`), `src/components/motion/reveal.tsx` (`RevealOnScroll`, `StaggerGrid`, `StaggerItem`), et `src/components/motion/scroll-progress.tsx`.
-- [x] Integrer `MotionProvider` et `ScrollProgress` dans `src/app/layout.tsx`.
+### [x] `TASK-UI14-AUTOCOMPLETE-01` — Auto-Completion Services Disponibles sur la Recherche
+- [x] Creer `src/components/service-autocomplete.tsx` (navigation clavier, Metiers + Prestations Prisma avec tarif FCFA) redirigeant vers `/services?q=...&category=...`.
+- [x] Integrer dans `QuickSearch` (`src/app/page.tsx`) et dans l'en-tete de `/services`.
 
-### [x] `TASK-MOTION-SCROLL-01` — Defilement Fluide & Suppression des Goulets GPU (`blur-3xl` / `spin`)
-- [x] Remplacer les 12 calques `blur-3xl` / `blur-xl` et `animate-[spin]` (`how-it-works.tsx`, `page.tsx`, `quick-search.tsx`, `services-browser.tsx`, `professionals-browser.tsx`, `about/page.tsx`, `site-footer.tsx`) par des radial-gradients legers.
-- [x] Remplacer `.animate-appear` / `animate-slide-down` par `RevealOnScroll`/`StaggerGrid` hors-viewport, garder le Hero above-the-fold immediat, et cibler les proprietes `transition-*` sur les cartes.
+### [x] `TASK-UI14-LAYOUT-MODES-01` — Outils d'Affichage Row / Column (`3x1`, `3x2`, `3x3`, `4x3`)
+- [x] Creer `src/components/catalog-layout-toolbar.tsx` (`ToggleGroup` + persistance `localStorage` via `useSyncExternalStore`) avec les 4 presets : `min 3x1 (row)`, `3x2 (6/page)`, `3x3 (9/page, defaut)`, `4x3 (12/page)`.
+- [x] Ajouter `layout="row" | "grid"` sur `ServiceListingCard` et `ProCard`, supprimer la 4e colonne ecrasante sur `/services` et `/professionals`.
 
-### [x] `TASK-MOTION-NAV-01` — Transitions Routes, `layoutId` & Parcours Reservation
-- [x] Creer `src/app/template.tsx` (micro-transition d'entree GPU compatible `sticky`), ajouter indicateurs glissants `layoutId` dans `MainNav` et `DashboardSidebar`, et progression animee dans `BookingStepper`.
-- [x] Animer les transitions directionnelles d'etapes dans `BookingClient` et l'apparition des creneaux horaires dans `DateTimePicker`.
+### [x] `TASK-UI14-SIDEBAR-01` — Optimisation Sidebar de Filtrage `/services`
+- [x] Passer la mise en page desktop `/services` sur `lg:grid-cols-[300px_minmax(0,1fr)]` (`Drawer` sur `< lg`), borner la sidebar sticky avec `ScrollArea` interne, compteur de filtres actifs et `ServiceFilter` nettoye.
 
-### [x] `TASK-MOTION-PERF-01` — Verification Multi-Viewports Zero-CLS, Regles UI Motion & Juge `100/100`
-- [x] Ajouter le test Sprint 13 dans `e2e/responsive-layout.spec.ts` (Cover hero, delta `<= 0.5px` lors de la rotation du slogan, zero `.blur-3xl`/`animate-[spin`, navigation routes, booking transitions, `reducedMotion`).
-- [x] Consigner `[R-UI-14]` et `[R-UI-15]` dans `.agents/rules/modules/ui_frontend.md` et valider avec `python evals/run_fullstack_eval.py` (`100/100 PASS`).
+### [x] `TASK-UI14-PRESENCE-01` — Transitions & Apparition/Disparition (`AnimatePresence`) sur Elements Cles
+- [x] Creer `src/components/motion/presence-primitives.tsx` et `src/components/motion/back-to-top.tsx` (bouton retour haut anime), animer puces de filtres actifs, etats vides/remplis, changements de layout et dropdown autocomplete.
 
-### [x] `TASK-PROD-FIX-01` — Durcissement Production (Prisma/Vercel, SSL Supabase, Redis/URL Fail-Safe, Digest Erreur)
-- [x] Garantir `prisma generate && next build` dans `package.json` et durcir `src/lib/prisma.ts` (SSL `.supabase.co`/`.supabase.com` + normalisation `sslmode`, singleton serverless `max: 5`).
-- [x] Securiser `metadataBase` dans `src/app/layout.tsx`, `getRedisClient()` dans `src/lib/redis.ts`, fallback resilient sur `src/app/page.tsx`, et affichage du `digest` dans `src/app/error.tsx`.
-- [x] Valider avec `python evals/run_fullstack_eval.py` (`100/100 PASS`).
+### [x] `TASK-UI14-TOASTS-01` — Normalisation des Notifications (`sonner`) & Feedback Interactions
+- [x] Corriger la parite theme `.luxury` + `closeButton` + `bottom-right` dans `src/components/ui/sonner.tsx` et `src/app/layout.tsx`, creer `src/lib/notifications.ts` (deduplication `id` anti-spam), et couvrir `SiteHeader` logout, `CatalogLayoutToolbar`, `ModeToggle` et reinitialisation des filtres.
+
+### [x] `TASK-UI14-COUNTERS-PERF-01` — Compteurs Animes, Optimisation Perf UI & Validation `100/100`
+- [x] Creer `src/components/motion/animated-counter.tsx` (`useInView`, `tabular-nums`, `prefers-reduced-motion`) et l'integrer dans `QuickSearch`, `ProfessionalsBrowser` et `AboutPage`.
+- [x] Etendre `e2e/responsive-layout.spec.ts` (13/13 PASS) et valider avec `python evals/run_fullstack_eval.py` (`100/100 PASS`).
 
 ---
 
@@ -55,6 +57,7 @@
 
 | Date | Task ID | Title & Description | Created / Modified Files |
 | :--- | :--- | :--- | :--- |
+| 2026-11-20 | SPRINT-13 | Hero Cover Zero-CLS, Framer Motion GPU-Only, Transitions, Perf 60fps & Durcissement Prod (`TASK-PROD-FIX-01`) | `src/lib/motion.ts`, `src/components/motion/*`, `src/app/template.tsx`, `src/lib/prisma.ts`, `src/lib/redis.ts`, `src/app/error.tsx`, `package.json`, `e2e/*` |
 | 2026-11-20 | SPRINT-12 | Full-Width `1920px+`, Lueur Hero, Capacite `1..N` Multi-Jours & Hotfix Auth `429`/Proxy | `src/lib/scheduling.ts`, `src/proxy.ts`, `src/lib/auth.ts`, `prisma/schema.prisma`, `src/app/**/*`, `e2e/**/*` |
 | 2026-11-03 | TASK-GIT-01 | Git Initialization & Security Audits | `.gitignore`, `evals/security_audit.py`, `evals/run_fullstack_eval.py`, `docs/TASKS.md` |
 | 2026-11-03 | TASK-I18N-01 | Complete Repository Internationalization (EN) | `README.md`, `AGENTS.md`, `CHANGELOG.md`, `docs/TASKS.md`, `.agents/**/*`, `evals/**/*`, `.gitignore` |

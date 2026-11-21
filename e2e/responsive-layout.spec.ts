@@ -425,4 +425,90 @@ test.describe("HomeServices - Audit Geometrique Multi-Viewports", () => {
     expect(reducedState.opacity).toBe("1")
     expect(reducedState.progressCount).toBe(0)
   })
+
+  test("6. Sprint 14: Nunito, Header Translucide, Autocomplete, Modes 3x1/3x2/3x3/4x3, Sidebar & Compteurs", async ({
+    page,
+  }) => {
+    test.setTimeout(90000)
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto("/", { waitUntil: "load" })
+
+    // 1. Police Nunito + Header translucide sans bordure + Compteurs animes
+    const homeMetrics = await page.evaluate(() => {
+      const bodyFont = window.getComputedStyle(document.body).fontFamily
+      const header = document.querySelector('[data-site-header="translucent"]')
+      const headerStyle = header ? window.getComputedStyle(header) : null
+      const counters = document.querySelectorAll('[data-animated-counter="true"]').length
+      return {
+        bodyFont,
+        hasTranslucentHeader: Boolean(header),
+        headerBorderBottom: headerStyle?.borderBottomWidth ?? "missing",
+        counters,
+      }
+    })
+    console.log(`[UI14-T6-HOME] ${JSON.stringify(homeMetrics)}`)
+    expect(homeMetrics.bodyFont.toLowerCase()).toContain("nunito")
+    expect(homeMetrics.hasTranslucentHeader).toBe(true)
+    expect(homeMetrics.headerBorderBottom).toBe("0px")
+    expect(homeMetrics.counters).toBeGreaterThanOrEqual(3)
+
+    // 2. Autocomplete des services sur l'accueil -> redirection /services
+    const autoInput = page.locator('[data-service-autocomplete="true"] input').first()
+    await autoInput.scrollIntoViewIfNeeded()
+    await autoInput.click()
+    await autoInput.fill("plomb")
+    const dropdown = page.locator('[data-autocomplete-dropdown="true"]').first()
+    await expect(dropdown).toBeVisible({ timeout: 5000 })
+    const firstOption = dropdown.locator('[role="option"]').first()
+    await expect(firstOption).toBeVisible()
+    await firstOption.click()
+    await page.waitForURL(/\/services\?/, { timeout: 10000 })
+
+    // 3. Sidebar filtres & bascule 3x1 / 3x2 / 3x3 / 4x3 sur /services
+    await page.goto("/services", { waitUntil: "load" })
+    const sidebarBox = await page
+      .locator('[data-services-sidebar="true"]')
+      .boundingBox()
+    expect(sidebarBox).not.toBeNull()
+    expect(sidebarBox!.width).toBeGreaterThanOrEqual(280)
+    await assertNoHorizontalOverflow(page, "desktop /services default 3x3")
+
+    // Default 3x3 -> 9 cartes max par page en mode grid
+    expect(await page.locator('[data-card-layout="grid"]').count()).toBeGreaterThanOrEqual(1)
+    expect(await page.locator('[data-card-layout="grid"]').count()).toBeLessThanOrEqual(9)
+
+    // Basculer en mode 3x1 (row)
+    await page.locator('[data-layout-option="row-3x1"]').click()
+    await expect(page.locator('[data-card-layout="row"]').first()).toBeVisible()
+    expect(await page.locator('[data-card-layout="row"]').count()).toBeGreaterThanOrEqual(3)
+    await assertNoHorizontalOverflow(page, "desktop /services row-3x1")
+
+    // Basculer en 3x2 (6 par page)
+    await page.locator('[data-layout-option="grid-3x2"]').click()
+    await expect(page.locator('[data-card-layout="grid"]').first()).toBeVisible()
+    expect(await page.locator('[data-card-layout="grid"]').count()).toBeLessThanOrEqual(6)
+
+    // Basculer en 4x3 (12 par page)
+    await page.locator('[data-layout-option="grid-4x3"]').click()
+    await expect(page.locator('[data-card-layout="grid"]').first()).toBeVisible()
+    expect(await page.locator('[data-card-layout="grid"]').count()).toBeGreaterThanOrEqual(9)
+    await assertNoHorizontalOverflow(page, "desktop /services grid-4x3")
+
+    // Verification mobile 375px sans overflow en mode row-3x1
+    await page.setViewportSize({ width: 375, height: 812 })
+    await page.locator('[data-layout-option="row-3x1"]').click()
+    await page.waitForTimeout(200)
+    await assertNoHorizontalOverflow(page, "mobile /services row-3x1")
+
+    // 4. Professionals: toolbar + compteurs + mode row
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto("/professionals", { waitUntil: "load" })
+    await expect(page.locator('[data-catalog-toolbar="true"]')).toBeVisible()
+    expect(
+      await page.locator('[data-animated-counter="true"]').count()
+    ).toBeGreaterThanOrEqual(3)
+    await page.locator('[data-layout-option="row-3x1"]').click()
+    await expect(page.locator('[data-card-layout="row"]').first()).toBeVisible()
+    await assertNoHorizontalOverflow(page, "desktop /professionals row-3x1")
+  })
 })

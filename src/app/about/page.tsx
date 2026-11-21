@@ -7,6 +7,7 @@ import {
   StaggerGrid,
   StaggerItem,
 } from "@/components/motion/reveal"
+import { AnimatedCounter } from "@/components/motion/animated-counter"
 import {
   CheckCircle2,
   Users,
@@ -99,7 +100,7 @@ export default function AboutPage() {
                     <Users className="h-7 w-7 text-[hsl(var(--brand))]" />
                   </div>
                   <div className="text-3xl sm:text-4xl font-bold mb-2 gradient-brand">
-                    0 %
+                    <AnimatedCounter value={0} suffix=" %" />
                   </div>
                   <p className="text-sm text-muted-foreground">Commission sur vos travaux</p>
                 </CardContent>
@@ -127,7 +128,7 @@ export default function AboutPage() {
                     <Zap className="h-7 w-7 text-[hsl(var(--brand))]" />
                   </div>
                   <div className="text-3xl sm:text-4xl font-bold mb-2 gradient-brand">
-                    50+
+                    <AnimatedCounter value={50} suffix="+" />
                   </div>
                   <p className="text-sm text-muted-foreground">Communes & villes couvertes</p>
                 </CardContent>
