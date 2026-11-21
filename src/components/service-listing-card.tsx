@@ -1,4 +1,4 @@
-import { Star, MapPin, Sparkles, Clock } from "lucide-react"
+import { Star, MapPin, CalendarCheck, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -102,7 +102,7 @@ export function ServiceListingCard({
                 className="bg-[hsl(var(--brand))] hover:bg-[hsl(var(--brand))]/90 text-white shadow-md hover:shadow-lg transition-[box-shadow,background-color] duration-200 gap-2 font-semibold"
               >
                 <Link href={`/book/${service.proProfileId}/${service.id}`}>
-                  <Sparkles className="h-4 w-4" />
+                  <CalendarCheck className="h-4 w-4" />
                   Réserver
                 </Link>
               </Button>
@@ -196,7 +196,7 @@ export function ServiceListingCard({
           className="bg-[hsl(var(--brand))] hover:bg-[hsl(var(--brand))]/90 text-white shadow-md hover:shadow-lg transition-[box-shadow,background-color] duration-300 gap-2 font-semibold"
         >
           <Link href={`/book/${service.proProfileId}/${service.id}`}>
-            <Sparkles className="h-4 w-4" />
+            <CalendarCheck className="h-4 w-4" />
             Réserver
           </Link>
         </Button>

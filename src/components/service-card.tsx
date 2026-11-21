@@ -20,7 +20,7 @@ export function ServiceCard({ title, icon: Icon, description }: ServiceCardProps
             <div className="absolute top-0 right-0 w-20 h-20 bg-[hsl(var(--brand))]/5 rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="absolute bottom-0 left-0 w-16 h-16 bg-[hsl(var(--brand-foreground))]/5 rounded-tr-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-            <CardHeader className="relative z-10">
+            <CardHeader className="relative z-10 flex flex-col items-center text-center sm:items-start sm:text-left">
                 <div className="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[hsl(var(--brand))]/10 to-[hsl(var(--brand-foreground))]/10 group-hover:from-[hsl(var(--brand))]/20 group-hover:to-[hsl(var(--brand-foreground))]/20 transition-transform duration-500 group-hover:scale-110 transform group-hover:rotate-6 ring-2 ring-[hsl(var(--brand))]/0 group-hover:ring-[hsl(var(--brand))]/20">
                     <Icon className="h-8 w-8 text-[hsl(var(--brand))] group-hover:text-[hsl(var(--brand-foreground))] transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6" />
                 </div>
@@ -28,7 +28,7 @@ export function ServiceCard({ title, icon: Icon, description }: ServiceCardProps
                     {title}
                 </CardTitle>
             </CardHeader>
-            <CardContent className="relative z-10">
+            <CardContent className="relative z-10 text-center sm:text-left">
                 <p className="text-sm text-muted-foreground group-hover:text-foreground/90 transition-colors duration-300 leading-relaxed">
                     {description}
                 </p>

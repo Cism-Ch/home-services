@@ -84,8 +84,8 @@ export function QuickSearch({
           </p>
         </RevealOnScroll>
 
-        <form onSubmit={handleSearch} className="relative z-20 mb-6">
-          <div className="relative flex flex-col md:flex-row gap-2 bg-card/90 backdrop-blur-md border-2 border-border hover:border-primary/50 focus-within:border-primary/60 focus-within:shadow-lg rounded-2xl p-2.5 transition-[border-color,box-shadow] duration-200 shadow-md">
+        <form onSubmit={handleSearch} className="relative z-30 mb-6">
+          <div className="relative flex flex-col md:flex-row md:items-center gap-2 bg-card/95 backdrop-blur-md border-2 border-border hover:border-primary/50 focus-within:border-primary/60 focus-within:shadow-lg rounded-2xl p-2 sm:p-2.5 transition-[border-color,box-shadow] duration-200 shadow-md">
               <ServiceAutocomplete
                 value={searchQuery}
                 onChange={setSearchQuery}
@@ -99,19 +99,19 @@ export function QuickSearch({
                 }
               />
 
-              <div className="w-full md:w-[260px] shrink-0 border-t md:border-t-0 md:border-l pt-2 md:pt-0 md:pl-2">
+              <div className="w-full md:w-[260px] shrink-0 border-t md:border-t-0 md:border-l border-border/60 pt-2 md:pt-0 md:pl-2">
                 <CityCombobox
                   value={selectedLocation?.id}
                   onChange={setSelectedLocation}
                   placeholder="Ville ou commune (ex: Cocody...)"
-                  triggerClassName="border-0 bg-transparent hover:bg-muted/40 shadow-none"
+                  triggerClassName="h-11 border-0 bg-transparent hover:bg-muted/40 shadow-none"
                 />
               </div>
 
               <Button
                 type="submit"
                 size="lg"
-                className="w-full md:w-auto px-8 font-semibold shadow-md hover:shadow-lg shrink-0 rounded-xl"
+                className="w-full md:w-auto h-11 px-8 font-semibold shadow-md hover:shadow-lg shrink-0 rounded-xl"
               >
                 Rechercher
               </Button>

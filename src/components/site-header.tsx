@@ -113,6 +113,11 @@ export function SiteHeader() {
                     </Link>
                   </Button>
                   <Button asChild variant="ghost" className="w-full justify-start min-h-10">
+                    <Link href="/pricing" onClick={() => setIsOpen(false)}>
+                      Tarifs
+                    </Link>
+                  </Button>
+                  <Button asChild variant="ghost" className="w-full justify-start min-h-10">
                     <Link href="/about" onClick={() => setIsOpen(false)}>
                       À propos
                     </Link>

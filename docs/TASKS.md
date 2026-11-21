@@ -10,46 +10,29 @@
 
 ```
 +-------------------------+  +-------------------------+  +-------------------------+
-|    [>] IN PROGRESS      |  |    [x] SPRINT 14 DONE   |  |       [X] ARCHIVES      |
+|    [>] IN PROGRESS      |  |    [x] SPRINT 15 DONE   |  |       [X] ARCHIVES      |
 +-------------------------+  +-------------------------+  +-------------------------+
-| (Aucune tache active)   |  | [x] TASK-UI14-FONT-HDR  |  | Sprint 02-12 (40 tasks) |
-|                         |  | [x] TASK-UI14-AUTOCOMP  |  | Sprint 13 + Prod (6)    |
-|                         |  | [x] TASK-UI14-LAYOUTS   |  | (Full Archive Logged)   |
-|                         |  | [x] TASK-UI14-SIDEBAR   |  |                         |
-|                         |  | [x] TASK-UI14-PRESENCE  |  |                         |
-|                         |  | [x] TASK-UI14-TOASTS    |  |                         |
-|                         |  | [x] TASK-UI14-COUNTERS  |  |                         |
+| (Aucune tache active)   |  | [x] TASK-UI15-FIX-MOB   |  | Sprint 02-12 (40 tasks) |
+|                         |  | [x] TASK-UI15-PRICING   |  | Sprint 13-14 (13 tasks) |
+|                         |  |                         |  | (Full Archive Logged)   |
 +-------------------------+  +-------------------------+  +-------------------------+
 ```
 
 ---
 
-## Completed Sprint 14: UI/UX Nunito, Autocomplete Services, Modes Grille/Liste, Sidebar, Presence & Notifications (100/100 PASS)
+## Completed Sprint 15: Correctifs Responsive Mobile (Sidebar/Drawer, Autocomplete, Cards, Footer) & Page Tarifs Cover (100/100 PASS)
 
-### [x] `TASK-UI14-FONT-HEADER-01` — Police Nunito, Header Translucide Sans Bordure & Cartes Hero/Presentation
-- [x] Migrer la police principale vers `Nunito` (`next/font/google`, poids 400..800) dans `src/app/layout.tsx` et `src/app/globals.css`.
-- [x] Refondre `SiteHeader` en barre translucide sans bordure avec densification au scroll, et raffiner `HowItWorks` et `FeaturedServices`.
+### [x] `TASK-UI15-FIX-MOB-01` — Correctifs Responsive Mobile & Alignements UI
+- [x] Corriger le Drawer mobile et la sidebar filtres sur `/services` (`max-h-[88dvh]`, scroll natif sans piege Radix/Vaul, grille `lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]`).
+- [x] Corriger l'affichage mobile et le positionnement de la dropdown `ServiceAutocomplete` (`text-left`, `max-h-[min(55vh,320px)]`, `z-50`, tailles tactiles).
+- [x] Remplacer l'icone `Sparkles` du bouton `Réserver` par `CalendarCheck` dans `ServiceListingCard`.
+- [x] Centrer sur mobile le contenu des cards `ServiceCard` ("Nos Services") ainsi que les badges/titres/sous-titres des sections de la page d'accueil.
+- [x] Aligner `SiteFooter` en grille adaptative `1x1` / `2x2` / `4x1` (`min-[360px]:grid-cols-2 lg:grid-cols-4`).
 
-### [x] `TASK-UI14-AUTOCOMPLETE-01` — Auto-Completion Services Disponibles sur la Recherche
-- [x] Creer `src/components/service-autocomplete.tsx` (navigation clavier, Metiers + Prestations Prisma avec tarif FCFA) redirigeant vers `/services?q=...&category=...`.
-- [x] Integrer dans `QuickSearch` (`src/app/page.tsx`) et dans l'en-tete de `/services`.
-
-### [x] `TASK-UI14-LAYOUT-MODES-01` — Outils d'Affichage Row / Column (`3x1`, `3x2`, `3x3`, `4x3`)
-- [x] Creer `src/components/catalog-layout-toolbar.tsx` (`ToggleGroup` + persistance `localStorage` via `useSyncExternalStore`) avec les 4 presets : `min 3x1 (row)`, `3x2 (6/page)`, `3x3 (9/page, defaut)`, `4x3 (12/page)`.
-- [x] Ajouter `layout="row" | "grid"` sur `ServiceListingCard` et `ProCard`, supprimer la 4e colonne ecrasante sur `/services` et `/professionals`.
-
-### [x] `TASK-UI14-SIDEBAR-01` — Optimisation Sidebar de Filtrage `/services`
-- [x] Passer la mise en page desktop `/services` sur `lg:grid-cols-[300px_minmax(0,1fr)]` (`Drawer` sur `< lg`), borner la sidebar sticky avec `ScrollArea` interne, compteur de filtres actifs et `ServiceFilter` nettoye.
-
-### [x] `TASK-UI14-PRESENCE-01` — Transitions & Apparition/Disparition (`AnimatePresence`) sur Elements Cles
-- [x] Creer `src/components/motion/presence-primitives.tsx` et `src/components/motion/back-to-top.tsx` (bouton retour haut anime), animer puces de filtres actifs, etats vides/remplis, changements de layout et dropdown autocomplete.
-
-### [x] `TASK-UI14-TOASTS-01` — Normalisation des Notifications (`sonner`) & Feedback Interactions
-- [x] Corriger la parite theme `.luxury` + `closeButton` + `bottom-right` dans `src/components/ui/sonner.tsx` et `src/app/layout.tsx`, creer `src/lib/notifications.ts` (deduplication `id` anti-spam), et couvrir `SiteHeader` logout, `CatalogLayoutToolbar`, `ModeToggle` et reinitialisation des filtres.
-
-### [x] `TASK-UI14-COUNTERS-PERF-01` — Compteurs Animes, Optimisation Perf UI & Validation `100/100`
-- [x] Creer `src/components/motion/animated-counter.tsx` (`useInView`, `tabular-nums`, `prefers-reduced-motion`) et l'integrer dans `QuickSearch`, `ProfessionalsBrowser` et `AboutPage`.
-- [x] Etendre `e2e/responsive-layout.spec.ts` (13/13 PASS) et valider avec `python evals/run_fullstack_eval.py` (`100/100 PASS`).
+### [x] `TASK-UI15-PRICING-01` — Page Tarifs (`/pricing`) en Cover Animee Client vs Professionnel & Menu
+- [x] Ajouter le lien `Tarifs` (`/pricing`) dans `MainNav`, `SiteHeader` (mobile) et `SiteFooter`.
+- [x] Creer `src/app/pricing/page.tsx` et `src/app/pricing/pricing-experience.tsx` en Cover plein ecran demandant de maniere animee si l'utilisateur est Client/Particulier ou Professionnel/Entreprise avec les formules XOF `PAYSTACK_PLANS`.
+- [x] Etendre `e2e/responsive-layout.spec.ts` (couverture `/pricing`, drawer mobile `/services`, footer `2x2`, autocomplete mobile) et valider `100/100 PASS`.
 
 ---
 
@@ -57,6 +40,7 @@
 
 | Date | Task ID | Title & Description | Created / Modified Files |
 | :--- | :--- | :--- | :--- |
+| 2026-11-21 | SPRINT-14 | Refonte UI/UX : Nunito, Autocomplete Services, Modes `3x1`/`3x2`/`3x3`/`4x3`, Sidebar, `AnimatePresence`, Notifications & Compteurs | `src/app/layout.tsx`, `src/components/service-autocomplete.tsx`, `src/components/catalog-layout-toolbar.tsx`, `src/components/motion/*`, `src/lib/notifications.ts`, `e2e/*` |
 | 2026-11-20 | SPRINT-13 | Hero Cover Zero-CLS, Framer Motion GPU-Only, Transitions, Perf 60fps & Durcissement Prod (`TASK-PROD-FIX-01`) | `src/lib/motion.ts`, `src/components/motion/*`, `src/app/template.tsx`, `src/lib/prisma.ts`, `src/lib/redis.ts`, `src/app/error.tsx`, `package.json`, `e2e/*` |
 | 2026-11-20 | SPRINT-12 | Full-Width `1920px+`, Lueur Hero, Capacite `1..N` Multi-Jours & Hotfix Auth `429`/Proxy | `src/lib/scheduling.ts`, `src/proxy.ts`, `src/lib/auth.ts`, `prisma/schema.prisma`, `src/app/**/*`, `e2e/**/*` |
 | 2026-11-03 | TASK-GIT-01 | Git Initialization & Security Audits | `.gitignore`, `evals/security_audit.py`, `evals/run_fullstack_eval.py`, `docs/TASKS.md` |

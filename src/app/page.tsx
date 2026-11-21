@@ -97,8 +97,8 @@ export default async function Home() {
         />
 
         <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
-          <RevealOnScroll className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 sm:mb-12">
-            <div>
+          <RevealOnScroll className="flex flex-col items-center text-center sm:flex-row sm:items-end sm:text-left justify-between gap-4 mb-8 sm:mb-12">
+            <div className="flex flex-col items-center sm:items-start">
               <div className="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-[hsl(var(--brand))] mb-3 bg-[hsl(var(--brand))]/10 px-4 py-1.5 rounded-full">
                 <div className="w-2 h-2 rounded-full bg-[hsl(var(--brand))] animate-pulse" />
                 SERVICES POPULAIRES
@@ -180,8 +180,8 @@ export default async function Home() {
         />
 
         <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 relative">
-          <RevealOnScroll className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 sm:mb-12">
-            <div>
+          <RevealOnScroll className="flex flex-col items-center text-center sm:flex-row sm:items-end sm:text-left justify-between gap-4 mb-8 sm:mb-12">
+            <div className="flex flex-col items-center sm:items-start">
               <div className="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-[hsl(var(--brand))] mb-3 bg-[hsl(var(--brand))]/10 px-4 py-1.5 rounded-full">
                 <div className="w-2 h-2 rounded-full bg-[hsl(var(--brand))] animate-pulse" />
                 PROFESSIONNELS VÉRIFIÉS

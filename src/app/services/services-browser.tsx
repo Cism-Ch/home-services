@@ -29,7 +29,6 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatFCFA } from "@/lib/formatters"
 import { notify } from "@/lib/notifications"
 import { cn } from "@/lib/utils"
@@ -241,13 +240,13 @@ export function ServicesBrowser({
             </p>
 
             {/* Autocomplete Search Bar */}
-            <div className="max-w-2xl mx-auto relative z-20 rounded-2xl border border-border/60 bg-card/90 p-1.5 shadow-lg backdrop-blur-md">
+            <div className="w-full max-w-2xl mx-auto relative z-30 rounded-2xl border border-border/60 bg-card/95 p-1.5 shadow-lg backdrop-blur-md text-left">
               <ServiceAutocomplete
                 value={searchQuery}
                 onChange={handleSearchChange}
                 services={serviceSuggestions}
                 categories={categorySuggestions}
-                placeholder="Rechercher une prestation ou un métier (ex: Plomberie, Clim...)"
+                placeholder="Rechercher un service ou métier..."
                 onSelectCategory={(cat) => {
                   setSearchQuery("")
                   setSelectedCategories([cat.id])
@@ -262,12 +261,13 @@ export function ServicesBrowser({
             </div>
 
             {/* Mobile & Tablet Filter Drawer */}
-            <div className="lg:hidden mt-6">
+            <div className="lg:hidden mt-5">
               <Drawer>
                 <DrawerTrigger asChild>
                   <Button
                     size="lg"
-                    className="gap-2 bg-[hsl(var(--brand))] hover:bg-[hsl(var(--brand))]/90 text-white shadow-lg glow-brand"
+                    data-mobile-filter-trigger="true"
+                    className="w-full sm:w-auto gap-2 bg-[hsl(var(--brand))] hover:bg-[hsl(var(--brand))]/90 text-white shadow-lg glow-brand rounded-xl"
                   >
                     <SlidersHorizontal className="h-5 w-5" />
                     Filtrer les services
@@ -281,32 +281,37 @@ export function ServicesBrowser({
                     )}
                   </Button>
                 </DrawerTrigger>
-                <DrawerContent>
-                  <DrawerHeader className="text-left">
-                    <DrawerTitle>Filtres de recherche</DrawerTitle>
+                <DrawerContent className="max-h-[88dvh] flex flex-col">
+                  <DrawerHeader className="shrink-0 border-b border-border/50 px-5 pt-3 pb-3 text-left">
+                    <DrawerTitle className="flex items-center justify-between gap-2">
+                      <span>Filtres de recherche</span>
+                      {activeFilterCount > 0 && (
+                        <Badge variant="secondary" className="tabular-nums">
+                          {activeFilterCount} actif(s)
+                        </Badge>
+                      )}
+                    </DrawerTitle>
                     <DrawerDescription>
                       Affinez les prestations par commune, catégorie, budget ou
                       note.
                     </DrawerDescription>
                   </DrawerHeader>
-                  <ScrollArea className="max-h-[60vh] px-4 pb-2">
-                    <div className="py-2">
-                      <ServiceFilter
-                        categories={categories}
-                        selectedCity={selectedCity}
-                        selectedCategories={selectedCategories}
-                        priceRange={priceRange}
-                        minRating={minRating}
-                        availableOnly={availableOnly}
-                        onCityChange={handleCityChange}
-                        onCategoryToggle={handleCategoryToggle}
-                        onPriceRangeChange={handlePriceRangeChange}
-                        onMinRatingChange={handleMinRatingChange}
-                        onAvailableOnlyChange={handleAvailableOnlyChange}
-                      />
-                    </div>
-                  </ScrollArea>
-                  <DrawerFooter className="border-t pt-4">
+                  <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-4">
+                    <ServiceFilter
+                      categories={categories}
+                      selectedCity={selectedCity}
+                      selectedCategories={selectedCategories}
+                      priceRange={priceRange}
+                      minRating={minRating}
+                      availableOnly={availableOnly}
+                      onCityChange={handleCityChange}
+                      onCategoryToggle={handleCategoryToggle}
+                      onPriceRangeChange={handlePriceRangeChange}
+                      onMinRatingChange={handleMinRatingChange}
+                      onAvailableOnlyChange={handleAvailableOnlyChange}
+                    />
+                  </div>
+                  <DrawerFooter className="shrink-0 border-t border-border/50 px-5 pt-3 pb-5">
                     <DrawerClose asChild>
                       <Button className="w-full">
                         Voir {filteredServices.length} résultat(s)
@@ -333,13 +338,13 @@ export function ServicesBrowser({
       {/* Main Content Section */}
       <section ref={resultsRef} className="w-full py-10 sm:py-14">
         <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
-          <div className="grid grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)] gap-6 xl:gap-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)] gap-6 xl:gap-8 items-start">
             <aside
               data-services-sidebar="true"
-              className="hidden lg:block sticky top-24"
+              className="hidden lg:block sticky top-24 min-w-0"
             >
-              <div className="relative flex flex-col max-h-[calc(100vh-7rem)] bg-card/70 backdrop-blur-md rounded-2xl border border-border/50 p-5 shadow-elevated overflow-hidden">
-                <div className="flex items-center justify-between gap-2 pb-4 mb-4 border-b border-border/50 shrink-0">
+              <div className="relative flex flex-col max-h-[calc(100vh-7rem)] bg-card/75 backdrop-blur-md rounded-2xl border border-border/50 p-5 shadow-elevated">
+                <div className="flex items-center justify-between gap-2 pb-3.5 mb-3.5 border-b border-border/50 shrink-0">
                   <div className="flex items-center gap-2 min-w-0">
                     <div className="p-2 rounded-lg bg-gradient-to-br from-[hsl(var(--brand))]/10 to-[hsl(var(--brand-foreground))]/10 shrink-0">
                       <Sparkles className="h-4 w-4 text-[hsl(var(--brand))]" />
@@ -362,30 +367,28 @@ export function ServicesBrowser({
                       variant="ghost"
                       size="sm"
                       onClick={resetFilters}
-                      className="h-7 px-2 text-xs"
+                      className="h-7 px-2 text-xs shrink-0"
                     >
                       Réinitialiser
                     </Button>
                   )}
                 </div>
 
-                <ScrollArea className="flex-1 min-h-0 pr-3 -mr-3">
-                  <div className="pb-2">
-                    <ServiceFilter
-                      categories={categories}
-                      selectedCity={selectedCity}
-                      selectedCategories={selectedCategories}
-                      priceRange={priceRange}
-                      minRating={minRating}
-                      availableOnly={availableOnly}
-                      onCityChange={handleCityChange}
-                      onCategoryToggle={handleCategoryToggle}
-                      onPriceRangeChange={handlePriceRangeChange}
-                      onMinRatingChange={handleMinRatingChange}
-                      onAvailableOnlyChange={handleAvailableOnlyChange}
-                    />
-                  </div>
-                </ScrollArea>
+                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain pr-1 pb-2">
+                  <ServiceFilter
+                    categories={categories}
+                    selectedCity={selectedCity}
+                    selectedCategories={selectedCategories}
+                    priceRange={priceRange}
+                    minRating={minRating}
+                    availableOnly={availableOnly}
+                    onCityChange={handleCityChange}
+                    onCategoryToggle={handleCategoryToggle}
+                    onPriceRangeChange={handlePriceRangeChange}
+                    onMinRatingChange={handleMinRatingChange}
+                    onAvailableOnlyChange={handleAvailableOnlyChange}
+                  />
+                </div>
               </div>
             </aside>
 

@@ -10,6 +10,7 @@ const PUBLIC_ROUTES = [
   "/",
   "/services",
   "/professionals",
+  "/pricing",
   "/professionals/pros/seed-pro-profile-1",
   "/book/seed-pro-profile-1/seed-service-plomberie-1",
   "/about",
@@ -406,7 +407,7 @@ test.describe("HomeServices - Audit Geometrique Multi-Viewports", () => {
     await expect(page.getByText("Durée du projet", { exact: false })).toBeVisible()
     await page.waitForTimeout(250)
     await assertNoHorizontalOverflow(page, "booking-step-2")
-    await page.getByRole("button", { name: /Retour/i }).click()
+    await page.getByRole("button", { name: "Retour", exact: true }).click()
     await expect(
       page.getByText("Détails de la prestation", { exact: false })
     ).toBeVisible()
@@ -510,5 +511,33 @@ test.describe("HomeServices - Audit Geometrique Multi-Viewports", () => {
     await page.locator('[data-layout-option="row-3x1"]').click()
     await expect(page.locator('[data-card-layout="row"]').first()).toBeVisible()
     await assertNoHorizontalOverflow(page, "desktop /professionals row-3x1")
+
+    // 5. Sprint 15: Mobile Drawer /services, Footer 2x2 et Page /pricing Cover animee
+    await page.setViewportSize({ width: 375, height: 812 })
+    await page.goto("/services", { waitUntil: "load" })
+    await page.locator('[data-mobile-filter-trigger="true"]').click()
+    const mobileDrawer = page.locator('[data-slot="drawer-content"]')
+    await expect(mobileDrawer).toBeVisible()
+    const drawerBox = await mobileDrawer.boundingBox()
+    expect(drawerBox).not.toBeNull()
+    expect(drawerBox!.width).toBeLessThanOrEqual(376)
+    expect(drawerBox!.height).toBeLessThanOrEqual(812)
+    await page.keyboard.press("Escape")
+
+    const footerCols = await page.evaluate(() => {
+      const grid = document.querySelector('[data-footer-grid="true"]')
+      return grid ? window.getComputedStyle(grid).gridTemplateColumns.split(" ").length : 0
+    })
+    expect(footerCols).toBe(2)
+
+    await page.goto("/pricing", { waitUntil: "load" })
+    await expect(page.locator('[data-pricing-cover="true"]')).toBeVisible()
+    await expect(page.locator('[data-pricing-panel="client"]')).toBeVisible()
+    await page.locator('[data-pricing-audience="pro"]').click()
+    await expect(page.locator('[data-pricing-panel="pro"]')).toBeVisible()
+    await assertNoHorizontalOverflow(page, "mobile /pricing pro")
+
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await assertNoHorizontalOverflow(page, "desktop /pricing pro")
   })
 })

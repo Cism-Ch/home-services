@@ -147,10 +147,13 @@ export function ServiceAutocomplete({
     <div
       ref={containerRef}
       data-service-autocomplete="true"
-      className={cn("relative flex-1 min-w-0", className)}
+      className={cn("relative w-full flex-1 min-w-0 text-left", className)}
     >
-      <div className="relative flex items-center gap-2.5 px-2 sm:px-3">
-        <Search className="h-5 w-5 text-muted-foreground shrink-0" aria-hidden="true" />
+      <div className="relative flex items-center w-full">
+        <Search
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0"
+          aria-hidden="true"
+        />
         <Input
           type="text"
           role="combobox"
@@ -167,7 +170,7 @@ export function ServiceAutocomplete({
           }}
           onKeyDown={handleKeyDown}
           className={cn(
-            "border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm sm:text-base placeholder:text-muted-foreground pr-8",
+            "h-11 w-full border-0 bg-transparent pl-10 pr-9 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-base sm:text-sm md:text-base placeholder:text-muted-foreground",
             inputClassName
           )}
         />
@@ -209,7 +212,7 @@ export function ServiceAutocomplete({
             animate={{ opacity: 1, y: 0 }}
             exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
             transition={{ duration: 0.18, ease: EASE_OUT_EXPO }}
-            className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[360px] overflow-y-auto rounded-2xl border border-border/70 bg-popover/95 p-2 text-popover-foreground shadow-xl backdrop-blur-xl"
+            className="absolute inset-x-0 top-[calc(100%+0.5rem)] z-50 max-h-[min(55vh,320px)] overflow-y-auto overscroll-contain rounded-2xl border border-border/70 bg-popover p-2 text-left text-popover-foreground shadow-2xl"
           >
             {!hasResults ? (
               <div className="px-3 py-6 text-center text-sm text-muted-foreground">
@@ -235,10 +238,10 @@ export function ServiceAutocomplete({
                             role="option"
                             aria-selected={isHighlighted}
                             onMouseEnter={() => setActiveIndex(idx)}
-                            onMouseDown={(e) => {
-                              e.preventDefault()
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() =>
                               selectOption({ kind: "category", item: cat })
-                            }}
+                            }
                             className={cn(
                               "w-full justify-between h-auto py-2 px-2.5 text-left font-medium rounded-xl",
                               isHighlighted && "bg-accent/15 text-foreground"
@@ -273,12 +276,12 @@ export function ServiceAutocomplete({
                             role="option"
                             aria-selected={isHighlighted}
                             onMouseEnter={() => setActiveIndex(flatIdx)}
-                            onMouseDown={(e) => {
-                              e.preventDefault()
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() =>
                               selectOption({ kind: "service", item: svc })
-                            }}
+                            }
                             className={cn(
-                              "w-full justify-between gap-3 h-auto py-2 px-2.5 text-left rounded-xl",
+                              "w-full justify-between gap-2.5 h-auto py-2 px-2.5 text-left rounded-xl",
                               isHighlighted && "bg-accent/15 text-foreground"
                             )}
                           >
@@ -290,11 +293,11 @@ export function ServiceAutocomplete({
                                 {svc.categoryName} &bull; {svc.providerName}
                               </p>
                             </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <span className="text-xs font-bold text-[hsl(var(--brand))] tabular-nums">
+                            <div className="flex items-center gap-1 shrink-0">
+                              <span className="text-xs font-bold text-[hsl(var(--brand))] tabular-nums whitespace-nowrap">
                                 {formatFCFA(svc.price)}
                               </span>
-                              <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground" />
+                              <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground hidden sm:inline" />
                             </div>
                           </Button>
                         )
