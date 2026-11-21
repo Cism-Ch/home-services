@@ -110,3 +110,6 @@ backups/skills/
 
 # Test
 test-results/*
+
+# docs+
+docs/documents/
