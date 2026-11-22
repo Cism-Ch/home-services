@@ -264,6 +264,15 @@
     -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
   }
 
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }

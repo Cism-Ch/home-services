@@ -10,22 +10,23 @@
 
 ```
 +-------------------------+  +-------------------------+  +-------------------------+
-|    [>] IN PROGRESS      |  |    [x] SPRINT 17 DONE   |  |       [X] ARCHIVES      |
+|    [>] IN PROGRESS      |  |    [x] SPRINT 18 DONE   |  |       [X] ARCHIVES      |
 +-------------------------+  +-------------------------+  +-------------------------+
-| (Aucune tache active)   |  | [x] TASK-CAT17-METIERS  |  | Sprint 02-12 (40 tasks) |
-|                         |  |                         |  | Sprint 13-16 (21 tasks) |
+| (Aucune tache active)   |  | [x] TASK-UI18-SVC-MODAL |  | Sprint 02-12 (40 tasks) |
+|                         |  |                         |  | Sprint 13-17 (22 tasks) |
 |                         |  |                         |  | (Full Archive Logged)   |
 +-------------------------+  +-------------------------+  +-------------------------+
 ```
 
 ---
 
-## Completed Sprint 17: Extension du Catalogue Metiers (+10 Categories & Illustrations Editorial Flat) (100/100 PASS)
+## Completed Sprint 18: Refonte Modale Paysage Prestations, Modeles Rapides Complets, Filigranes & Lueurs Orangees (100/100 PASS)
 
-### [x] `TASK-CAT17-METIERS-01` — Ajout des 10 Categories Metiers, Illustrations Flat, Templates FCFA & Seed Supabase
-- [x] Generer 10 illustrations flat editoriales (`serrurerie.jpg` + 9 SVG vectoriels coherents : `electrotechnique`, `electronique`, `domotique`, `luminaires`, `antennes`, `auto-moto`, `assainissement`, `ferronnerie`, `vitrerie-alu`) dans `public/images/services/`.
-- [x] Mettre a jour `src/lib/category-illustrations.ts`, `src/lib/service-templates.ts`, `prisma/seed-data.ts`, `src/components/dashboard/create-service-dialog.tsx` et `src/app/dashboard/admin/admin-dashboard-view.tsx`.
-- [x] Injecter les 20 categories dans Supabase via `pnpm run db:seed` et valider avec `python evals/run_fullstack_eval.py --quick` (`100/100 PASS`).
+### [x] `TASK-UI18-SVC-MODAL-01` — Modeles Rapides 20 Categories & Modale Paysage Responsive avec Filigranes
+- [x] Completer `src/lib/service-templates.ts` avec `categoryId` exact et des modeles FCFA pour les 20 categories (25 modeles dont `securite`, `maconnerie`, `jardinage` + modeles complementaires).
+- [x] Ajouter `.no-scrollbar` dans `src/app/globals.css` pour masquer les barres de defilement dans la modale.
+- [x] Refondre `src/components/dashboard/create-service-dialog.tsx` : choix de categorie en premier filtrant les modeles rapides, mise en page paysage (`lg:max-w-5xl`) a marges uniformes (`p-5 sm:p-6`), illustration metier agrandie, filigranes d'icones par categorie (cards + grand fond de modale) et lueurs orangees radiales GPU.
+- [x] Valider via `python evals/run_fullstack_eval.py` (`100/100 PASS`).
 
 ---
 
@@ -33,6 +34,7 @@
 
 | Date | Task ID | Title & Description | Created / Modified Files |
 | :--- | :--- | :--- | :--- |
+| 2026-11-22 | SPRINT-17 | Extension Catalogue Metiers (+10 Categories dont Luminaires separe de Domotique, Illustrations Flat, Templates FCFA & Seed Supabase) | `prisma/seed-data.ts`, `src/lib/category-illustrations.ts`, `src/lib/service-templates.ts`, `public/images/services/*` |
 | 2026-11-22 | SPRINT-16 | CRUD/Archivage Services, Proxy S3 `/api/upload`, Hero ShaderGradient, 10 Illustrations Metiers, Admin Health & Moderation KYC/Avis | `src/app/api/upload/*`, `src/app/dashboard/admin/health/*`, `src/components/marketing/hero-shader-background.tsx`, `src/lib/category-illustrations.ts`, `public/images/services/*` |
 | 2026-11-21 | SPRINT-15 | Correctifs Responsive Mobile (Drawer `/services`, Autocomplete, `CalendarCheck`, centrage mobile, Footer `2x2`) & Page `/pricing` Cover | `src/app/pricing/*`, `src/app/services/services-browser.tsx`, `src/components/service-autocomplete.tsx`, `src/components/site-footer.tsx`, `e2e/*` |
 | 2026-11-21 | SPRINT-14 | Refonte UI/UX : Nunito, Autocomplete Services, Modes `3x1`/`3x2`/`3x3`/`4x3`, Sidebar, `AnimatePresence`, Notifications & Compteurs | `src/app/layout.tsx`, `src/components/service-autocomplete.tsx`, `src/components/catalog-layout-toolbar.tsx`, `src/components/motion/*`, `src/lib/notifications.ts`, `e2e/*` |
