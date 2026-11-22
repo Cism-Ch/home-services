@@ -236,7 +236,7 @@ export function CreateServiceDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="relative w-[calc(100vw-2rem)] sm:max-w-2xl lg:max-w-5xl max-h-[90dvh] p-5 sm:p-6 overflow-hidden flex flex-col gap-5 rounded-2xl border-border/70">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] sm:max-w-2xl lg:max-w-5xl xl:max-w-[1040px] max-h-[90dvh] p-5 sm:p-6 overflow-hidden flex flex-col gap-5 rounded-2xl border-border/70">
         {/* Lueurs orangees radiales GPU + Grand filigrane categorie en arriere-plan */}
         <div
           aria-hidden="true"
