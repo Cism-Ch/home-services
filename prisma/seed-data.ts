@@ -58,10 +58,17 @@ export const SEED_CATEGORIES = [
   },
   {
     id: "securite",
-    name: "Serrurerie & Sécurité",
+    name: "Sécurité & Vidéosurveillance",
     description:
-      "Ouverture de porte, serrures haute sécurité, caméras et interphones.",
+      "Caméras de surveillance, alarmes, contrôle d'accès et interphones.",
     icon: "ShieldCheck",
+  },
+  {
+    id: "serrurerie",
+    name: "Serrurerie & Ouverture",
+    description:
+      "Ouverture de porte, remplacement de serrure, cylindre haute sécurité et blindage.",
+    icon: "KeyRound",
   },
   {
     id: "menuiserie",
@@ -83,6 +90,69 @@ export const SEED_CATEGORIES = [
     description:
       "Tonte, taille de haies, aménagement paysager et désherbage.",
     icon: "Trees",
+  },
+  {
+    id: "electrotechnique",
+    name: "Électrotechnique & Groupes",
+    description:
+      "Pose et réparation de groupes électrogènes, inverseurs automatiques, régulateurs et moteurs.",
+    icon: "Cpu",
+  },
+  {
+    id: "electronique",
+    name: "Électronique & Électroménager",
+    description:
+      "Réparation TV, réfrigérateurs, congélateurs, machines à laver et cartes électroniques.",
+    icon: "Tv",
+  },
+  {
+    id: "domotique",
+    name: "Domotique & Maison Connectée",
+    description:
+      "Automatisation maison, motorisation de portail, interrupteurs et capteurs intelligents.",
+    icon: "Wifi",
+  },
+  {
+    id: "luminaires",
+    name: "Luminaires & Éclairage",
+    description:
+      "Pose de lustres, spots LED encastrés, appliques murales et éclairage extérieur.",
+    icon: "Lightbulb",
+  },
+  {
+    id: "antennes",
+    name: "Antennes & Paraboles (TV/Sat)",
+    description:
+      "Installation, pointage et dépannage de paraboles et décodeurs (Canal+, StarTimes, TNT — marque à préciser).",
+    icon: "SatelliteDish",
+  },
+  {
+    id: "auto-moto",
+    name: "Dépannage Auto & Moto",
+    description:
+      "Intervention mécanique à domicile : batterie, crevaison, diagnostic, entretien rapide.",
+    icon: "Car",
+  },
+  {
+    id: "assainissement",
+    name: "Vidange Fosse & Assainissement",
+    description:
+      "Vidange de fosse septique, curage d'égouts, débouchage haute pression et désinfection.",
+    icon: "Waves",
+  },
+  {
+    id: "ferronnerie",
+    name: "Ferronnerie & Soudure",
+    description:
+      "Portails métalliques, grilles anti-vol, rampes, charpentes et soudure sur site.",
+    icon: "Flame",
+  },
+  {
+    id: "vitrerie-alu",
+    name: "Alu, Vitrerie & Cloisons",
+    description:
+      "Pose de portes, fenêtres, baies vitrées et cloisons en verre et aluminium.",
+    icon: "PanelsTopLeft",
   },
 ] as const
 

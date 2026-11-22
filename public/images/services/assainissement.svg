@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" fill="none">
+  <rect width="800" height="450" fill="#FFFFFF"/>
+  <!-- Backdrop -->
+  <rect x="110" y="95" width="580" height="265" rx="18" fill="#F4F6F9"/>
+  <line x1="90" y1="360" x2="710" y2="360" stroke="#CBD5E1" stroke-width="4" stroke-linecap="round"/>
+  <!-- Vacuum tank truck -->
+  <rect x="210" y="185" width="250" height="120" rx="58" fill="#FF6B4A"/>
+  <rect x="248" y="218" width="174" height="16" rx="8" fill="#FFFFFF" fill-opacity="0.35"/>
+  <!-- Truck cab -->
+  <path d="M475 215H555L592 260V322H475V215Z" fill="#232730"/>
+  <path d="M494 232H546L572 264H494V232Z" fill="#FFFFFF"/>
+  <!-- Chassis & Wheels -->
+  <rect x="200" y="305" width="398" height="22" rx="8" fill="#232730"/>
+  <circle cx="272" cy="340" r="28" fill="#232730"/>
+  <circle cx="272" cy="340" r="11" fill="#E2E8F0"/>
+  <circle cx="382" cy="340" r="28" fill="#232730"/>
+  <circle cx="382" cy="340" r="11" fill="#E2E8F0"/>
+  <circle cx="536" cy="340" r="28" fill="#232730"/>
+  <circle cx="536" cy="340" r="11" fill="#E2E8F0"/>
+  <!-- High-pressure hose & water droplets -->
+  <path d="M210 265C165 265 155 310 155 358" stroke="#232730" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="628" cy="168" r="12" fill="#FF6B4A" fill-opacity="0.3"/>
+  <circle cx="652" cy="196" r="8" fill="#FF6B4A" fill-opacity="0.5"/>
+</svg>

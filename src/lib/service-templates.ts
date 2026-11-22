@@ -101,12 +101,112 @@ export const serviceTemplates: ServiceTemplate[] = [
   // Bricolage & Menuiserie
   {
     id: "handyman-small",
-    category: "Bricolage",
-    title: "Montage de meubles et serrurerie",
-    description: "Assemblage de placards, pose de tringles, changement de serrures et petits travaux.",
-    typicalPrice: 12000,
-    priceRange: { min: 8000, max: 30000 },
+    category: "Menuiserie",
+    title: "Montage de meubles et menuiserie bois",
+    description: "Assemblage de placards, fabrication sur mesure, réparation de portes et meubles bois.",
+    typicalPrice: 15000,
+    priceRange: { min: 10000, max: 45000 },
     duration: 90,
+  },
+  // Serrurerie
+  {
+    id: "locksmith-door",
+    category: "Serrurerie",
+    title: "Ouverture de porte et changement de serrure",
+    description: "Intervention rapide pour porte claquée, remplacement de cylindre et pose de serrure haute sécurité.",
+    typicalPrice: 15000,
+    priceRange: { min: 10000, max: 35000 },
+    duration: 60,
+  },
+  // Electrotechnique
+  {
+    id: "electrotech-generator",
+    category: "Électrotechnique",
+    title: "Pose et entretien de groupe électrogène",
+    description: "Installation, raccordement d'inverseur automatique, vidange et dépannage de groupe électrogène.",
+    typicalPrice: 35000,
+    priceRange: { min: 20000, max: 90000 },
+    duration: 120,
+  },
+  // Electronique
+  {
+    id: "electronics-repair",
+    category: "Électronique",
+    title: "Réparation TV, frigo et électroménager",
+    description: "Diagnostic et réparation d'appareils électroniques et électroménagers (préciser marque et panne).",
+    typicalPrice: 15000,
+    priceRange: { min: 10000, max: 45000 },
+    duration: 90,
+  },
+  // Domotique
+  {
+    id: "smarthome-setup",
+    category: "Domotique",
+    title: "Installation domotique et automatisation",
+    description: "Configuration d'interrupteurs connectés, motorisation de portail, capteurs et contrôle smartphone.",
+    typicalPrice: 40000,
+    priceRange: { min: 25000, max: 120000 },
+    duration: 150,
+  },
+  // Luminaires
+  {
+    id: "lighting-install",
+    category: "Luminaires",
+    title: "Pose de lustres, spots LED et appliques",
+    description: "Installation sécurisée de luminaires intérieurs/extérieurs, bandeaux LED et variateurs.",
+    typicalPrice: 15000,
+    priceRange: { min: 10000, max: 40000 },
+    duration: 60,
+  },
+  // Antennes & Paraboles
+  {
+    id: "satellite-dish",
+    category: "Antennes",
+    title: "Pose et réglage parabole (marque à préciser)",
+    description: "Installation complète, pointage signal et dépannage parabole/TNT (préciser marque : Canal+, StarTimes, etc.).",
+    typicalPrice: 12000,
+    priceRange: { min: 8000, max: 25000 },
+    duration: 60,
+  },
+  // Depannage Auto & Moto
+  {
+    id: "auto-moto-home",
+    category: "Auto-Moto",
+    title: "Dépannage auto ou moto à domicile",
+    description: "Intervention sur place : batterie, crevaison, diagnostic panne ou vidange rapide (préciser modèle).",
+    typicalPrice: 15000,
+    priceRange: { min: 10000, max: 45000 },
+    duration: 60,
+  },
+  // Vidange & Assainissement
+  {
+    id: "septic-cleaning",
+    category: "Assainissement",
+    title: "Vidange fosse septique et curage égouts",
+    description: "Pompage par camion hydrocureur, débouchage canalisation principale et nettoyage complet des regards.",
+    typicalPrice: 45000,
+    priceRange: { min: 30000, max: 100000 },
+    duration: 120,
+  },
+  // Ferronnerie
+  {
+    id: "ironwork-welding",
+    category: "Ferronnerie",
+    title: "Ferronnerie, grilles et soudure sur mesure",
+    description: "Fabrication, pose ou réparation de portails métalliques, antivols fenêtres et rampes en fer forgé.",
+    typicalPrice: 35000,
+    priceRange: { min: 20000, max: 150000 },
+    duration: 180,
+  },
+  // Vitrerie & Alu
+  {
+    id: "alu-glass-partition",
+    category: "Vitrerie-Alu",
+    title: "Pose porte, fenêtre ou cloison verre & alu",
+    description: "Prise de mesures, fabrication et pose de menuiserie aluminium, baies vitrées et cloisons de bureau/maison.",
+    typicalPrice: 50000,
+    priceRange: { min: 30000, max: 180000 },
+    duration: 180,
   },
 ]
 
@@ -117,5 +217,16 @@ export const serviceCategories = [
   "Peinture",
   "Ménage",
   "Déménagement",
-  "Bricolage",
+  "Menuiserie",
+  "Serrurerie",
+  "Électrotechnique",
+  "Électronique",
+  "Domotique",
+  "Luminaires",
+  "Antennes",
+  "Auto-Moto",
+  "Assainissement",
+  "Ferronnerie",
+  "Vitrerie-Alu",
+  "Jardinage",
 ]

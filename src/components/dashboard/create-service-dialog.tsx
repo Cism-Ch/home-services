@@ -63,7 +63,8 @@ function normalizeSlug(input: string): string {
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
-      .split(/[^a-z0-9]+/)[0] || "plomberie"
+      .replace(/[^a-z0-9-]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "plomberie"
   )
 }
 

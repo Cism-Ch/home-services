@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" fill="none">
+  <rect width="800" height="450" fill="#FFFFFF"/>
+  <!-- Minimalist living room -->
+  <rect x="120" y="75" width="560" height="285" rx="18" fill="#F4F6F9"/>
+  <line x1="100" y1="360" x2="700" y2="360" stroke="#CBD5E1" stroke-width="4" stroke-linecap="round"/>
+  <!-- Warm light cone -->
+  <path d="M360 198L275 358H525L440 198H360Z" fill="#FF6B4A" fill-opacity="0.1"/>
+  <!-- Three modern pendant lamps -->
+  <line x1="290" y1="75" x2="290" y2="165" stroke="#232730" stroke-width="3"/>
+  <path d="M258 195C258 176 272 165 290 165C308 165 322 176 322 195H258Z" fill="#232730"/>
+  <circle cx="290" cy="200" r="9" fill="#FF6B4A"/>
+  <line x1="400" y1="75" x2="400" y2="145" stroke="#232730" stroke-width="4"/>
+  <path d="M352 198C352 168 373 145 400 145C427 145 448 168 448 198H352Z" fill="#FF6B4A"/>
+  <circle cx="400" cy="204" r="13" fill="#FFF7ED"/>
+  <line x1="510" y1="75" x2="510" y2="165" stroke="#232730" stroke-width="3"/>
+  <path d="M478 195C478 176 492 165 510 165C528 165 542 176 542 195H478Z" fill="#232730"/>
+  <circle cx="510" cy="200" r="9" fill="#FF6B4A"/>
+  <!-- Sofa silhouette underneath -->
+  <rect x="260" y="295" width="280" height="48" rx="14" fill="#E2E8F0"/>
+  <rect x="248" y="314" width="26" height="44" rx="8" fill="#CBD5E1"/>
+  <rect x="526" y="314" width="26" height="44" rx="8" fill="#CBD5E1"/>
+</svg>

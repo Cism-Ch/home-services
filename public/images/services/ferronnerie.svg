@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" fill="none">
+  <rect width="800" height="450" fill="#FFFFFF"/>
+  <!-- Workshop backdrop -->
+  <rect x="110" y="85" width="580" height="275" rx="18" fill="#F4F6F9"/>
+  <line x1="90" y1="360" x2="710" y2="360" stroke="#CBD5E1" stroke-width="4" stroke-linecap="round"/>
+  <!-- Decorative wrought iron gate -->
+  <rect x="235" y="135" width="330" height="225" rx="8" fill="#FFFFFF" stroke="#232730" stroke-width="8"/>
+  <line x1="400" y1="135" x2="400" y2="360" stroke="#232730" stroke-width="6"/>
+  <line x1="290" y1="135" x2="290" y2="360" stroke="#CBD5E1" stroke-width="5"/>
+  <line x1="345" y1="135" x2="345" y2="360" stroke="#CBD5E1" stroke-width="5"/>
+  <line x1="455" y1="135" x2="455" y2="360" stroke="#CBD5E1" stroke-width="5"/>
+  <line x1="510" y1="135" x2="510" y2="360" stroke="#CBD5E1" stroke-width="5"/>
+  <line x1="235" y1="248" x2="565" y2="248" stroke="#232730" stroke-width="6"/>
+  <!-- Welding spark accent -->
+  <circle cx="400" cy="248" r="24" fill="#FF6B4A" fill-opacity="0.22"/>
+  <circle cx="400" cy="248" r="10" fill="#FF6B4A"/>
+  <line x1="400" y1="210" x2="400" y2="224" stroke="#FF6B4A" stroke-width="4" stroke-linecap="round"/>
+  <line x1="400" y1="272" x2="400" y2="286" stroke="#FF6B4A" stroke-width="4" stroke-linecap="round"/>
+  <line x1="362" y1="248" x2="376" y2="248" stroke="#FF6B4A" stroke-width="4" stroke-linecap="round"/>
+  <line x1="424" y1="248" x2="438" y2="248" stroke="#FF6B4A" stroke-width="4" stroke-linecap="round"/>
+  <line x1="373" y1="221" x2="383" y2="231" stroke="#FF6B4A" stroke-width="4" stroke-linecap="round"/>
+  <line x1="417" y1="265" x2="427" y2="275" stroke="#FF6B4A" stroke-width="4" stroke-linecap="round"/>
+</svg>

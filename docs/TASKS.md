@@ -10,39 +10,22 @@
 
 ```
 +-------------------------+  +-------------------------+  +-------------------------+
-|    [>] IN PROGRESS      |  |    [x] SPRINT 16 DONE   |  |       [X] ARCHIVES      |
+|    [>] IN PROGRESS      |  |    [x] SPRINT 17 DONE   |  |       [X] ARCHIVES      |
 +-------------------------+  +-------------------------+  +-------------------------+
-| (Aucune tache active)   |  | [x] TASK-PRO16-SVC-CRUD |  | Sprint 02-12 (40 tasks) |
-|                         |  | [x] TASK-PRO16-UPLOAD   |  | Sprint 13-15 (15 tasks) |
-|                         |  | [x] TASK-HERO16-SHADER  |  | (Full Archive Logged)   |
-|                         |  | [x] TASK-ILLUS16-METIER |  |                         |
-|                         |  | [x] TASK-ADM16-HEALTH   |  |                         |
-|                         |  | [x] TASK-ADM16-KYC-REV  |  |                         |
+| (Aucune tache active)   |  | [x] TASK-CAT17-METIERS  |  | Sprint 02-12 (40 tasks) |
+|                         |  |                         |  | Sprint 13-16 (21 tasks) |
+|                         |  |                         |  | (Full Archive Logged)   |
 +-------------------------+  +-------------------------+  +-------------------------+
 ```
 
 ---
 
-## Completed Sprint 16: Correction Production CRUD Services, Upload S3, ShaderGradient Hero, Illustrations Metiers, Admin Health & Moderation (100/100 PASS)
+## Completed Sprint 17: Extension du Catalogue Metiers (+10 Categories & Illustrations Editorial Flat) (100/100 PASS)
 
-### [x] `TASK-PRO16-SVC-CRUD-01` — Edition & Suppression/Archivage Securise des Prestations (FCFA)
-- [x] Ajouter `updateProServiceAction` et corriger `deleteProServiceAction` (archivage `isActive: false` si reservations liees, suppression nette sinon) dans `src/server/actions/pro-catalog.ts`.
-- [x] Ajouter l'edition complete + toggle actif/archive + apercu d'illustration auto-selectionnee dans `ProServicesView` et `CreateServiceDialog`.
-
-### [x] `TASK-PRO16-UPLOAD-01` — Correction Upload Photo Profil / Portfolio / KYC (`POST /api/upload`)
-- [x] Creer `src/app/api/upload/route.ts` (proxy serveur S3 `PutObjectCommand` authentifie + rate-limit + validation MIME/taille, zero blocage CORS navigateur) et brancher `ProProfileView`.
-
-### [x] `TASK-HERO16-SHADER-01` — Hero Cover Plein Ecran avec `@shadergradient/react` & Descente `HowItWorks`
-- [x] Installer `@shadergradient/react @react-three/fiber three three-stdlib camera-controls @types/three`, creer `HeroShaderBackground` (lazy `ssr: false`, fallback WebGL + `prefers-reduced-motion`) et sortir `HowItWorks` sous la Cover Hero.
-
-### [x] `TASK-ILLUS16-METIER-01` — Illustrations Editorial Flat par Metier Auto-Selectionnees
-- [x] Generer les 10 illustrations vectorielles flat par categorie (`public/images/services/*.jpg`), creer `src/lib/category-illustrations.ts` et les brancher en auto-selection dans `catalog.ts`, `ProServicesView` et `CreateServiceDialog`.
-
-### [x] `TASK-ADM16-HEALTH-01` — Page Admin Sante & Uptime du Stack (`/dashboard/admin/health`)
-- [x] Creer `src/lib/stack-health.ts`, `GET /api/admin/health`, `src/app/dashboard/admin/health/page.tsx` et le lien sidebar `Sante & Uptime` (sondes live DB, Better-Auth, Tigris S3, Redis, QStash, Resend, Paystack avec latences).
-
-### [x] `TASK-ADM16-KYC-REV-01` — Visualisation/Telechargement KYC & Moderation Coherente des Avis
-- [x] Creer `GET /api/admin/kyc/[proId]` (apercu inline + `?download=1`), ajouter la modale de previsualisation KYC dans `AdminDashboardView`, et refondre la moderation des avis (statuts clairs `Publie` / `En attente` / `Signale`, filtres, action `HIDE`, confirmation suppression).
+### [x] `TASK-CAT17-METIERS-01` — Ajout des 10 Categories Metiers, Illustrations Flat, Templates FCFA & Seed Supabase
+- [x] Generer 10 illustrations flat editoriales (`serrurerie.jpg` + 9 SVG vectoriels coherents : `electrotechnique`, `electronique`, `domotique`, `luminaires`, `antennes`, `auto-moto`, `assainissement`, `ferronnerie`, `vitrerie-alu`) dans `public/images/services/`.
+- [x] Mettre a jour `src/lib/category-illustrations.ts`, `src/lib/service-templates.ts`, `prisma/seed-data.ts`, `src/components/dashboard/create-service-dialog.tsx` et `src/app/dashboard/admin/admin-dashboard-view.tsx`.
+- [x] Injecter les 20 categories dans Supabase via `pnpm run db:seed` et valider avec `python evals/run_fullstack_eval.py --quick` (`100/100 PASS`).
 
 ---
 
@@ -50,6 +33,7 @@
 
 | Date | Task ID | Title & Description | Created / Modified Files |
 | :--- | :--- | :--- | :--- |
+| 2026-11-22 | SPRINT-16 | CRUD/Archivage Services, Proxy S3 `/api/upload`, Hero ShaderGradient, 10 Illustrations Metiers, Admin Health & Moderation KYC/Avis | `src/app/api/upload/*`, `src/app/dashboard/admin/health/*`, `src/components/marketing/hero-shader-background.tsx`, `src/lib/category-illustrations.ts`, `public/images/services/*` |
 | 2026-11-21 | SPRINT-15 | Correctifs Responsive Mobile (Drawer `/services`, Autocomplete, `CalendarCheck`, centrage mobile, Footer `2x2`) & Page `/pricing` Cover | `src/app/pricing/*`, `src/app/services/services-browser.tsx`, `src/components/service-autocomplete.tsx`, `src/components/site-footer.tsx`, `e2e/*` |
 | 2026-11-21 | SPRINT-14 | Refonte UI/UX : Nunito, Autocomplete Services, Modes `3x1`/`3x2`/`3x3`/`4x3`, Sidebar, `AnimatePresence`, Notifications & Compteurs | `src/app/layout.tsx`, `src/components/service-autocomplete.tsx`, `src/components/catalog-layout-toolbar.tsx`, `src/components/motion/*`, `src/lib/notifications.ts`, `e2e/*` |
 | 2026-11-20 | SPRINT-13 | Hero Cover Zero-CLS, Framer Motion GPU-Only, Transitions, Perf 60fps & Durcissement Prod (`TASK-PROD-FIX-01`) | `src/lib/motion.ts`, `src/components/motion/*`, `src/app/template.tsx`, `src/lib/prisma.ts`, `src/lib/redis.ts`, `src/app/error.tsx`, `package.json`, `e2e/*` |

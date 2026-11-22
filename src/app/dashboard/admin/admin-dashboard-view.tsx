@@ -81,6 +81,16 @@ import {
   Hammer,
   HardHat,
   Trees,
+  KeyRound,
+  Cpu,
+  Tv,
+  Wifi,
+  Lightbulb,
+  SatelliteDish,
+  Car,
+  Waves,
+  Flame,
+  PanelsTopLeft,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -95,6 +105,16 @@ const CATEGORY_ICON_MAP: Record<string, React.ComponentType<{ className?: string
   Hammer,
   HardHat,
   Trees,
+  KeyRound,
+  Cpu,
+  Tv,
+  Wifi,
+  Lightbulb,
+  SatelliteDish,
+  Car,
+  Waves,
+  Flame,
+  PanelsTopLeft,
 }
 
 function getKycBadge(item: AdminKycItem) {

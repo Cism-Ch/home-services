@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" fill="none">
+  <rect width="800" height="450" fill="#FFFFFF"/>
+  <!-- Minimalist utility room backdrop -->
+  <rect x="110" y="90" width="580" height="270" rx="16" fill="#F4F6F9"/>
+  <rect x="150" y="130" width="130" height="170" rx="10" fill="#E6EBF2"/>
+  <rect x="170" y="152" width="90" height="54" rx="6" fill="#FFFFFF"/>
+  <circle cx="192" cy="235" r="8" fill="#FF6B4A"/>
+  <circle cx="218" cy="235" r="8" fill="#CBD5E1"/>
+  <circle cx="244" cy="235" r="8" fill="#232730"/>
+  <line x1="110" y1="360" x2="690" y2="360" stroke="#CBD5E1" stroke-width="4" stroke-linecap="round"/>
+  <!-- Backup power generator -->
+  <rect x="330" y="210" width="230" height="148" rx="14" fill="#232730"/>
+  <rect x="348" y="228" width="194" height="112" rx="8" fill="#FF6B4A"/>
+  <rect x="366" y="246" width="92" height="76" rx="6" fill="#FFFFFF" fill-opacity="0.92"/>
+  <line x1="382" y1="264" x2="442" y2="264" stroke="#CBD5E1" stroke-width="6" stroke-linecap="round"/>
+  <line x1="382" y1="284" x2="442" y2="284" stroke="#CBD5E1" stroke-width="6" stroke-linecap="round"/>
+  <line x1="382" y1="304" x2="442" y2="304" stroke="#CBD5E1" stroke-width="6" stroke-linecap="round"/>
+  <!-- Lightning bolt emblem -->
+  <path d="M506 246L482 286H500L492 322L524 278H505L506 246Z" fill="#FFFFFF"/>
+  <!-- Generator wheels & handle -->
+  <circle cx="372" cy="360" r="18" fill="#232730"/>
+  <circle cx="372" cy="360" r="7" fill="#E2E8F0"/>
+  <circle cx="518" cy="360" r="18" fill="#232730"/>
+  <circle cx="518" cy="360" r="7" fill="#E2E8F0"/>
+  <!-- Cable connection to transfer switch -->
+  <path d="M280 265C302 265 305 288 330 288" stroke="#232730" stroke-width="5" stroke-linecap="round"/>
+  <!-- Multimeter floating card -->
+  <rect x="590" y="150" width="68" height="96" rx="10" fill="#FFFFFF" stroke="#DCE2EA" stroke-width="3"/>
+  <rect x="602" y="164" width="44" height="28" rx="4" fill="#FF6B4A" fill-opacity="0.18"/>
+  <circle cx="624" cy="216" r="14" fill="#232730"/>
+  <line x1="624" y1="216" x2="633" y2="207" stroke="#FF6B4A" stroke-width="3" stroke-linecap="round"/>
+</svg>
