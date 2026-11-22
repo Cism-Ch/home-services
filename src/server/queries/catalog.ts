@@ -3,6 +3,7 @@
  */
 
 import { prisma } from "@/lib/prisma"
+import { getCategoryIllustration } from "@/lib/category-illustrations"
 import { CATALOG_CACHE_KEYS, getCachedOrFetch } from "@/lib/redis"
 import {
   normalizeDurationUnit,
@@ -21,19 +22,6 @@ import type {
   CatalogUnavailability,
 } from "@/lib/types/catalog"
 
-const CATEGORY_FALLBACK_IMAGES: Record<string, string> = {
-  plomberie: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&q=80",
-  electricite: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800&q=80",
-  climatisation: "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=800&q=80",
-  menage: "https://images.unsplash.com/photo-1581578731117-104f2a41272c?w=800&q=80",
-  peinture: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=800&q=80",
-  demenagement: "https://images.unsplash.com/photo-1600518464441-9154a4dea21b?w=800&q=80",
-  securite: "https://images.unsplash.com/photo-1558002038-1055907df827?w=800&q=80",
-  menuiserie: "https://images.unsplash.com/photo-1530124566582-a618bc2615dc?w=800&q=80",
-  maconnerie: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&q=80",
-  jardinage: "https://images.unsplash.com/photo-1592417817098-8fd3d9eb14a5?w=800&q=80",
-}
-
 export function getServiceFallbackImage(
   categoryId: string,
   portfolioImages?: string[]
@@ -41,10 +29,7 @@ export function getServiceFallbackImage(
   if (portfolioImages && portfolioImages.length > 0) {
     return portfolioImages[0]
   }
-  return (
-    CATEGORY_FALLBACK_IMAGES[categoryId] ||
-    "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&q=80"
-  )
+  return getCategoryIllustration(categoryId)
 }
 
 function getSubscriptionPriorityRank(

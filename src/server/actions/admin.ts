@@ -14,7 +14,7 @@ export interface ServerActionResponse<T> {
 
 const entityIdSchema = z.string().trim().min(1, "Identifiant requis").max(120)
 const kycDecisionSchema = z.enum(["APPROVE", "REJECT"])
-const reviewDecisionSchema = z.enum(["APPROVE", "REMOVE"])
+const reviewDecisionSchema = z.enum(["APPROVE", "HIDE", "REMOVE"])
 
 const slugSchema = z
   .string()
@@ -154,7 +154,7 @@ export async function getKycSignedDocumentUrlAction(
  */
 export async function moderateReviewAction(
   reviewId: string,
-  decision: "APPROVE" | "REMOVE"
+  decision: "APPROVE" | "HIDE" | "REMOVE"
 ): Promise<ServerActionResponse<{ reviewId: string; status: string }>> {
   const authRes = await requireActionSession(["admin"])
   if (authRes.error !== null) {
@@ -181,6 +181,11 @@ export async function moderateReviewAction(
       if (parsedDecision.data === "REMOVE") {
         await tx.review.delete({
           where: { id: parsedReviewId.data },
+        })
+      } else if (parsedDecision.data === "HIDE") {
+        await tx.review.update({
+          where: { id: parsedReviewId.data },
+          data: { isModerated: false },
         })
       } else {
         await tx.review.update({
@@ -242,7 +247,12 @@ export async function moderateReviewAction(
     return {
       data: {
         reviewId: parsedReviewId.data,
-        status: parsedDecision.data === "APPROVE" ? "PUBLISHED" : "REMOVED",
+        status:
+          parsedDecision.data === "APPROVE"
+            ? "PUBLISHED"
+            : parsedDecision.data === "HIDE"
+            ? "HIDDEN"
+            : "REMOVED",
       },
       error: null,
     }

@@ -16,6 +16,7 @@ import {
   Clock,
   Menu,
   ShieldCheck,
+  Activity,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
@@ -269,6 +270,12 @@ export function DashboardSidebar({ user }: { user: SidebarUserProps }) {
       label: "Gouvernance & KYC",
       icon: ShieldCheck,
       exact: true,
+    },
+    {
+      href: "/dashboard/admin/health",
+      label: "Santé & Uptime",
+      icon: Activity,
+      exact: false,
     },
   ]
 

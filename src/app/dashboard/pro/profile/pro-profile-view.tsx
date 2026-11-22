@@ -32,10 +32,6 @@ import { FileUploadButton } from "@/components/file-upload-button"
 import { ProLiveStatusBanner } from "@/components/dashboard/pro-live-status-banner"
 import {
   updateProProfileAction,
-  requestPresignedUploadAction,
-  confirmPortfolioUploadAction,
-  confirmAvatarUploadAction,
-  confirmKycUploadAction,
   removeStoredAssetAction,
 } from "@/server/actions/pro-catalog"
 import type { AvailabilityStatusType } from "@/lib/types/catalog"
@@ -134,72 +130,38 @@ export function ProProfileView({ profile }: ProProfileViewProps) {
 
     setUploadingFolder(folder)
     try {
-      const presigned = await requestPresignedUploadAction(
-        profile.id,
-        file.name,
-        file.type,
-        folder,
-        file.size
-      )
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("folder", folder)
 
-      if (presigned.error || !presigned.data) {
-        toast.error(
-          presigned.error || "Erreur lors de la génération de l'URL signée Tigris."
-        )
-        return
-      }
-
-      if (!presigned.data.isConfigured || !presigned.data.uploadUrl) {
-        toast.error("Stockage Tigris S3 non configuré sur cet environnement.")
-        return
-      }
-
-      const uploadResponse = await fetch(presigned.data.uploadUrl, {
-        method: "PUT",
-        headers: {
-          "Content-Type": file.type,
-        },
-        body: file,
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
       })
 
-      if (!uploadResponse.ok) {
+      const payload = (await response.json().catch(() => null)) as {
+        data?: { objectKey: string; publicUrl: string; folder: string } | null
+        error?: string | null
+      } | null
+
+      if (!response.ok || !payload?.data) {
         toast.error(
-          `Échec de l'envoi vers Tigris S3 (HTTP ${uploadResponse.status}).`
+          payload?.error ||
+            `Échec de l'envoi du fichier (HTTP ${response.status}).`
         )
         return
       }
 
       if (folder === "portfolio") {
-        const confirmRes = await confirmPortfolioUploadAction(
-          presigned.data.publicUrl,
-          presigned.data.objectKey
-        )
-        if (confirmRes.error) {
-          toast.error(confirmRes.error)
-          return
-        }
         setPortfolio((prev) => [
           ...prev,
-          { key: presigned.data!.objectKey, url: presigned.data!.publicUrl },
+          { key: payload.data!.objectKey, url: payload.data!.publicUrl },
         ])
         toast.success("Photo ajoutée au portfolio et enregistrée sur Tigris S3.")
       } else if (folder === "avatars") {
-        const confirmRes = await confirmAvatarUploadAction(
-          presigned.data.publicUrl,
-          presigned.data.objectKey
-        )
-        if (confirmRes.error) {
-          toast.error(confirmRes.error)
-          return
-        }
-        setAvatarUrl(presigned.data.publicUrl)
+        setAvatarUrl(payload.data.publicUrl)
         toast.success("Photo de profil mise à jour avec succès.")
       } else {
-        const confirmRes = await confirmKycUploadAction(presigned.data.objectKey)
-        if (confirmRes.error) {
-          toast.error(confirmRes.error)
-          return
-        }
         setKycStatus("PENDING")
         toast.info(
           "Justificatif KYC envoyé sur Tigris S3. Dossier en attente de validation administrateur."
@@ -211,7 +173,7 @@ export function ProProfileView({ profile }: ProProfileViewProps) {
       toast.error(
         err instanceof Error
           ? err.message
-          : "Erreur réseau lors du transfert vers Tigris S3."
+          : "Erreur réseau lors du transfert du fichier."
       )
     } finally {
       setUploadingFolder(null)

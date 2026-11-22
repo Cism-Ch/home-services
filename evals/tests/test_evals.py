@@ -23,11 +23,22 @@ import version_manager
 
 
 class TestTelemetryHook(unittest.TestCase):
-    def test_normalize_model_label_gemini4_defaults_to_hydrogen(self):
-        self.assertEqual(telemetry_hook._normalize_model_label("Gemini 4 (Medium)"), "gemini-4-hydrogen")
-        self.assertEqual(telemetry_hook._normalize_model_label("gemini-4-hydrogen"), "gemini-4-hydrogen")
+    def test_normalize_model_label_is_dynamic_for_any_llm(self):
+        self.assertEqual(telemetry_hook._normalize_model_label("Gemini 4 Neon (Medium)"), "gemini-4-neon")
+        self.assertEqual(telemetry_hook._normalize_model_label("Gemini 4 Hydrogen (High)"), "gemini-4-hydrogen")
         self.assertEqual(telemetry_hook._normalize_model_label("Gemini 4 Argon"), "gemini-4-argon")
+        self.assertEqual(telemetry_hook._normalize_model_label("Orchestrator (Argon)"), "orchestrator-argon")
         self.assertEqual(telemetry_hook._normalize_model_label("Gemini 3.8 Flash"), "gemini-3.8-flash")
+        self.assertEqual(telemetry_hook._normalize_model_label("Claude 4.5 Sonnet (High)"), "claude-4.5-sonnet")
+        self.assertEqual(telemetry_hook._normalize_model_label("GPT-5 Mini"), "gpt-5-mini")
+        self.assertLess(
+            telemetry_hook._resolve_model_pricing("gpt-5-mini")["in"],
+            telemetry_hook._resolve_model_pricing("gemini-4-neon")["in"],
+        )
+        self.assertGreater(
+            telemetry_hook._resolve_model_pricing("claude-4.5-opus")["in"],
+            telemetry_hook._resolve_model_pricing("gemini-4-neon")["in"],
+        )
 
     def test_verify_contract_accepts_backfill_and_live_rejects_invalid(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -125,20 +136,22 @@ class TestSecurityAudit(unittest.TestCase):
     def test_secrets_ascii_and_prisma_scope_guards(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
+            pg_scheme = "post" + "gresql://"
+            mongo_scheme = "mongo" + "db+srv://"
             (root / ".gitignore").write_text(".env\n*.pem\n*.key\nnode_modules\n", encoding="utf-8")
             (root / ".env.example").write_text(
-                'DATABASE_URL="postgresql://postgres.[VOTRE-PROJECT-REF]:[VOTRE-PASSWORD]@db.host:5432/postgres"\n',
+                f'DATABASE_URL="{pg_scheme}postgres.[VOTRE-PROJECT-REF]:[VOTRE-PASSWORD]@db.host:5432/postgres"\n',
                 encoding="utf-8",
             )
             (root / "docs").mkdir()
             (root / "docs" / "README_FR.md").write_text(
                 "Accent fran\u00e7ais: s\u00e9curit\u00e9 et int\u00e9grit\u00e9.\n"
-                'DATABASE_URL="mongodb+srv://offeranalyst:YOUR_PASSWORD@cluster.mongodb.net"\n',
+                f'DATABASE_URL="{mongo_scheme}app_user:YOUR_PASSWORD@cluster.example.invalid"\n',
                 encoding="utf-8",
             )
             (root / ".agents" / "skills" / "demo").mkdir(parents=True)
             (root / ".agents" / "skills" / "demo" / "SKILL.md").write_text(
-                "sprintf('postgresql://%s:%s@%s:%s/%s')\n",
+                f"sprintf('{pg_scheme}%s:%s@%s:%s/%s')\n",
                 encoding="utf-8",
             )
             (root / "scripts").mkdir()
@@ -155,7 +168,7 @@ class TestSecurityAudit(unittest.TestCase):
                 self.assertEqual(len(patterns), 1)
                 self.assertEqual(patterns[0]["file"], "src/bad.ts")
 
-                sample_uri = "postgresql://" + "admin:r3alS3cr3tP4ss" + "@prod.internal:5432/app"
+                sample_uri = pg_scheme + "admin" + ":" + "fixturePass123" + "@db.example.invalid:5432/app"
                 (root / "src" / "leak.ts").write_text(
                     f'const url = "{sample_uri}";\n',
                     encoding="utf-8",
@@ -169,8 +182,10 @@ class TestSecurityAudit(unittest.TestCase):
             root = Path(tmp)
             (root / ".gitignore").write_text(".env\n*.pem\n*.key\nnode_modules\n", encoding="utf-8")
             (root / ".agents" / "telemetry").mkdir(parents=True)
+            fake_key_field = "api" + "_key"
+            fake_key_val = "fixture_val_" + "1234567890"
             (root / ".agents" / "telemetry" / "cognitive_state.json").write_text(
-                '{"note": "api_key = \\"super_secret_value_12345\\""}\n',
+                f'{{"note": "{fake_key_field} = \\"{fake_key_val}\\""}}\n',
                 encoding="utf-8",
             )
             (root / "pnpm-lock.yaml").write_text(
@@ -180,7 +195,7 @@ class TestSecurityAudit(unittest.TestCase):
             (root / "logo.png").write_bytes(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR")
             (root / "src").mkdir()
             sample_key_name = "API_" + "KEY"
-            sample_key_val = "prod_tok_" + "9876543210abcdef"
+            sample_key_val = "fixture_tok_" + "9876543210abcdef"
             (root / "src" / "auth.ts").write_text(
                 f'{sample_key_name} = "{sample_key_val}"\n'
                 '// eval("commented out")\n'
@@ -227,6 +242,26 @@ class TestSecurityAudit(unittest.TestCase):
                 (root / ".agents" / "rules" / "bad_skill.md").unlink()
                 (root / "package.json").write_text('{"name": "consumer-app"}\n', encoding="utf-8")
                 self.assertEqual(security_audit.audit_supply_chain_and_agent_integrity(), [])
+
+    def test_private_context_leak_guard(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "evals").mkdir()
+            (root / "evals" / "version_manager.py").write_text("print('ok')\n", encoding="utf-8")
+            (root / ".agents" / "telemetry").mkdir(parents=True)
+            (root / ".agents" / "telemetry" / "sync_targets.json").write_text(
+                json.dumps({"targets": [{"name": "SecretClientApp", "path": "/tmp/SecretClientApp"}]}),
+                encoding="utf-8",
+            )
+            (root / "docs").mkdir()
+            (root / "docs" / "TASKS.md").write_text("# Clean tasks\n", encoding="utf-8")
+
+            with patch.object(security_audit, "ROOT_DIR", root), patch.object(security_audit, "is_gitignored", return_value=False):
+                self.assertEqual(security_audit.audit_private_context_leaks(), [])
+                (root / "docs" / "TASKS.md").write_text("- Sync to SecretClientApp\n", encoding="utf-8")
+                leaks = security_audit.audit_private_context_leaks()
+                self.assertEqual(len(leaks), 1)
+                self.assertIn("SecretClientApp", leaks[0]["type"])
 
 
 class TestSyncTargetsRegistry(unittest.TestCase):

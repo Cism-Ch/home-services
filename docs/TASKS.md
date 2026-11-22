@@ -10,29 +10,39 @@
 
 ```
 +-------------------------+  +-------------------------+  +-------------------------+
-|    [>] IN PROGRESS      |  |    [x] SPRINT 15 DONE   |  |       [X] ARCHIVES      |
+|    [>] IN PROGRESS      |  |    [x] SPRINT 16 DONE   |  |       [X] ARCHIVES      |
 +-------------------------+  +-------------------------+  +-------------------------+
-| (Aucune tache active)   |  | [x] TASK-UI15-FIX-MOB   |  | Sprint 02-12 (40 tasks) |
-|                         |  | [x] TASK-UI15-PRICING   |  | Sprint 13-14 (13 tasks) |
-|                         |  |                         |  | (Full Archive Logged)   |
+| (Aucune tache active)   |  | [x] TASK-PRO16-SVC-CRUD |  | Sprint 02-12 (40 tasks) |
+|                         |  | [x] TASK-PRO16-UPLOAD   |  | Sprint 13-15 (15 tasks) |
+|                         |  | [x] TASK-HERO16-SHADER  |  | (Full Archive Logged)   |
+|                         |  | [x] TASK-ILLUS16-METIER |  |                         |
+|                         |  | [x] TASK-ADM16-HEALTH   |  |                         |
+|                         |  | [x] TASK-ADM16-KYC-REV  |  |                         |
 +-------------------------+  +-------------------------+  +-------------------------+
 ```
 
 ---
 
-## Completed Sprint 15: Correctifs Responsive Mobile (Sidebar/Drawer, Autocomplete, Cards, Footer) & Page Tarifs Cover (100/100 PASS)
+## Completed Sprint 16: Correction Production CRUD Services, Upload S3, ShaderGradient Hero, Illustrations Metiers, Admin Health & Moderation (100/100 PASS)
 
-### [x] `TASK-UI15-FIX-MOB-01` — Correctifs Responsive Mobile & Alignements UI
-- [x] Corriger le Drawer mobile et la sidebar filtres sur `/services` (`max-h-[88dvh]`, scroll natif sans piege Radix/Vaul, grille `lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]`).
-- [x] Corriger l'affichage mobile et le positionnement de la dropdown `ServiceAutocomplete` (`text-left`, `max-h-[min(55vh,320px)]`, `z-50`, tailles tactiles).
-- [x] Remplacer l'icone `Sparkles` du bouton `Réserver` par `CalendarCheck` dans `ServiceListingCard`.
-- [x] Centrer sur mobile le contenu des cards `ServiceCard` ("Nos Services") ainsi que les badges/titres/sous-titres des sections de la page d'accueil.
-- [x] Aligner `SiteFooter` en grille adaptative `1x1` / `2x2` / `4x1` (`min-[360px]:grid-cols-2 lg:grid-cols-4`).
+### [x] `TASK-PRO16-SVC-CRUD-01` — Edition & Suppression/Archivage Securise des Prestations (FCFA)
+- [x] Ajouter `updateProServiceAction` et corriger `deleteProServiceAction` (archivage `isActive: false` si reservations liees, suppression nette sinon) dans `src/server/actions/pro-catalog.ts`.
+- [x] Ajouter l'edition complete + toggle actif/archive + apercu d'illustration auto-selectionnee dans `ProServicesView` et `CreateServiceDialog`.
 
-### [x] `TASK-UI15-PRICING-01` — Page Tarifs (`/pricing`) en Cover Animee Client vs Professionnel & Menu
-- [x] Ajouter le lien `Tarifs` (`/pricing`) dans `MainNav`, `SiteHeader` (mobile) et `SiteFooter`.
-- [x] Creer `src/app/pricing/page.tsx` et `src/app/pricing/pricing-experience.tsx` en Cover plein ecran demandant de maniere animee si l'utilisateur est Client/Particulier ou Professionnel/Entreprise avec les formules XOF `PAYSTACK_PLANS`.
-- [x] Etendre `e2e/responsive-layout.spec.ts` (couverture `/pricing`, drawer mobile `/services`, footer `2x2`, autocomplete mobile) et valider `100/100 PASS`.
+### [x] `TASK-PRO16-UPLOAD-01` — Correction Upload Photo Profil / Portfolio / KYC (`POST /api/upload`)
+- [x] Creer `src/app/api/upload/route.ts` (proxy serveur S3 `PutObjectCommand` authentifie + rate-limit + validation MIME/taille, zero blocage CORS navigateur) et brancher `ProProfileView`.
+
+### [x] `TASK-HERO16-SHADER-01` — Hero Cover Plein Ecran avec `@shadergradient/react` & Descente `HowItWorks`
+- [x] Installer `@shadergradient/react @react-three/fiber three three-stdlib camera-controls @types/three`, creer `HeroShaderBackground` (lazy `ssr: false`, fallback WebGL + `prefers-reduced-motion`) et sortir `HowItWorks` sous la Cover Hero.
+
+### [x] `TASK-ILLUS16-METIER-01` — Illustrations Editorial Flat par Metier Auto-Selectionnees
+- [x] Generer les 10 illustrations vectorielles flat par categorie (`public/images/services/*.jpg`), creer `src/lib/category-illustrations.ts` et les brancher en auto-selection dans `catalog.ts`, `ProServicesView` et `CreateServiceDialog`.
+
+### [x] `TASK-ADM16-HEALTH-01` — Page Admin Sante & Uptime du Stack (`/dashboard/admin/health`)
+- [x] Creer `src/lib/stack-health.ts`, `GET /api/admin/health`, `src/app/dashboard/admin/health/page.tsx` et le lien sidebar `Sante & Uptime` (sondes live DB, Better-Auth, Tigris S3, Redis, QStash, Resend, Paystack avec latences).
+
+### [x] `TASK-ADM16-KYC-REV-01` — Visualisation/Telechargement KYC & Moderation Coherente des Avis
+- [x] Creer `GET /api/admin/kyc/[proId]` (apercu inline + `?download=1`), ajouter la modale de previsualisation KYC dans `AdminDashboardView`, et refondre la moderation des avis (statuts clairs `Publie` / `En attente` / `Signale`, filtres, action `HIDE`, confirmation suppression).
 
 ---
 
@@ -40,6 +50,7 @@
 
 | Date | Task ID | Title & Description | Created / Modified Files |
 | :--- | :--- | :--- | :--- |
+| 2026-11-21 | SPRINT-15 | Correctifs Responsive Mobile (Drawer `/services`, Autocomplete, `CalendarCheck`, centrage mobile, Footer `2x2`) & Page `/pricing` Cover | `src/app/pricing/*`, `src/app/services/services-browser.tsx`, `src/components/service-autocomplete.tsx`, `src/components/site-footer.tsx`, `e2e/*` |
 | 2026-11-21 | SPRINT-14 | Refonte UI/UX : Nunito, Autocomplete Services, Modes `3x1`/`3x2`/`3x3`/`4x3`, Sidebar, `AnimatePresence`, Notifications & Compteurs | `src/app/layout.tsx`, `src/components/service-autocomplete.tsx`, `src/components/catalog-layout-toolbar.tsx`, `src/components/motion/*`, `src/lib/notifications.ts`, `e2e/*` |
 | 2026-11-20 | SPRINT-13 | Hero Cover Zero-CLS, Framer Motion GPU-Only, Transitions, Perf 60fps & Durcissement Prod (`TASK-PROD-FIX-01`) | `src/lib/motion.ts`, `src/components/motion/*`, `src/app/template.tsx`, `src/lib/prisma.ts`, `src/lib/redis.ts`, `src/app/error.tsx`, `package.json`, `e2e/*` |
 | 2026-11-20 | SPRINT-12 | Full-Width `1920px+`, Lueur Hero, Capacite `1..N` Multi-Jours & Hotfix Auth `429`/Proxy | `src/lib/scheduling.ts`, `src/proxy.ts`, `src/lib/auth.ts`, `prisma/schema.prisma`, `src/app/**/*`, `e2e/**/*` |

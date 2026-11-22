@@ -132,11 +132,139 @@ export async function createProServiceAction(
 }
 
 /**
- * Supprime un service du catalogue professionnel
+ * Met a jour une prestation existante en FCFA (titre, description, categorie, tarif, duree, statut actif)
+ */
+export async function updateProServiceAction(
+  serviceId: string,
+  input: CreateServiceInput
+): Promise<
+  ServerActionResponse<{
+    id: string
+    title: string
+    description: string
+    categoryId: string
+    price: number
+    duration: number
+    durationUnit: DurationUnit
+    durationValue: number
+    isActive: boolean
+  }>
+> {
+  const authRes = await requireProProfile()
+  if (authRes.error !== null) {
+    return { data: null, error: authRes.error }
+  }
+
+  const parsedId = serviceIdSchema.safeParse(serviceId)
+  if (!parsedId.success) {
+    return {
+      data: null,
+      error: parsedId.error.issues[0]?.message || "Identifiant de service invalide.",
+    }
+  }
+
+  const normalizedInput: CreateServiceInput = {
+    ...input,
+    durationUnit: normalizeDurationUnit(input.durationUnit),
+    durationValue: input.durationValue ?? input.duration ?? 60,
+  }
+
+  const parsed = createServiceSchema.safeParse(normalizedInput)
+  if (!parsed.success) {
+    const firstIssue = parsed.error.issues[0]?.message || "Données de service invalides"
+    return { data: null, error: firstIssue }
+  }
+
+  try {
+    const existing = await prisma.service.findUnique({
+      where: { id: parsedId.data },
+      select: { id: true, proProfileId: true },
+    })
+
+    if (!existing) {
+      return { data: null, error: "Prestation introuvable." }
+    }
+
+    if (
+      existing.proProfileId !== authRes.proProfile.id &&
+      authRes.user.userType !== "admin"
+    ) {
+      return { data: null, error: "Vous ne pouvez pas modifier cette prestation." }
+    }
+
+    const categoryExists = await prisma.category.findUnique({
+      where: { id: parsed.data.categoryId },
+      select: { id: true },
+    })
+
+    if (!categoryExists) {
+      return {
+        data: null,
+        error: "Catégorie introuvable. Veuillez sélectionner une catégorie valide.",
+      }
+    }
+
+    const normalizedMinutes = durationToApproxMinutes(
+      parsed.data.durationValue,
+      parsed.data.durationUnit
+    )
+
+    const updated = await prisma.service.update({
+      where: { id: parsedId.data },
+      data: {
+        categoryId: parsed.data.categoryId,
+        title: parsed.data.title,
+        description: parsed.data.description,
+        price: parsed.data.price,
+        duration: normalizedMinutes,
+        durationUnit: parsed.data.durationUnit,
+        durationValue: parsed.data.durationValue,
+        isActive: parsed.data.isActive,
+      },
+    })
+
+    await invalidateCatalogCache()
+    revalidatePath("/dashboard/pro/services")
+    revalidatePath("/services")
+    revalidatePath(`/professionals/pros/${existing.proProfileId}`)
+
+    return {
+      data: {
+        id: updated.id,
+        title: updated.title,
+        description: updated.description,
+        categoryId: updated.categoryId,
+        price: updated.price,
+        duration: updated.duration,
+        durationUnit: normalizeDurationUnit(updated.durationUnit),
+        durationValue: updated.durationValue,
+        isActive: updated.isActive,
+      },
+      error: null,
+    }
+  } catch (err) {
+    console.error("[pro-catalog] updateProService error:", err)
+    return {
+      data: null,
+      error: "Erreur lors de la mise à jour de la prestation.",
+    }
+  }
+}
+
+/**
+ * Supprime un service du catalogue professionnel.
+ * Si des reservations historiques y sont rattachees, archive proprement (isActive = false)
+ * au lieu de echouer sur la contrainte FK Restrict.
  */
 export async function deleteProServiceAction(
   serviceId: string
-): Promise<ServerActionResponse<{ deletedId: string }>> {
+): Promise<
+  ServerActionResponse<{
+    deletedId: string
+    mode: "DELETED" | "ARCHIVED"
+    bookingsCount: number
+  }>
+> {
   const authRes = await requireProProfile()
   if (authRes.error !== null) {
     return { data: null, error: authRes.error }
@@ -153,7 +281,10 @@ export async function deleteProServiceAction(
   try {
     const existing = await prisma.service.findUnique({
       where: { id: parsedId.data },
-      select: { proProfileId: true },
+      select: {
+        proProfileId: true,
+        _count: { select: { bookings: true } },
+      },
     })
 
     if (!existing) {
@@ -167,16 +298,30 @@ export async function deleteProServiceAction(
       return { data: null, error: "Vous ne pouvez pas supprimer ce service." }
     }
 
-    await prisma.service.delete({
-      where: { id: parsedId.data },
-    })
+    const bookingsCount = existing._count.bookings
+    let mode: "DELETED" | "ARCHIVED" = "DELETED"
+
+    if (bookingsCount > 0) {
+      await prisma.service.update({
+        where: { id: parsedId.data },
+        data: { isActive: false },
+      })
+      mode = "ARCHIVED"
+    } else {
+      await prisma.service.delete({
+        where: { id: parsedId.data },
+      })
+    }
 
     await invalidateCatalogCache()
     revalidatePath("/dashboard/pro/services")
     revalidatePath("/services")
-    revalidatePath(`/professionals/pros/${authRes.proProfile.id}`)
+    revalidatePath(`/professionals/pros/${existing.proProfileId}`)
 
-    return { data: { deletedId: parsedId.data }, error: null }
+    return {
+      data: { deletedId: parsedId.data, mode, bookingsCount },
+      error: null,
+    }
   } catch (err) {
     console.error("[pro-catalog] deleteProService error:", err)
     return {

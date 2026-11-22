@@ -74,11 +74,31 @@ export default async function Home() {
             icon: <Briefcase className="h-5 w-5" />,
           },
         ]}
-        scrollTargetHref="#quick-search"
-        scrollTargetLabel="Rechercher un artisan"
+        scrollTargetHref="#how-it-works"
+        scrollTargetLabel="Comment ça marche"
+      />
+
+      {/* Section Etapes de presentation sous la couverture Hero */}
+      <section
+        id="how-it-works"
+        className="w-full py-12 md:py-16 scroll-mt-20 relative"
       >
-        <HowItWorks />
-      </HeroSection>
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
+          <RevealOnScroll className="text-center mb-8 md:mb-10">
+            <div className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-[hsl(var(--brand))] mb-3 bg-[hsl(var(--brand))]/10 px-4 py-1.5 rounded-full">
+              <div className="w-2 h-2 rounded-full bg-[hsl(var(--brand))] animate-pulse" />
+              COMMENT ÇA MARCHE
+            </div>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight mb-2 gradient-brand">
+              Réservez en 3 étapes simples
+            </h2>
+            <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
+              Du choix du métier à l&apos;intervention à domicile, sans intermédiaire financier
+            </p>
+          </RevealOnScroll>
+          <HowItWorks />
+        </div>
+      </section>
 
       {/* Quick Search Section */}
       <QuickSearch

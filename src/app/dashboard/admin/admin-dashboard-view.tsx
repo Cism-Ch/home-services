@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
   Card,
@@ -14,6 +15,24 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import {
   Select,
   SelectContent,
@@ -31,7 +50,6 @@ import type {
 } from "@/server/queries/admin"
 import {
   verifyProKycAction,
-  getKycSignedDocumentUrlAction,
   moderateReviewAction,
   createCategoryAction,
   deleteCategoryAction,
@@ -39,6 +57,10 @@ import {
   deleteCityAction,
 } from "@/server/actions/admin"
 import {
+  Activity,
+  Download,
+  Eye,
+  EyeOff,
   ShieldCheck,
   Users,
   CreditCard,
@@ -47,7 +69,6 @@ import {
   XCircle,
   MapPin,
   FileCheck,
-  ExternalLink,
   Plus,
   Trash2,
   Wrench,
@@ -108,8 +129,12 @@ export function AdminDashboardView({ data }: { data: AdminDashboardData }) {
     Record<string, { isVerified: boolean; kycStatus: AdminKycItem["kycStatus"] }>
   >({})
   const [removedReviewIds, setRemovedReviewIds] = useState<Record<string, boolean>>({})
-  const [approvedReviewIds, setApprovedReviewIds] = useState<Record<string, boolean>>({})
-  const [openingDocProId, setOpeningDocProId] = useState<string | null>(null)
+  const [reviewOverrides, setReviewOverrides] = useState<
+    Record<string, { isModerated: boolean; isReported: boolean }>
+  >({})
+  const [reviewFilter, setReviewFilter] = useState<"ALL" | "PENDING" | "PUBLISHED">("ALL")
+  const [confirmDeleteReviewId, setConfirmDeleteReviewId] = useState<string | null>(null)
+  const [previewKycItem, setPreviewKycItem] = useState<AdminKycItem | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
 
   const [newCitySlug, setNewCitySlug] = useState("")
@@ -126,13 +151,25 @@ export function AdminDashboardView({ data }: { data: AdminDashboardData }) {
     return patch ? { ...item, ...patch } : item
   })
 
-  const moderatedReviews = data.reviews
+  const allReviews = data.reviews
     .filter((r) => !removedReviewIds[r.id])
-    .map((r) =>
-      approvedReviewIds[r.id]
-        ? { ...r, isModerated: true, isReported: false }
-        : r
-    )
+    .map((r) => {
+      const patch = reviewOverrides[r.id]
+      return patch ? { ...r, ...patch } : r
+    })
+
+  const pendingReviewsCount = allReviews.filter(
+    (r) => !r.isModerated || r.isReported
+  ).length
+  const publishedReviewsCount = allReviews.filter(
+    (r) => r.isModerated && !r.isReported
+  ).length
+
+  const filteredReviews = allReviews.filter((r) => {
+    if (reviewFilter === "PENDING") return !r.isModerated || r.isReported
+    if (reviewFilter === "PUBLISHED") return r.isModerated && !r.isReported
+    return true
+  })
 
   const handleKycDecision = async (proId: string, decision: "APPROVE" | "REJECT") => {
     setBusyId(proId)
@@ -151,6 +188,10 @@ export function AdminDashboardView({ data }: { data: AdminDashboardData }) {
         },
       }))
 
+      if (previewKycItem?.id === proId) {
+        setPreviewKycItem(null)
+      }
+
       toast.success(
         decision === "APPROVE"
           ? "Dossier KYC validé. Le badge Prestataire Vérifié est actif."
@@ -162,23 +203,9 @@ export function AdminDashboardView({ data }: { data: AdminDashboardData }) {
     }
   }
 
-  const handleOpenKycDocument = async (proId: string) => {
-    setOpeningDocProId(proId)
-    try {
-      const res = await getKycSignedDocumentUrlAction(proId)
-      if (res.error || !res.data) {
-        toast.error(res.error || "Document KYC indisponible.")
-        return
-      }
-      window.open(res.data.url, "_blank", "noopener,noreferrer")
-    } finally {
-      setOpeningDocProId(null)
-    }
-  }
-
   const handleReviewDecision = async (
     reviewId: string,
-    decision: "APPROVE" | "REMOVE"
+    decision: "APPROVE" | "HIDE" | "REMOVE"
   ) => {
     setBusyId(reviewId)
     try {
@@ -190,10 +217,20 @@ export function AdminDashboardView({ data }: { data: AdminDashboardData }) {
 
       if (decision === "REMOVE") {
         setRemovedReviewIds((prev) => ({ ...prev, [reviewId]: true }))
-        toast.info("Avis retiré de la plateforme et note recalculée.")
+        setConfirmDeleteReviewId(null)
+        toast.info("Avis supprimé définitivement et note du prestataire recalculée.")
+      } else if (decision === "HIDE") {
+        setReviewOverrides((prev) => ({
+          ...prev,
+          [reviewId]: { isModerated: false, isReported: false },
+        }))
+        toast.info("Avis masqué du profil public et note recalculée.")
       } else {
-        setApprovedReviewIds((prev) => ({ ...prev, [reviewId]: true }))
-        toast.success("Avis mutuel approuvé et maintenu en ligne.")
+        setReviewOverrides((prev) => ({
+          ...prev,
+          [reviewId]: { isModerated: true, isReported: false },
+        }))
+        toast.success("Avis publié et pris en compte dans la note moyenne.")
       }
       router.refresh()
     } finally {
@@ -296,17 +333,33 @@ export function AdminDashboardView({ data }: { data: AdminDashboardData }) {
       header: "Justificatif Tigris S3",
       cell: (item) =>
         item.hasDocument ? (
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="gap-1.5 text-xs"
-            disabled={openingDocProId === item.id}
-            onClick={() => handleOpenKycDocument(item.id)}
-          >
-            <ExternalLink className="h-3.5 w-3.5 text-primary" />
-            {openingDocProId === item.id ? "Signature..." : "Voir justificatif"}
-          </Button>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-xs"
+              onClick={() => setPreviewKycItem(item)}
+            >
+              <Eye className="h-3.5 w-3.5 text-primary" />
+              Visualiser
+            </Button>
+            <Button
+              asChild
+              size="sm"
+              variant="ghost"
+              className="gap-1 text-xs px-2"
+            >
+              <a
+                href={`/api/admin/kyc/${item.id}?download=1`}
+                download
+                aria-label={`Télécharger le justificatif de ${item.name}`}
+              >
+                <Download className="h-3.5 w-3.5" />
+                Télécharger
+              </a>
+            </Button>
+          </div>
         ) : (
           <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
             <FileCheck className="h-3.5 w-3.5" />
@@ -395,14 +448,22 @@ export function AdminDashboardView({ data }: { data: AdminDashboardData }) {
   }
 
   return (
-    <div className="space-y-8 animate-appear">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-          Portail d&apos;Administration & Gouvernance
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Supervisez la vérification KYC des artisans, la modération des avis mutuels, le référentiel GEO et les revenus Paystack en FCFA.
-        </p>
+    <div className="space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Portail d&apos;Administration &amp; Gouvernance
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Supervisez la vérification KYC des artisans, la modération des avis mutuels, le référentiel GEO et les revenus Paystack en FCFA.
+          </p>
+        </div>
+        <Button asChild variant="outline" className="gap-2 w-full sm:w-auto shrink-0">
+          <Link href="/dashboard/admin/health">
+            <Activity className="h-4 w-4 text-[hsl(var(--brand))]" />
+            Santé &amp; Uptime Stack
+          </Link>
+        </Button>
       </div>
 
       {/* KPIs Grid */}
@@ -443,9 +504,9 @@ export function AdminDashboardView({ data }: { data: AdminDashboardData }) {
             <Star className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{moderatedReviews.length} avis</div>
+            <div className="text-2xl font-bold">{allReviews.length} avis</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {data.platformCounts.completedBookings} / {data.platformCounts.totalBookings} missions clôturées
+              {pendingReviewsCount} à modérer • {data.platformCounts.completedBookings} missions clôturées
             </p>
           </CardContent>
         </Card>
@@ -472,7 +533,7 @@ export function AdminDashboardView({ data }: { data: AdminDashboardData }) {
             Abonnements Paystack ({data.subscriptions.length})
           </TabsTrigger>
           <TabsTrigger value="reviews">
-            Modération Avis ({moderatedReviews.length})
+            Modération Avis ({allReviews.length})
           </TabsTrigger>
           <TabsTrigger value="geo">GEO & Métiers</TabsTrigger>
         </TabsList>
@@ -518,68 +579,132 @@ export function AdminDashboardView({ data }: { data: AdminDashboardData }) {
 
           <TabsContent value="reviews">
             <Card>
-              <CardHeader>
-                <CardTitle>Modération des Avis Mutuels</CardTitle>
-                <CardDescription>
-                  Contrôlez les avis déposés entre clients et prestataires ; la suppression recalcule automatiquement la note moyenne du professionnel.
-                </CardDescription>
+              <CardHeader className="space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <CardTitle>Modération des Avis Mutuels</CardTitle>
+                    <CardDescription className="mt-1">
+                      Seuls les avis <strong>Publiés</strong> comptent dans la note moyenne publique d&apos;un prestataire. Masquez temporairement un avis douteux ou supprimez-le définitivement.
+                    </CardDescription>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={reviewFilter === "ALL" ? "default" : "outline"}
+                      onClick={() => setReviewFilter("ALL")}
+                    >
+                      Tous ({allReviews.length})
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={reviewFilter === "PENDING" ? "default" : "outline"}
+                      onClick={() => setReviewFilter("PENDING")}
+                    >
+                      À modérer ({pendingReviewsCount})
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={reviewFilter === "PUBLISHED" ? "default" : "outline"}
+                      onClick={() => setReviewFilter("PUBLISHED")}
+                    >
+                      Publiés ({publishedReviewsCount})
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {moderatedReviews.length === 0 ? (
+                {filteredReviews.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-8 border rounded-lg">
-                    Aucun avis publié pour le moment.
+                    Aucun avis dans cette catégorie.
                   </p>
                 ) : (
-                  moderatedReviews.map((rev) => (
-                    <div
-                      key={rev.id}
-                      className="p-4 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                    >
-                      <div className="space-y-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-semibold text-sm">{rev.authorName}</span>
-                          <span className="text-xs text-muted-foreground">
-                            vers {rev.targetName}
-                          </span>
-                          <Badge variant="outline" className="text-[10px]">
-                            {rev.authorType === "PRO_TO_CLIENT"
-                              ? "Pro -> Client"
-                              : "Client -> Pro"}
-                          </Badge>
-                          <span className="text-xs text-amber-500 font-bold">
-                            {rev.rating} / 5
-                          </span>
-                          {rev.isReported && (
-                            <Badge variant="destructive" className="text-[10px]">
-                              Signalé
+                  filteredReviews.map((rev) => {
+                    const isPublished = rev.isModerated && !rev.isReported
+                    return (
+                      <div
+                        key={rev.id}
+                        className="p-4 rounded-xl border flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-card/60"
+                      >
+                        <div className="space-y-1.5 min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-semibold text-sm">{rev.authorName}</span>
+                            <span className="text-xs text-muted-foreground">
+                              → {rev.targetName}
+                            </span>
+                            <Badge variant="outline" className="text-[11px]">
+                              {rev.authorType === "PRO_TO_CLIENT"
+                                ? "Pro → Client"
+                                : "Client → Pro"}
                             </Badge>
-                          )}
+                            <span className="text-xs text-amber-500 font-bold tabular-nums">
+                              {rev.rating} / 5
+                            </span>
+                            {rev.isReported ? (
+                              <Badge variant="destructive" className="text-[11px]">
+                                Signalé
+                              </Badge>
+                            ) : isPublished ? (
+                              <Badge variant="success" className="text-[11px]">
+                                Publié
+                              </Badge>
+                            ) : (
+                              <Badge variant="warning" className="text-[11px]">
+                                En attente / Masqué
+                              </Badge>
+                            )}
+                            <span className="text-[11px] text-muted-foreground tabular-nums">
+                              {new Date(rev.createdAt).toLocaleDateString("fr-FR")}
+                            </span>
+                          </div>
+                          <p className="text-sm text-foreground/85 leading-relaxed">
+                            {rev.comment}
+                          </p>
                         </div>
-                        <p className="text-sm text-muted-foreground">{rev.comment}</p>
+
+                        <div className="flex flex-wrap items-center gap-2 shrink-0">
+                          {!isPublished ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={busyId === rev.id}
+                              className="gap-1.5 text-emerald-600 hover:text-emerald-700"
+                              onClick={() => void handleReviewDecision(rev.id, "APPROVE")}
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              Publier
+                            </Button>
+                          ) : (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={busyId === rev.id}
+                              className="gap-1.5"
+                              onClick={() => void handleReviewDecision(rev.id, "HIDE")}
+                            >
+                              <EyeOff className="h-3.5 w-3.5" />
+                              Masquer
+                            </Button>
+                          )}
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            disabled={busyId === rev.id}
+                            className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => setConfirmDeleteReviewId(rev.id)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Supprimer
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          disabled={busyId === rev.id}
-                          onClick={() => handleReviewDecision(rev.id, "APPROVE")}
-                        >
-                          Approuver
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          disabled={busyId === rev.id}
-                          className="text-destructive"
-                          onClick={() => handleReviewDecision(rev.id, "REMOVE")}
-                        >
-                          Supprimer
-                        </Button>
-                      </div>
-                    </div>
-                  ))
+                    )
+                  })
                 )}
               </CardContent>
             </Card>
@@ -748,6 +873,104 @@ export function AdminDashboardView({ data }: { data: AdminDashboardData }) {
           </TabsContent>
         </div>
       </Tabs>
+
+      {/* Modale de previsualisation & telechargement du justificatif KYC */}
+      <Dialog
+        open={previewKycItem !== null}
+        onOpenChange={(next) => {
+          if (!next) setPreviewKycItem(null)
+        }}
+      >
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              Justificatif KYC — {previewKycItem?.name}
+            </DialogTitle>
+            <DialogDescription>
+              {previewKycItem?.headline} • {previewKycItem?.city}
+            </DialogDescription>
+          </DialogHeader>
+
+          {previewKycItem && (
+            <div className="flex-1 min-h-[360px] rounded-xl border bg-muted/30 overflow-hidden">
+              <iframe
+                src={`/api/admin/kyc/${previewKycItem.id}`}
+                title={`Justificatif KYC de ${previewKycItem.name}`}
+                className="w-full h-[55vh] border-0 bg-white"
+              />
+            </div>
+          )}
+
+          <DialogFooter className="flex-wrap gap-2 sm:justify-between">
+            {previewKycItem && (
+              <Button asChild variant="outline" className="gap-2">
+                <a
+                  href={`/api/admin/kyc/${previewKycItem.id}?download=1`}
+                  download
+                >
+                  <Download className="h-4 w-4" />
+                  Télécharger le fichier
+                </a>
+              </Button>
+            )}
+            <div className="flex items-center gap-2">
+              {previewKycItem && (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={busyId === previewKycItem.id}
+                    className="gap-1.5 text-destructive"
+                    onClick={() => void handleKycDecision(previewKycItem.id, "REJECT")}
+                  >
+                    <XCircle className="h-4 w-4" />
+                    Rejeter
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={busyId === previewKycItem.id}
+                    className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+                    onClick={() => void handleKycDecision(previewKycItem.id, "APPROVE")}
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    Valider KYC
+                  </Button>
+                </>
+              )}
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation suppression definitive d'avis */}
+      <AlertDialog
+        open={confirmDeleteReviewId !== null}
+        onOpenChange={(next) => {
+          if (!next) setConfirmDeleteReviewId(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer définitivement cet avis ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible et recalculera immédiatement la note moyenne du prestataire. Si vous souhaitez conserver une trace, préférez l&apos;action &laquo; Masquer &raquo;.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmDeleteReviewId) {
+                  void handleReviewDecision(confirmDeleteReviewId, "REMOVE")
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Supprimer définitivement
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

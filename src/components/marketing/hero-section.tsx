@@ -3,6 +3,7 @@ import { ArrowRightIcon, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Glow } from "@/components/marketing/glow"
+import { HeroShaderBackground } from "@/components/marketing/hero-shader-background"
 import { cn } from "@/lib/utils"
 
 interface HeroAction {
@@ -49,6 +50,9 @@ export function HeroSection({
         "bg-background text-foreground py-8 sm:py-10 lg:py-12"
       )}
     >
+      {/* Fond anime ShaderGradient 3D avec secours WebGL */}
+      <HeroShaderBackground />
+
       {/* Lueur contenue dans le hero pour eviter toute coupure nette avant la section suivante */}
       <Glow variant="top" />
 

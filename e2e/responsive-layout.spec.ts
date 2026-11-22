@@ -251,7 +251,7 @@ test.describe("HomeServices - Audit Geometrique Multi-Viewports", () => {
       "/dashboard/pro/availability",
       "/dashboard/pro/settings",
     ]
-    const adminRoutes = ["/dashboard/admin"]
+    const adminRoutes = ["/dashboard/admin", "/dashboard/admin/health"]
 
     let checkedCount = 0
 
